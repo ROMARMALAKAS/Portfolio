@@ -1070,7 +1070,7 @@ kbd {
 .rv-reaction-label { pointer-events: none; }
 
 /* =====================================================
-   Fullscreen game stage — forced landscape layout
+   Fullscreen game stage — portrait layout
    ===================================================== */
 #gameStage:fullscreen,
 #gameStage:-webkit-full-screen {
@@ -1093,25 +1093,9 @@ kbd {
   margin: 0 auto;
 }
 
-/* Rotate-device hint when we asked for an orientation but the browser refused */
-@media (max-width: 900px) and (orientation: portrait) {
-  body.rv-fs-active #gameStage[data-fs-orientation="landscape"]::before {
-    content: "Rotate your device to landscape \1F504";
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 24px;
-    font: 600 18px/1.4 var(--rv-font);
-    color: #fff;
-    background: rgba(11, 15, 26, 0.86);
-  }
-}
+/* Rotate-device hint when we locked portrait but the device is in landscape */
 @media (max-width: 900px) and (orientation: landscape) {
-  body.rv-fs-active #gameStage[data-fs-orientation="portrait"]::before {
+  body.rv-fs-active #gameStage::before {
     content: "Rotate your device to portrait \1F504";
     position: fixed;
     inset: 0;

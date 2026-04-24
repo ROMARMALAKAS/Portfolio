@@ -163,10 +163,8 @@ document.getElementById("year").textContent = new Date().getFullYear();
     _fsEl() { return document.getElementById("gameStage"); },
 
     _preferredOrientation() {
-      if (!this._active) return "landscape";
-      const pane = document.getElementById("game-" + this._active);
-      if (!pane) return "landscape";
-      return pane.getAttribute("data-orientation") || "landscape";
+      // All games are portrait-only.
+      return "portrait";
     },
 
     requestFullscreen() {
@@ -238,8 +236,7 @@ document.getElementById("year").textContent = new Date().getFullYear();
       this.renderLB(key + "_god");
       this.emit("gameShow", key);
       stage.scrollIntoView({ behavior: "smooth", block: "start" });
-      // Go fullscreen for a focused playing experience
-      this.requestFullscreen();
+      // Fullscreen is now opt-in via the header button so we don't force it.
     },
   });
 
@@ -1904,24 +1901,49 @@ document.getElementById("year").textContent = new Date().getFullYear();
   let lastTs = 0;
   let nextSpawnY = -TILE_H;
 
-  // Small synth for "plink" on tap
+  // Use the same Salamander Grand piano samples as the Piano game.
+  // Falls back to a warm AudioContext synth if Tone.js hasn't loaded yet.
+  let tlSampler = null;
+  let tlSamplerLoaded = false;
   let ac = null;
+  const TILE_NOTES = ["C4", "E4", "G4", "C5"]; // one note per lane
+  function ensureTileSampler() {
+    if (tlSampler || typeof Tone === "undefined") return tlSampler;
+    try { Tone.start(); } catch (e) {}
+    tlSampler = new Tone.Sampler({
+      urls: {
+        C4: "C4.mp3", "D#4": "Ds4.mp3", "F#4": "Fs4.mp3", A4: "A4.mp3",
+        C5: "C5.mp3", "D#5": "Ds5.mp3", "F#5": "Fs5.mp3", A5: "A5.mp3",
+      },
+      release: 1,
+      baseUrl: "https://tonejs.github.io/audio/salamander/",
+      onload: () => { tlSamplerLoaded = true; },
+    }).toDestination();
+    return tlSampler;
+  }
   function pluck(col) {
+    const note = TILE_NOTES[col] || "C4";
+    const s = ensureTileSampler();
+    if (s && tlSamplerLoaded) {
+      try { Tone.start(); s.triggerAttackRelease(note, "8n"); return; } catch (e) {}
+    }
+    // Fallback: small synth
     if (!ac) {
       const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
       ac = new AC();
     }
     const t = ac.currentTime;
-    const freqs = [261.63, 329.63, 392.0, 523.25]; // C E G C
+    const freqs = [261.63, 329.63, 392.0, 523.25];
     const o = ac.createOscillator();
-    o.type = "sine";
+    o.type = "triangle";
     o.frequency.value = freqs[col] || 440;
     const g = ac.createGain();
     g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(0.25, t + 0.01);
-    g.gain.exponentialRampToValueAtTime(0.0005, t + 0.35);
+    g.gain.exponentialRampToValueAtTime(0.3, t + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.0005, t + 0.4);
     o.connect(g); g.connect(ac.destination);
-    o.start(t); o.stop(t + 0.4);
+    o.start(t); o.stop(t + 0.45);
   }
 
   function spawn() {
@@ -1977,10 +1999,13 @@ document.getElementById("year").textContent = new Date().getFullYear();
     const dt = Math.min(50, ts - lastTs) / 1000;
     lastTs = ts;
 
-    // Spawn enough tiles to fill top of screen
-    while (nextSpawnY > -H) spawn();
+    // Scroll both the tiles AND the spawn cursor downward so new tiles keep coming.
+    const delta = speed * dt;
+    nextSpawnY += delta;
+    tiles.forEach((t) => (t.y += delta));
 
-    tiles.forEach((t) => (t.y += speed * dt));
+    // Spawn enough tiles to fill top of screen
+    while (nextSpawnY > -TILE_H) spawn();
 
     // Missed tile (unhit, scrolled past bottom): count as a miss and remove
     const before = tiles.length;
@@ -2031,9 +2056,12 @@ document.getElementById("year").textContent = new Date().getFullYear();
     score = 0;
     misses = 0;
     speed = 180;
-    nextSpawnY = -TILE_H;
+    // First tile spawns right at the top of the canvas; more keep coming in the frame loop.
+    nextSpawnY = 0;
     running = true;
     lastTs = 0;
+    // Kick off sampler preload so the first tap has audio
+    ensureTileSampler();
     scoreEl.textContent = "0";
     missEl.textContent = "0";
     speedEl.textContent = "1.00×";
