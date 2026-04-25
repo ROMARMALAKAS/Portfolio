@@ -39,23 +39,95 @@ document.getElementById("year").textContent = new Date().getFullYear();
   setTimeout(tick, 600);
 })();
 
-/* ---------- Theme toggle ---------- */
+/* ---------- Theme toggle (with sunglasses reaction video) ---------- */
 (function () {
   const root = document.documentElement;
   const btn = document.getElementById("themeToggle");
   const icon = document.getElementById("themeIcon");
+  const overlay = document.getElementById("rvThemeVid");
+  const videoEl = document.getElementById("rvThemeVidEl");
+  const labelEl = document.getElementById("rvThemeVidLabel");
+
   const saved = localStorage.getItem("rv_theme");
   const initial = saved === "dark" || saved === "light" ? saved : "light";
   root.setAttribute("data-bs-theme", initial);
   updateIcon(initial);
 
+  // When the glasses go ON the theme should flip to dark; when they come OFF
+  // it should flip to light. These thresholds (in seconds) are tuned to match
+  // the moment the sunglasses appear / disappear in each clip.
+  const FLIP_AT = { dark: 1.7, light: 1.5 };
+  let playing = false;
+
   btn.addEventListener("click", () => {
+    if (playing) return; // ignore rapid double-clicks while a clip is showing
     const cur = root.getAttribute("data-bs-theme") === "dark" ? "dark" : "light";
     const next = cur === "dark" ? "light" : "dark";
+
+    if (overlay && videoEl) {
+      runReaction(next).finally(() => commit(next));
+    } else {
+      commit(next);
+    }
+  });
+
+  function commit(next) {
     root.setAttribute("data-bs-theme", next);
     localStorage.setItem("rv_theme", next);
     updateIcon(next);
-  });
+  }
+
+  function runReaction(next) {
+    return new Promise((resolve) => {
+      playing = true;
+      const src =
+        next === "dark"
+          ? "assets/glasses-on.mp4"
+          : "assets/glasses-off.mp4";
+      labelEl.textContent =
+        next === "dark" ? "Dark mode on" : "Dark mode off";
+      videoEl.src = src;
+      videoEl.currentTime = 0;
+      overlay.classList.add("is-on");
+      overlay.setAttribute("aria-hidden", "false");
+
+      let flipped = false;
+      const onTime = () => {
+        if (flipped) return;
+        const t = videoEl.currentTime || 0;
+        if (t >= (FLIP_AT[next] || 1.5)) {
+          flipped = true;
+          commit(next); // theme switches mid-clip when the glasses pop on/off
+        }
+      };
+      const finish = () => {
+        videoEl.removeEventListener("timeupdate", onTime);
+        videoEl.removeEventListener("ended", finish);
+        videoEl.removeEventListener("error", finish);
+        if (!flipped) commit(next);
+        // Let the video sit briefly so the final pose is visible, then hide.
+        setTimeout(() => {
+          overlay.classList.remove("is-on");
+          overlay.setAttribute("aria-hidden", "true");
+          videoEl.pause();
+          playing = false;
+          resolve();
+        }, 250);
+      };
+
+      videoEl.addEventListener("timeupdate", onTime);
+      videoEl.addEventListener("ended", finish, { once: true });
+      videoEl.addEventListener("error", finish, { once: true });
+
+      const p = videoEl.play();
+      if (p && typeof p.catch === "function") {
+        p.catch(() => finish());
+      }
+
+      // Hard fallback in case timeupdate / ended never fires.
+      setTimeout(() => { if (playing) finish(); }, 6000);
+    });
+  }
 
   function updateIcon(mode) {
     if (!icon) return;
