@@ -3537,25 +3537,22 @@ document.getElementById("year").textContent = new Date().getFullYear();
   function bindDirButton(btn) {
     const d = btn.getAttribute("data-bomber-dir");
     if (!d) return;
-    let activePointer = null;
+    let isDown = false;
     const onDown = (ev) => {
       ev.preventDefault();
-      if (activePointer !== null) return;
-      activePointer = ev.pointerId;
-      try { btn.setPointerCapture(ev.pointerId); } catch (e) {}
+      if (isDown) return;
+      isDown = true;
       pressBtn(d);
     };
-    const onEnd = (ev) => {
-      if (activePointer === null) return;
-      if (ev && ev.pointerId !== activePointer) return;
-      activePointer = null;
+    const onEnd = () => {
+      if (!isDown) return;
+      isDown = false;
       releaseBtn(d);
     };
     btn.addEventListener("pointerdown", onDown);
     btn.addEventListener("pointerup", onEnd);
     btn.addEventListener("pointercancel", onEnd);
     btn.addEventListener("pointerleave", onEnd);
-    btn.addEventListener("lostpointercapture", onEnd);
     btn.addEventListener("contextmenu", (ev) => ev.preventDefault());
   }
 
