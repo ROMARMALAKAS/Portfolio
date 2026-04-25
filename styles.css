@@ -1401,7 +1401,8 @@ kbd {
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.2);
+  background: #fff url("assets/romar-avatar.jpg") center/cover no-repeat;
+  border: 2px solid rgba(255, 255, 255, 0.7);
   display: grid;
   place-items: center;
   font-weight: 700;
