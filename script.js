@@ -993,11 +993,13 @@ document.getElementById("year").textContent = new Date().getFullYear();
 })();
 
 /* =====================================================
-   CALENDAR — monthly availability
+   CALENDAR — monthly availability backed by /bookings
    ===================================================== */
 (function () {
   const grid = document.getElementById("calendar");
   if (!grid) return;
+
+  const API = (window.RV && window.RV.api) || "https://leaderboard-api-zgbqyajg.fly.dev";
 
   const monthLabel = document.getElementById("calMonth");
   const prevBtn = document.getElementById("calPrev");
@@ -1018,21 +1020,37 @@ document.getElementById("year").textContent = new Date().getFullYear();
   let viewMonth = today.getMonth();
   let selected = null;
 
-  function ymd(y, m, d) {
-    return `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+  /** @type {Set<string>} YYYY-MM-DD strings for booked days */
+  const bookedDates = new Set();
+
+  function ymd(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const d = String(date.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
   }
 
-  // Deterministic pseudo-random availability based on date, so the calendar looks realistic
-  // and consistent across reloads.
   function statusFor(date) {
-    const day = date.getDay(); // 0 Sun .. 6 Sat
-    if (day === 0 || day === 6) return { key: "off", label: "Day off", note: "Weekends are usually offline — but I answer email." };
-    const seed = date.getFullYear() * 10000 + (date.getMonth() + 1) * 100 + date.getDate();
-    const h = (Math.sin(seed) * 10000) % 1;
-    const r = Math.abs(h);
-    if (r < 0.35) return { key: "available", label: "Available — calls welcome", note: "Morning and afternoon slots are open." };
-    if (r < 0.72) return { key: "few", label: "A few slots left", note: "Limited availability — best to confirm early." };
-    return { key: "booked", label: "Booked", note: "Fully booked this day. Please pick another." };
+    const isPast = date < today;
+    if (bookedDates.has(ymd(date))) {
+      return {
+        key: "booked",
+        label: "Booked",
+        note: "This day is taken. Please pick another date.",
+      };
+    }
+    if (isPast) {
+      return {
+        key: "past",
+        label: "Past date",
+        note: "This date has already passed.",
+      };
+    }
+    return {
+      key: "available",
+      label: "Available",
+      note: "Open for booking. Click below to claim this day.",
+    };
   }
 
   function formatDate(d) {
@@ -1043,7 +1061,6 @@ document.getElementById("year").textContent = new Date().getFullYear();
     monthLabel.textContent = `${MONTHS[viewMonth]} ${viewYear}`;
     grid.innerHTML = "";
 
-    // Day-of-week headers
     DOW.forEach((d) => {
       const h = document.createElement("div");
       h.className = "rv-cal-head";
@@ -1051,13 +1068,10 @@ document.getElementById("year").textContent = new Date().getFullYear();
       grid.appendChild(h);
     });
 
-    // Calculate first day (Monday-first week)
     const firstOfMonth = new Date(viewYear, viewMonth, 1);
-    // getDay: 0 Sun - 6 Sat. Convert to Mon-first (0 Mon .. 6 Sun).
     const startOffset = (firstOfMonth.getDay() + 6) % 7;
     const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
 
-    // Leading muted cells
     for (let i = 0; i < startOffset; i++) {
       const el = document.createElement("div");
       el.className = "rv-cal-day is-muted";
@@ -1072,10 +1086,16 @@ document.getElementById("year").textContent = new Date().getFullYear();
       el.className = "rv-cal-day";
       if (+cellDate === +today) el.classList.add("is-today");
       if (selected && +cellDate === +selected) el.classList.add("is-selected");
+      if (st.key === "past") el.classList.add("is-past");
+      if (st.key === "booked") el.classList.add("is-booked");
       el.setAttribute("aria-label", `${formatDate(cellDate)} — ${st.label}`);
+      const dotColor =
+        st.key === "available" ? "var(--rv-success)" :
+        st.key === "booked"    ? "var(--rv-danger)"  :
+        "var(--rv-text-faint)";
       el.innerHTML = `
         <span class="rv-cal-num">${d}</span>
-        <span class="rv-cal-status-dot" style="background: var(--rv-${st.key === "available" ? "success" : st.key === "few" ? "warning" : st.key === "booked" ? "danger" : "text-faint"});"></span>
+        <span class="rv-cal-status-dot" style="background: ${dotColor};"></span>
       `;
       el.addEventListener("click", () => selectDate(cellDate));
       grid.appendChild(el);
@@ -1089,31 +1109,129 @@ document.getElementById("year").textContent = new Date().getFullYear();
     selDateEl.textContent = formatDate(selected);
     const iconMap = {
       available: "bi-check-circle",
-      few:       "bi-hourglass-split",
       booked:    "bi-x-circle",
-      off:       "bi-cup-hot",
+      past:      "bi-clock-history",
     };
     selStatusEl.className = `rv-cal-side-status status-${st.key}`;
     selStatusEl.innerHTML = `<i class="bi ${iconMap[st.key] || "bi-calendar"}"></i><span>${st.label}</span>`;
     selNoteEl.textContent = st.note;
 
-    // Update mailto with selected date
-    const prettyDate = selected.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" });
-    const subject = encodeURIComponent(`Booking request — ${prettyDate}`);
-    const body = encodeURIComponent(`Hi Romar,\n\nI'd like to book some time on ${prettyDate}. Here's what I have in mind:\n\n[Describe your project or question]\n\nThanks!`);
-    bookBtn.href = `mailto:romarmalakass@gmail.com?subject=${subject}&body=${body}`;
-
-    // Disable the book button for unavailable days
-    if (st.key === "booked" || st.key === "off") {
-      bookBtn.classList.add("disabled");
-      bookBtn.setAttribute("aria-disabled", "true");
-    } else {
+    if (st.key === "available") {
+      bookBtn.disabled = false;
       bookBtn.classList.remove("disabled");
       bookBtn.removeAttribute("aria-disabled");
+      bookBtn.innerHTML = '<i class="bi bi-calendar-plus"></i> Book this day';
+    } else {
+      bookBtn.disabled = true;
+      bookBtn.classList.add("disabled");
+      bookBtn.setAttribute("aria-disabled", "true");
+      bookBtn.innerHTML =
+        st.key === "booked"
+          ? '<i class="bi bi-lock-fill"></i> Already booked'
+          : '<i class="bi bi-clock-history"></i> Past date';
     }
 
     render();
   }
+
+  async function loadBookings() {
+    try {
+      const res = await fetch(`${API}/bookings`, { cache: "no-store" });
+      if (!res.ok) return;
+      const data = await res.json();
+      bookedDates.clear();
+      (data.dates || []).forEach((d) => bookedDates.add(d));
+      render();
+      if (selected) selectDate(selected);
+    } catch (_) {
+      /* offline or backend down — calendar still works in available mode */
+    }
+  }
+
+  /* ----- Booking modal ----- */
+  const modal = document.getElementById("bookingModal");
+  const modalDate = document.getElementById("bookingModalDate");
+  const form = document.getElementById("bookingForm");
+  const nameEl = document.getElementById("bookingName");
+  const emailEl = document.getElementById("bookingEmail");
+  const noteEl = document.getElementById("bookingNote");
+  const errorEl = document.getElementById("bookingError");
+  const submitEl = document.getElementById("bookingSubmit");
+
+  function openModal() {
+    if (!selected || statusFor(selected).key !== "available") return;
+    errorEl.hidden = true;
+    errorEl.textContent = "";
+    modalDate.textContent = formatDate(selected);
+    modal.classList.add("is-open");
+    modal.setAttribute("aria-hidden", "false");
+    setTimeout(() => nameEl.focus(), 80);
+  }
+  function closeModal() {
+    modal.classList.remove("is-open");
+    modal.setAttribute("aria-hidden", "true");
+  }
+
+  if (modal) {
+    modal.addEventListener("click", (e) => {
+      if (e.target.dataset && e.target.dataset.close === "1") closeModal();
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && modal.classList.contains("is-open")) closeModal();
+    });
+  }
+
+  bookBtn.addEventListener("click", openModal);
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!selected) return;
+    errorEl.hidden = true;
+    errorEl.textContent = "";
+    const name = nameEl.value.trim();
+    const email = emailEl.value.trim();
+    const note = noteEl.value.trim();
+    if (!name || !email) {
+      errorEl.textContent = "Please fill in your name and email.";
+      errorEl.hidden = false;
+      return;
+    }
+    submitEl.disabled = true;
+    submitEl.innerHTML = '<i class="bi bi-hourglass-split"></i> Saving…';
+    try {
+      const res = await fetch(`${API}/bookings`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ date: ymd(selected), name, email, note }),
+      });
+      if (res.status === 409) {
+        errorEl.textContent = "Someone just booked this day. Pick another date.";
+        errorEl.hidden = false;
+        await loadBookings();
+        return;
+      }
+      if (!res.ok) {
+        errorEl.textContent = "Couldn't save booking. Please try again.";
+        errorEl.hidden = false;
+        return;
+      }
+      bookedDates.add(ymd(selected));
+      render();
+      selectDate(selected);
+      form.reset();
+      closeModal();
+      // Friendly toast via the existing toast helper if available
+      if (window.RV && typeof window.RV.toast === "function") {
+        window.RV.toast(`Booked ${formatDate(selected)}. Romar will email you back.`);
+      }
+    } catch (err) {
+      errorEl.textContent = "Network error. Check your connection and try again.";
+      errorEl.hidden = false;
+    } finally {
+      submitEl.disabled = false;
+      submitEl.innerHTML = '<i class="bi bi-calendar-check"></i> Confirm booking';
+    }
+  });
 
   prevBtn.addEventListener("click", () => {
     viewMonth--;
@@ -1133,6 +1251,7 @@ document.getElementById("year").textContent = new Date().getFullYear();
 
   render();
   selectDate(today);
+  loadBookings();
 })();
 
 /* =====================================================

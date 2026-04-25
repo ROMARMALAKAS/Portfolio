@@ -38,7 +38,6 @@
     <nav class="navbar navbar-expand-lg rv-navbar sticky-top">
       <div class="container">
         <a class="navbar-brand d-flex align-items-center gap-2" href="#top">
-          <span class="rv-mark">RV</span>
           <span class="fw-semibold">Romar Villafuerte</span>
         </a>
         <div class="d-flex align-items-center gap-2 ms-auto order-lg-3">
@@ -310,9 +309,7 @@
                 <div class="rv-cal-grid" id="calendar" role="grid"></div>
                 <div class="rv-cal-legend mt-3">
                   <span><span class="rv-dot rv-dot-available"></span> Available</span>
-                  <span><span class="rv-dot rv-dot-few"></span> Few slots</span>
                   <span><span class="rv-dot rv-dot-booked"></span> Booked</span>
-                  <span><span class="rv-dot rv-dot-off"></span> Day off</span>
                 </div>
               </div>
             </div>
@@ -329,13 +326,13 @@
                 <p class="text-body-secondary small mb-3" id="calSelectedNote">
                   Times are in your local timezone.
                 </p>
-                <a
+                <button
                   class="btn btn-primary w-100"
                   id="calBookBtn"
-                  href="mailto:romarmalakass@gmail.com?subject=Project%20inquiry"
+                  type="button"
                 >
-                  <i class="bi bi-calendar-plus"></i> Request this day
-                </a>
+                  <i class="bi bi-calendar-plus"></i> Book this day
+                </button>
                 <a
                   class="btn btn-light-secondary w-100 mt-2"
                   href="mailto:romarmalakass@gmail.com"
@@ -344,6 +341,91 @@
                 </a>
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- Booking modal -->
+        <div
+          id="bookingModal"
+          class="rv-booking-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="bookingModalTitle"
+          aria-hidden="true"
+        >
+          <div class="rv-booking-backdrop" data-close="1"></div>
+          <div class="rv-booking-card">
+            <header class="rv-booking-head">
+              <h3 id="bookingModalTitle" class="rv-booking-title">
+                Book this day
+              </h3>
+              <button
+                type="button"
+                class="rv-booking-close"
+                data-close="1"
+                aria-label="Close"
+              >
+                <i class="bi bi-x-lg"></i>
+              </button>
+            </header>
+            <p class="rv-booking-date" id="bookingModalDate"></p>
+            <p class="text-body-secondary small mb-3">
+              Once you book, this day will show as <strong>Booked</strong> for
+              everyone visiting the site. Romar will email you back to confirm.
+            </p>
+            <form id="bookingForm" class="rv-booking-form" autocomplete="off">
+              <label class="rv-booking-label" for="bookingName">Your name</label>
+              <input
+                id="bookingName"
+                class="rv-booking-input"
+                type="text"
+                maxlength="60"
+                required
+                placeholder="e.g. Juan Dela Cruz"
+              />
+              <label class="rv-booking-label" for="bookingEmail">Email</label>
+              <input
+                id="bookingEmail"
+                class="rv-booking-input"
+                type="email"
+                maxlength="120"
+                required
+                placeholder="you@example.com"
+              />
+              <label class="rv-booking-label" for="bookingNote">
+                Project / message
+                <span class="text-body-secondary">(optional)</span>
+              </label>
+              <textarea
+                id="bookingNote"
+                class="rv-booking-input"
+                rows="3"
+                maxlength="400"
+                placeholder="What would you like to talk about?"
+              ></textarea>
+              <p
+                class="rv-booking-error"
+                id="bookingError"
+                role="alert"
+                hidden
+              ></p>
+              <div class="d-flex gap-2 mt-2">
+                <button
+                  type="button"
+                  class="btn btn-light-secondary flex-fill"
+                  data-close="1"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  class="btn btn-primary flex-fill"
+                  id="bookingSubmit"
+                >
+                  <i class="bi bi-calendar-check"></i> Confirm booking
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       </section>
