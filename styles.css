@@ -1735,3 +1735,101 @@ kbd {
 /* Calendar tweaks: past + booked cell visuals */
 .rv-cal-day.is-past { opacity: 0.45; cursor: default; }
 .rv-cal-day.is-booked .rv-cal-num { text-decoration: line-through; opacity: 0.7; }
+
+/* =====================================================
+   Game how-to-play panel (shown when a game is opened)
+   ===================================================== */
+.rv-howto {
+  background: var(--rv-card-bg, #fff);
+  border: 1px solid var(--rv-border);
+  border-radius: var(--rv-r-md);
+  padding: clamp(20px, 4vw, 32px);
+  margin-bottom: 18px;
+  box-shadow: 0 1px 0 var(--rv-border);
+  animation: rvFade 0.2s ease;
+}
+.rv-howto-head {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+.rv-howto-icon {
+  flex: 0 0 auto;
+  width: 48px;
+  height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #eaf3ff;
+  color: #1b84ff;
+  border-radius: 12px;
+  font-size: 22px;
+}
+[data-bs-theme="dark"] .rv-howto-icon { background: rgba(27, 132, 255, 0.18); color: #79b6ff; }
+.rv-howto-titles { min-width: 0; flex: 1; }
+.rv-howto-title { margin: 0 0 4px; font-size: clamp(1.1rem, 2.4vw, 1.4rem); font-weight: 700; }
+.rv-howto-desc { margin: 0; color: var(--rv-muted, #5e6278); font-size: 0.95rem; }
+.rv-howto-h5 { margin: 12px 0 8px; font-size: 0.78rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--rv-muted); font-weight: 700; }
+.rv-howto-steps {
+  margin: 0 0 18px;
+  padding-left: 1.25em;
+  color: var(--rv-text);
+  line-height: 1.55;
+}
+.rv-howto-steps li { margin-bottom: 4px; }
+.rv-howto-steps li::marker { color: #1b84ff; font-weight: 700; }
+.rv-howto-actions { display: flex; justify-content: flex-end; gap: 10px; }
+@media (max-width: 540px) {
+  .rv-howto-actions { justify-content: stretch; }
+  .rv-howto-actions .btn { width: 100%; }
+}
+
+/* =====================================================
+   Quiz: timeout flash + dimmed wrong choices on timeout
+   ===================================================== */
+.rv-quiz-flash {
+  display: inline-block;
+  margin-left: 0.6em;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: #f1416c;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.8em;
+  vertical-align: middle;
+  animation: rvFlash 0.85s ease-out;
+}
+@keyframes rvFlash {
+  0%   { transform: translateY(-6px); opacity: 0; }
+  20%  { transform: translateY(0);    opacity: 1; }
+  80%  { transform: translateY(0);    opacity: 1; }
+  100% { transform: translateY(-2px); opacity: 0; }
+}
+.rv-quiz-choice.is-timeout {
+  opacity: 0.5;
+  filter: grayscale(40%);
+}
+
+/* =====================================================
+   Edge-to-edge game stage on phones
+   When body has rv-game-active and we're on a phone, the
+   playground breaks out of the section padding so the game
+   canvas can fill the full screen width.
+   ===================================================== */
+@media (max-width: 720px) {
+  body.rv-game-active #playground.rv-section { padding-left: 0; padding-right: 0; }
+  body.rv-game-active #playground .container { max-width: 100%; padding-left: 0; padding-right: 0; }
+  body.rv-game-active #gameStage .rv-stage-head { padding: 8px 12px 0; margin-bottom: 8px; }
+  body.rv-game-active #gameHowTo { margin-left: 12px; margin-right: 12px; }
+  body.rv-game-active .rv-game-pane .rv-card { border-left: 0; border-right: 0; border-radius: 0; padding: 14px 10px !important; }
+  body.rv-game-active .rv-game-pane .row { --bs-gutter-x: 0; }
+  body.rv-game-active .rv-game-pane .col-lg-8,
+  body.rv-game-active .rv-game-pane .col-lg-4 { padding-left: 0; padding-right: 0; }
+  /* Let canvases breathe taller on phones */
+  body.rv-game-active .rv-snake-wrap canvas { max-height: 70vh; }
+  body.rv-game-active .rv-bomber-wrap canvas { max-height: 65vh; }
+  body.rv-game-active .rv-game-wrap canvas { max-width: 100%; }
+  /* Stretch piano keys to viewport */
+  body.rv-game-active .rv-piano-wrap { padding-left: 0; padding-right: 0; }
+}

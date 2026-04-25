@@ -305,6 +305,9 @@ document.getElementById("year").textContent = new Date().getFullYear();
       const stage = document.getElementById("gameStage");
       if (picker) picker.classList.remove("d-none");
       if (stage) stage.classList.add("d-none");
+      const howto = document.getElementById("gameHowTo");
+      if (howto) howto.classList.add("d-none");
+      document.body.classList.remove("rv-game-active");
       this.exitFullscreen();
       this.emit("gameHide");
       document.getElementById("playground")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -320,24 +323,213 @@ document.getElementById("year").textContent = new Date().getFullYear();
       if (!picker || !stage) return;
       picker.classList.add("d-none");
       stage.classList.remove("d-none");
+      document.body.classList.add("rv-game-active");
       document.querySelectorAll(".rv-game-pane").forEach((p) => p.classList.add("d-none"));
       const pane = document.getElementById("game-" + key);
-      if (pane) pane.classList.remove("d-none");
+      if (pane) pane.classList.add("d-none"); // hidden until "Got it"
       const title = document.getElementById("stageTitle");
       const user = document.getElementById("stageUser");
       if (title) title.textContent = this.titles[key] || "Play";
       if (user) user.textContent = this.user;
       this._active = key;
-      this.renderLB(key);
-      this.renderLB(key + "_normal");
-      this.renderLB(key + "_hard");
-      this.renderLB(key + "_pro");
-      this.renderLB(key + "_god");
-      this.emit("gameShow", key);
+      this._showHowTo(key, () => {
+        if (pane) pane.classList.remove("d-none");
+        this.renderLB(key);
+        this.renderLB(key + "_normal");
+        this.renderLB(key + "_hard");
+        this.renderLB(key + "_pro");
+        this.renderLB(key + "_god");
+        this.emit("gameShow", key);
+      });
       stage.scrollIntoView({ behavior: "smooth", block: "start" });
       // Fullscreen is now opt-in via the header button so we don't force it.
     },
+
+    _showHowTo(key, onStart) {
+      const stage = document.getElementById("gameStage");
+      if (!stage) { onStart && onStart(); return; }
+      const info = HOW_TO[key];
+      if (!info) { onStart && onStart(); return; }
+      let panel = document.getElementById("gameHowTo");
+      if (!panel) {
+        panel = document.createElement("div");
+        panel.id = "gameHowTo";
+        panel.className = "rv-howto";
+        // Insert right after the stage head so it sits at the top of the stage
+        const head = stage.querySelector(".rv-stage-head");
+        if (head && head.nextSibling) stage.insertBefore(panel, head.nextSibling);
+        else stage.appendChild(panel);
+      }
+      const stepsHtml = info.steps.map((s) => `<li>${escapeHtml(s)}</li>`).join("");
+      panel.innerHTML = `
+        <div class="rv-howto-head">
+          <span class="rv-howto-icon"><i class="bi ${info.icon || "bi-controller"}"></i></span>
+          <div class="rv-howto-titles">
+            <h4 class="rv-howto-title">${escapeHtml(this.titles[key] || "Play")}</h4>
+            <p class="rv-howto-desc">${escapeHtml(info.desc)}</p>
+          </div>
+        </div>
+        <h5 class="rv-howto-h5">How to play</h5>
+        <ol class="rv-howto-steps">${stepsHtml}</ol>
+        <div class="rv-howto-actions">
+          <button type="button" class="btn btn-primary btn-lg" id="howtoStart">
+            <i class="bi bi-play-fill"></i> Got it, start
+          </button>
+        </div>`;
+      panel.classList.remove("d-none");
+      const btn = panel.querySelector("#howtoStart");
+      if (btn) btn.addEventListener("click", () => {
+        panel.classList.add("d-none");
+        if (onStart) onStart();
+      }, { once: true });
+    },
   });
+
+  // Description + how-to-play steps for every game in the picker.
+  const HOW_TO = {
+    piano: {
+      icon: "bi-music-note-list",
+      desc: "A full 88-key grand piano with real Salamander samples.",
+      steps: [
+        "Click or tap any key to play that note.",
+        "Use the ◀ / ▶ buttons to scroll across the 88 keys.",
+        "Hit Show keys to label notes; hit Play tune for a quick demo.",
+        "On a real keyboard, the bottom rows act as the white and black keys.",
+      ],
+    },
+    tiles: {
+      icon: "bi-music-player",
+      desc: "Tap the falling black tiles in the right lane before they reach the bottom.",
+      steps: [
+        "4 lanes scroll downward — only tap the BLACK tiles.",
+        "Each tap plays a real piano note (C4–C5).",
+        "Speed grows the longer you survive.",
+        "Miss a black tile or tap a blank lane and the run ends.",
+        "Highest score lands on the leaderboard.",
+      ],
+    },
+    guess: {
+      icon: "bi-image",
+      desc: "Random photos — pick the right word for each one.",
+      steps: [
+        "A picture loads. 4 word choices appear below it.",
+        "Tap the word that matches the photo.",
+        "Correct = +points · wrong = no points.",
+        "Normal: easier categories · Hard: trickier vocab.",
+        "Highest total score is submitted to the leaderboard.",
+      ],
+    },
+    snake: {
+      icon: "bi-dpad",
+      desc: "Classic Snake. Eat the food, grow the tail, don't bite yourself.",
+      steps: [
+        "Use the on-screen D-pad (or arrow keys) to steer.",
+        "Eat the red dot → snake gets longer + score goes up.",
+        "Hitting your own tail or stopping = game over.",
+        "Walls wrap around — the snake reappears on the other side.",
+        "Highest score wins on the leaderboard.",
+      ],
+    },
+    reaction: {
+      icon: "bi-lightning-charge",
+      desc: "Test your reflexes. 5 rounds — fastest average wins.",
+      steps: [
+        "Tap Start to begin a round.",
+        "When the screen turns RED, wait — don't tap yet.",
+        "The moment it flips to GREEN, tap as fast as you can.",
+        "If you tap during red, that round is invalid.",
+        "After 5 rounds, your average reaction time is submitted (lower is better).",
+      ],
+    },
+    memory: {
+      icon: "bi-grid-3x3-gap",
+      desc: "Flip cards two at a time. Match all 8 pairs in as few moves as possible.",
+      steps: [
+        "Tap a face-down card to flip it.",
+        "Tap a second card — if they match, both stay face up.",
+        "If they don't match, both flip back. Remember their spots!",
+        "Find all 8 pairs to win.",
+        "Lowest move count wins on the leaderboard.",
+      ],
+    },
+    slide: {
+      icon: "bi-puzzle",
+      desc: "Classic 15-puzzle (3×3 version). Slide tiles into 1–8 order.",
+      steps: [
+        "Tap a tile next to the empty square to slide it into the gap.",
+        "Goal: arrange tiles in order 1, 2, 3 / 4, 5, 6 / 7, 8 with the blank in the bottom-right.",
+        "Each move increments your move counter.",
+        "Lowest move count wins on the leaderboard.",
+      ],
+    },
+    stars: {
+      icon: "bi-stars",
+      desc: "30-second arcade. Click yellow stars, dodge the red ones.",
+      steps: [
+        "Click YELLOW stars → +1 point each.",
+        "Click RED stars → −2 points (don't click them).",
+        "You have 30 seconds total.",
+        "Stars get faster as the timer ticks down.",
+        "Highest score wins on the leaderboard.",
+      ],
+    },
+    basket: {
+      icon: "bi-bullseye",
+      desc: "Hold the screen to charge power, release to shoot the ball.",
+      steps: [
+        "Press and HOLD anywhere on the court to charge power.",
+        "The longer you hold, the harder the ball is thrown.",
+        "Release to shoot at a fixed 60° arc — power decides distance.",
+        "Sink baskets to score. You have 30 seconds.",
+        "Highest score wins on the leaderboard.",
+      ],
+    },
+    mine: {
+      icon: "bi-flag",
+      desc: "Classic Minesweeper, 6×6 with 8 hidden mines. Fastest solve wins.",
+      steps: [
+        "Tap a square to reveal it. Numbers tell you how many mines are next to it.",
+        "Long-press (or right-click) a square to flag a suspected mine.",
+        "Reveal every NON-mine square to win.",
+        "Tap a mine and the game ends.",
+        "Lowest solve time wins on the leaderboard.",
+      ],
+    },
+    math: {
+      icon: "bi-calculator",
+      desc: "10 questions. Pick the correct answer before the 30-second timer runs out.",
+      steps: [
+        "Pick a difficulty: Normal, Hard, Pro Expert, or God Mode.",
+        "Tap Start. Each question has 30 seconds.",
+        "If you don't answer in time, it's marked WRONG and the next question loads automatically.",
+        "Faster correct answers earn bonus points.",
+        "Highest final score wins on the leaderboard.",
+      ],
+    },
+    english: {
+      icon: "bi-book",
+      desc: "10 questions of vocab + grammar. 30 seconds per question.",
+      steps: [
+        "Pick a difficulty: Normal, Hard, Pro Expert, or God Mode.",
+        "Tap Start. Each question has 30 seconds.",
+        "If you don't answer in time, it's marked WRONG and the next question loads automatically.",
+        "Faster correct answers earn bonus points.",
+        "Highest final score wins on the leaderboard.",
+      ],
+    },
+    bomber: {
+      icon: "bi-controller",
+      desc: "Bomberman 2D. Place bombs, blast walls and enemies, survive.",
+      steps: [
+        "Use the on-screen D-pad (or arrow keys) to walk through the grid.",
+        "Tap the BOMB button (or Space) to drop a bomb where you stand.",
+        "Bombs explode after a short fuse — get out of the cross-shaped blast.",
+        "Blasts destroy soft walls (brown) and any enemy or you caught in them.",
+        "Clear all enemies to win the level. Highest score wins on the leaderboard.",
+      ],
+    },
+  };
+  RV._howTo = HOW_TO;
 
   function escapeHtml(s) {
     return String(s)
@@ -1714,10 +1906,10 @@ document.getElementById("year").textContent = new Date().getFullYear();
   const scoreEl = document.getElementById("mathScore");
 
   const DIFF = {
-    normal: { time: 12, qRange: [1, 20], ops: ["+", "-"], label: "Normal" },
-    hard:   { time: 10, qRange: [5, 50], ops: ["+", "-", "*"], label: "Hard" },
-    pro:    { time: 8,  qRange: [10, 99], ops: ["+", "-", "*", "/"], label: "Pro Expert" },
-    god:    { time: 6,  qRange: [15, 150], ops: ["+", "-", "*", "/", "^"], label: "God Mode" },
+    normal: { time: 30, qRange: [1, 20], ops: ["+", "-"], label: "Normal" },
+    hard:   { time: 30, qRange: [5, 50], ops: ["+", "-", "*"], label: "Hard" },
+    pro:    { time: 30, qRange: [10, 99], ops: ["+", "-", "*", "/"], label: "Pro Expert" },
+    god:    { time: 30, qRange: [15, 150], ops: ["+", "-", "*", "/", "^"], label: "God Mode" },
   };
   const MULT = { normal: 10, hard: 18, pro: 28, god: 45 };
 
@@ -1794,8 +1986,20 @@ document.getElementById("year").textContent = new Date().getFullYear();
     Array.from(choicesEl.children).forEach((b) => {
       b.disabled = true;
       if (Number(b.textContent) === current.ans) b.classList.add("is-right");
+      else b.classList.add("is-timeout");
     });
-    setTimeout(next, 650);
+    flashTimeUp();
+    setTimeout(next, 900);
+  }
+
+  function flashTimeUp() {
+    if (!qEl) return;
+    const old = qEl.textContent;
+    const flash = document.createElement("span");
+    flash.className = "rv-quiz-flash";
+    flash.textContent = "⏱ Time's up!";
+    qEl.appendChild(flash);
+    setTimeout(() => flash.remove(), 850);
   }
 
   function answer(val, btn) {
@@ -1952,10 +2156,10 @@ document.getElementById("year").textContent = new Date().getFullYear();
     ],
   };
   const DIFF = {
-    normal: { time: 12, label: "Normal" },
-    hard:   { time: 10, label: "Hard" },
-    pro:    { time: 8,  label: "Pro Expert" },
-    god:    { time: 6,  label: "God Mode" },
+    normal: { time: 30, label: "Normal" },
+    hard:   { time: 30, label: "Hard" },
+    pro:    { time: 30, label: "Pro Expert" },
+    god:    { time: 30, label: "God Mode" },
   };
   const MULT = { normal: 10, hard: 18, pro: 28, god: 45 };
 
@@ -2004,8 +2208,19 @@ document.getElementById("year").textContent = new Date().getFullYear();
     Array.from(choicesEl.children).forEach((b) => {
       b.disabled = true;
       if (b.textContent === current.a) b.classList.add("is-right");
+      else b.classList.add("is-timeout");
     });
-    setTimeout(next, 700);
+    flashTimeUp();
+    setTimeout(next, 900);
+  }
+
+  function flashTimeUp() {
+    if (!qEl) return;
+    const flash = document.createElement("span");
+    flash.className = "rv-quiz-flash";
+    flash.textContent = "⏱ Time's up!";
+    qEl.appendChild(flash);
+    setTimeout(() => flash.remove(), 850);
   }
 
   function answer(val, btn) {
