@@ -749,11 +749,15 @@ kbd {
 .rv-lb li .rv-lb-score { color: var(--rv-primary); font-weight: 700; font-variant-numeric: tabular-nums; }
 .rv-lb li.is-me { background: var(--rv-primary-soft); border-color: var(--rv-primary); }
 .rv-lb li.is-me .rv-lb-name::after { content: " (you)"; color: var(--rv-text-dim); font-weight: 500; }
+.rv-lb li.rv-lb-empty,
 .rv-lb-empty {
+  display: block;
+  grid-template-columns: none;
   padding: 14px;
   text-align: center;
   color: var(--rv-text-faint);
   font-size: 0.85rem;
+  background: transparent;
   border: 1px dashed var(--rv-border-strong);
   border-radius: 10px;
 }
