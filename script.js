@@ -33,10 +33,30 @@ document.getElementById("year").textContent = new Date().getFullYear();
    RV — global game hub (username, leaderboards, picker)
    ===================================================== */
 (function () {
+  // Global leaderboard backend (FastAPI on Fly.io)
+  const RV_API = "https://leaderboard-api-zgbqyajg.fly.dev";
+
+  // Map bucket key -> sort order. "high" = bigger is better, "low" = smaller is better.
+  const ORDER_FOR = (key) => {
+    const base = String(key).split("_")[0];
+    const lowGames = new Set(["memory", "slide", "mine", "reaction"]);
+    return lowGames.has(base) ? "low" : "high";
+  };
+
+  // Split a leaderboard bucket key into {game, difficulty} for the API.
+  function splitBucket(key) {
+    const k = String(key);
+    const i = k.indexOf("_");
+    if (i < 0) return { game: k, difficulty: "" };
+    return { game: k.slice(0, i), difficulty: k.slice(i + 1) };
+  }
+
   const RV = (window.RV = {
     user: localStorage.getItem("rv_user") || "",
     _pending: null,
     _listeners: {},
+    _remote: {},   // bucket -> array of {name,score} fetched from server
+    _fetching: {}, // bucket -> Promise
 
     titles: {
       piano: "Piano",
@@ -91,6 +111,7 @@ document.getElementById("year").textContent = new Date().getFullYear();
     // kind: 'high' = bigger is better, 'low' = smaller is better
     submitScore(game, score, kind = "high", meta) {
       if (!this.user) return;
+      // 1) Optimistic local cache so the UI updates instantly even if the network is slow.
       const list = this.getLB(game);
       const existing = list.find((e) => (e.name || "").toLowerCase() === this.user.toLowerCase());
       if (existing) {
@@ -104,35 +125,75 @@ document.getElementById("year").textContent = new Date().getFullYear();
         list.push({ name: this.user, score, t: Date.now(), meta });
       }
       list.sort((a, b) => (kind === "high" ? b.score - a.score : a.score - b.score));
-      const top = list.slice(0, 10);
-      this.saveLB(game, top);
+      this.saveLB(game, list.slice(0, 10));
       this.renderLB(game);
+
+      // 2) Submit to the global server. Refresh the leaderboard from the server when done.
+      const { game: g, difficulty } = splitBucket(game);
+      const body = { game: g, difficulty, username: this.user, score: Math.max(0, Math.floor(score)), order: kind };
+      fetch(RV_API + "/scores", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      })
+        .then((r) => r.json().catch(() => null))
+        .catch(() => null)
+        .finally(() => {
+          this.fetchLB(game).then(() => this.renderLB(game));
+        });
     },
 
     formatScore(game, entry) {
-      if (game === "mine") return entry.score + "s";
-      if (game === "memory" || game === "slide") return entry.score + " moves";
+      const base = String(game).split("_")[0];
+      if (base === "mine" || base === "reaction") return entry.score + (base === "reaction" ? "ms" : "s");
+      if (base === "memory" || base === "slide") return entry.score + " moves";
       return String(entry.score);
     },
 
-    renderLB(game) {
-      document
-        .querySelectorAll(`[data-lb-list="${game}"]`)
-        .forEach((ol) => {
-          const list = this.getLB(game);
-          ol.innerHTML = "";
-          if (!list.length) {
-            ol.innerHTML = '<li class="rv-lb-empty">No scores yet — be the first!</li>';
-            return;
+    fetchLB(game) {
+      if (this._fetching[game]) return this._fetching[game];
+      const { game: g, difficulty } = splitBucket(game);
+      const order = ORDER_FOR(game);
+      const url = `${RV_API}/scores/${encodeURIComponent(g)}?difficulty=${encodeURIComponent(difficulty)}&order=${order}&limit=10`;
+      const p = fetch(url, { method: "GET" })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => {
+          if (data && Array.isArray(data.items)) {
+            this._remote[game] = data.items.map((it) => ({ name: it.username, score: it.score }));
           }
-          list.forEach((e) => {
-            const li = document.createElement("li");
-            li.innerHTML =
-              `<span class="rv-lb-name">${escapeHtml(e.name)}</span>` +
-              `<span class="rv-lb-score">${escapeHtml(this.formatScore(game, e))}</span>`;
-            ol.appendChild(li);
-          });
+        })
+        .catch(() => {})
+        .finally(() => { delete this._fetching[game]; });
+      this._fetching[game] = p;
+      return p;
+    },
+
+    renderLB(game) {
+      const els = document.querySelectorAll(`[data-lb-list="${game}"]`);
+      if (!els.length) return;
+      // Prefer the live server list if we have one; otherwise fall back to local cache.
+      const list = this._remote[game] || this.getLB(game);
+      els.forEach((ol) => {
+        ol.innerHTML = "";
+        if (!list.length) {
+          ol.innerHTML = '<li class="rv-lb-empty">No scores yet — be the first!</li>';
+          return;
+        }
+        list.forEach((e, idx) => {
+          const li = document.createElement("li");
+          const isMe = this.user && (e.name || "").toLowerCase() === this.user.toLowerCase();
+          if (isMe) li.classList.add("is-me");
+          li.innerHTML =
+            `<span class="rv-lb-rank">${idx + 1}</span>` +
+            `<span class="rv-lb-name">${escapeHtml(e.name)}</span>` +
+            `<span class="rv-lb-score">${escapeHtml(this.formatScore(game, e))}</span>`;
+          ol.appendChild(li);
         });
+      });
+      // Refresh from server in the background so other players' scores show up.
+      if (!this._remote[game] && !this._fetching[game]) {
+        this.fetchLB(game).then(() => this.renderLB(game));
+      }
     },
 
     renderAllLBs() {
@@ -141,7 +202,11 @@ document.getElementById("year").textContent = new Date().getFullYear();
           el.getAttribute("data-lb-list")
         )
       );
-      keys.forEach((k) => this.renderLB(k));
+      keys.forEach((k) => {
+        // Render once from cache immediately, then refresh from the server.
+        this.renderLB(k);
+        this.fetchLB(k).then(() => this.renderLB(k));
+      });
     },
 
     promptUser(onReady) {
@@ -2592,17 +2657,14 @@ document.getElementById("year").textContent = new Date().getFullYear();
   const livesEl = document.getElementById("bmLives");
   const bombsEl = document.getElementById("bmBombs");
 
-  const COLS = 13;
-  const ROWS = 11;
-  const CELL = 40; // => 520 x 440; we use 416 for canvas height to match row*CELL... let's recompute
-  // canvas is 520x416 — so CELL = min(520/13, 416/11) = 40 wide, 37.8 tall → pick 40 and use floor rows
-  // Use 13 cols x 10 rows, CELL = 40 → 520 x 400; pad top/bottom; recompute canvas instead.
-  // Simpler: use CELL=40, ROWS=10. Adjust canvas dims programmatically.
+  // Portrait playfield (taller than wide). CELL_SIZE chosen so canvas pixel
+  // size is around 440 x 600 — same proportions as Snake (2:3) for a consistent
+  // big-screen-in-portrait look.
   const CELL_SIZE = 40;
-  const N_COLS = 13;
-  const N_ROWS = 10;
-  canvas.width = N_COLS * CELL_SIZE;   // 520
-  canvas.height = N_ROWS * CELL_SIZE;  // 400
+  const N_COLS = 11;
+  const N_ROWS = 15;
+  canvas.width = N_COLS * CELL_SIZE;   // 440
+  canvas.height = N_ROWS * CELL_SIZE;  // 600
 
   // Map codes
   // 0 empty, 1 indestructible wall, 2 destructible block
@@ -2980,50 +3042,57 @@ document.getElementById("year").textContent = new Date().getFullYear();
     }
   }
 
-  // Track active pointer per button. A direction stays "pressed" until either
-  // the pointer is released/cancelled OR the user swipes onto a different d-pad
-  // button (in which case that button takes over).
+  // D-pad pointer model: each active pointer (finger / mouse) maps to the
+  // direction button it is currently over. Sliding the finger across buttons
+  // updates the direction. Lifting the finger releases it. Using document-level
+  // pointermove + elementsFromPoint avoids the touch-capture issue where
+  // pointerenter on sibling buttons doesn't fire on Android Chrome / iOS Safari.
   const activePointers = new Map(); // pointerId -> dir
+  const dpad = document.querySelector(".rv-bomber-dpad");
+
+  function dirFromPoint(x, y) {
+    if (!dpad) return null;
+    const els = document.elementsFromPoint(x, y);
+    for (const el of els) {
+      const btn = el && el.closest ? el.closest("[data-bomber-dir]") : null;
+      if (btn && dpad.contains(btn)) return btn.getAttribute("data-bomber-dir");
+    }
+    return null;
+  }
 
   function setPointerDir(pointerId, d) {
-    activePointers.set(pointerId, d);
-    pressDir(d);
-  }
-  function clearPointer(pointerId) {
-    const d = activePointers.get(pointerId);
-    if (d) {
+    const prev = activePointers.get(pointerId);
+    if (prev === d) return;
+    if (prev) {
       activePointers.delete(pointerId);
-      // Only release if no other pointer is pressing the same dir
-      const stillPressed = [...activePointers.values()].includes(d);
-      if (!stillPressed) releaseDir(d);
+      if (![...activePointers.values()].includes(prev)) releaseDir(prev);
+    }
+    if (d) {
+      activePointers.set(pointerId, d);
+      pressDir(d);
     }
   }
+  function clearPointer(pointerId) { setPointerDir(pointerId, null); }
 
-  document.querySelectorAll("[data-bomber-dir]").forEach((b) => {
-    const d = b.getAttribute("data-bomber-dir");
-    b.addEventListener("pointerdown", (ev) => {
+  if (dpad) {
+    dpad.addEventListener("pointerdown", (ev) => {
+      const d = dirFromPoint(ev.clientX, ev.clientY);
+      if (!d) return;
       ev.preventDefault();
+      // Release implicit pointer capture so pointermove keeps firing as the
+      // finger slides between buttons (otherwise touch is captured by the
+      // first button hit).
+      try { ev.target.releasePointerCapture && ev.target.releasePointerCapture(ev.pointerId); } catch (e) {}
       setPointerDir(ev.pointerId, d);
     });
-    // Allow swipe-onto behavior: if a pointer is already pressed on another
-    // d-pad button, moving onto this one takes over.
-    b.addEventListener("pointerenter", (ev) => {
-      if (ev.buttons === 1 || ev.pressure > 0) {
-        const prev = activePointers.get(ev.pointerId);
-        if (prev && prev !== d) {
-          // Release old dir
-          activePointers.delete(ev.pointerId);
-          const stillPressed = [...activePointers.values()].includes(prev);
-          if (!stillPressed) releaseDir(prev);
-        }
-        setPointerDir(ev.pointerId, d);
-      }
-    });
-    b.addEventListener("contextmenu", (ev) => ev.preventDefault());
-  });
+    dpad.addEventListener("contextmenu", (ev) => ev.preventDefault());
+  }
 
-  // Release any held direction on global pointerup / pointercancel so the
-  // player never gets stuck walking forever.
+  document.addEventListener("pointermove", (ev) => {
+    if (!activePointers.has(ev.pointerId)) return;
+    const d = dirFromPoint(ev.clientX, ev.clientY);
+    setPointerDir(ev.pointerId, d);
+  });
   document.addEventListener("pointerup", (ev) => clearPointer(ev.pointerId));
   document.addEventListener("pointercancel", (ev) => clearPointer(ev.pointerId));
 

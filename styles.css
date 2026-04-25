@@ -731,8 +731,7 @@ kbd {
   border-radius: 10px;
   font-size: 0.9rem;
 }
-.rv-lb li::before {
-  content: counter(rvlb);
+.rv-lb li .rv-lb-rank {
   font-variant-numeric: tabular-nums;
   font-weight: 700;
   color: var(--rv-text-dim);
@@ -743,11 +742,13 @@ kbd {
   font-size: 0.8rem;
   border: 1px solid var(--rv-border);
 }
-.rv-lb li:nth-child(1)::before { background: #fff8dc; border-color: #f0d67b; color: #8a6c00; }
-.rv-lb li:nth-child(2)::before { background: #f1f1f4; border-color: #d6d8dd; color: #5e6278; }
-.rv-lb li:nth-child(3)::before { background: #fdeccd; border-color: #e8c38a; color: #9a6114; }
+.rv-lb li:nth-child(1) .rv-lb-rank { background: #fff8dc; border-color: #f0d67b; color: #8a6c00; }
+.rv-lb li:nth-child(2) .rv-lb-rank { background: #f1f1f4; border-color: #d6d8dd; color: #5e6278; }
+.rv-lb li:nth-child(3) .rv-lb-rank { background: #fdeccd; border-color: #e8c38a; color: #9a6114; }
 .rv-lb li .rv-lb-name { font-weight: 600; color: var(--rv-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rv-lb li .rv-lb-score { color: var(--rv-primary); font-weight: 700; font-variant-numeric: tabular-nums; }
+.rv-lb li.is-me { background: var(--rv-primary-soft); border-color: var(--rv-primary); }
+.rv-lb li.is-me .rv-lb-name::after { content: " (you)"; color: var(--rv-text-dim); font-weight: 500; }
 .rv-lb-empty {
   padding: 14px;
   text-align: center;
@@ -1111,9 +1112,26 @@ kbd {
   }
 }
 
-/* Snake portrait wrap */
-.rv-snake-wrap { display: flex; justify-content: center; }
-.rv-snake-wrap canvas { max-width: 100%; height: auto; }
+/* Snake portrait wrap — taller-than-wide canvas, full visibility */
+.rv-game-wrap.rv-snake-wrap {
+  aspect-ratio: auto;
+  background: transparent;
+  border: 0;
+  display: flex;
+  justify-content: center;
+  overflow: visible;
+}
+.rv-snake-wrap canvas {
+  width: 100%;
+  max-width: 480px;
+  height: auto;
+  max-height: 78vh;
+  image-rendering: pixelated;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 1px 0 var(--rv-border);
+}
+.rv-snake-wrap .rv-game-overlay { border-radius: 10px; }
 
 /* Select-games button row spacing when chip is hidden */
 .rv-section-head .rv-chip { max-width: 100%; }
@@ -1121,18 +1139,28 @@ kbd {
 /* =====================================================
    Bomberman 2D
    ===================================================== */
+/* Bomberman is portrait, so let the wrap grow with the canvas */
+#game-bomber .rv-game-wrap {
+  aspect-ratio: auto;
+  background: transparent;
+  border: 0;
+  overflow: visible;
+}
 .rv-bomber-wrap {
   position: relative;
-  display: inline-block;
+  display: flex;
+  justify-content: center;
   background: #1a1c24;
   border-radius: var(--rv-r-md);
   padding: 6px;
-  max-width: 100%;
+  width: 100%;
 }
 .rv-bomber-wrap canvas {
   display: block;
-  max-width: 100%;
+  width: 100%;
+  max-width: 480px;
   height: auto;
+  max-height: 70vh;
   image-rendering: pixelated;
   background: #2b7a0b;
   border-radius: 6px;
@@ -1147,9 +1175,17 @@ kbd {
 .rv-bomber-dpad {
   display: grid;
   touch-action: none;
-  grid-template-columns: repeat(3, 58px);
-  grid-template-rows: repeat(3, 58px);
+  -ms-touch-action: none;
+  grid-template-columns: repeat(3, 64px);
+  grid-template-rows: repeat(3, 64px);
   gap: 4px;
+}
+@media (max-width: 480px) {
+  .rv-bomber-dpad {
+    grid-template-columns: repeat(3, 60px);
+    grid-template-rows: repeat(3, 60px);
+  }
+  .rv-bomber-bomb { width: 80px; height: 80px; }
 }
 .rv-bomber-dpad button {
   border: 1px solid var(--rv-border);
