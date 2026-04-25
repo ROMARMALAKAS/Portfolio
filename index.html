@@ -65,7 +65,7 @@
         <div class="collapse navbar-collapse order-lg-2" id="rvNav">
           <ul class="navbar-nav ms-lg-auto align-items-lg-center gap-lg-1">
             <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
-            <li class="nav-item"><a class="nav-link" href="#services">Services</a></li>
+            <li class="nav-item"><a class="nav-link" href="#education">Education</a></li>
             <li class="nav-item"><a class="nav-link" href="#projects">Work</a></li>
             <li class="nav-item"><a class="nav-link" href="#schedule">Schedule</a></li>
             <li class="nav-item"><a class="nav-link" href="#playground">Playground</a></li>
@@ -88,12 +88,11 @@
               </span>
               <h1 class="rv-display mt-3 mb-3">
                 Hi, I'm Romar Villafuerte.<br />
-                <span class="text-muted-strong">I build fast, modern websites.</span>
+                <span class="text-muted-strong rv-typer" id="rvTyper" aria-live="polite">A website developer.</span>
               </h1>
               <p class="lead text-body-secondary mb-4">
-                Website developer focused on clean design, great performance,
-                and thoughtful details. I turn ideas into polished, accessible
-                experiences on the web.
+                I build clean, fast websites and small web apps. Currently
+                focused on practical school-style projects you can actually use.
               </p>
               <div class="d-flex flex-wrap gap-2">
                 <a href="#projects" class="btn btn-primary btn-lg px-4">
@@ -150,94 +149,62 @@
           <div class="row g-4">
             <div class="col-lg-7">
               <p class="text-body-secondary mb-3">
-                I'm a website developer who enjoys the whole stack of shipping
-                a great site — from the first sketch to the final deploy. I
-                care about typography, motion, accessibility, and the small
-                moments that make an interface feel considered.
+                I'm a website developer based in the Philippines. I enjoy the
+                whole process of shipping a website — from sketching an idea
+                to making sure it loads fast and feels good to use.
               </p>
               <p class="text-body-secondary mb-0">
-                I work with founders, agencies, and teams to turn rough ideas
-                into production-ready websites. If it lives in a browser, I
-                can probably build it.
+                If it lives in a browser, I can probably build it.
               </p>
             </div>
             <div class="col-lg-5">
-              <div class="row g-3">
-                <div class="col-6">
-                  <div class="rv-stat">
-                    <div class="rv-stat-value">5+</div>
-                    <div class="rv-stat-label">Years of experience</div>
-                  </div>
-                </div>
-                <div class="col-6">
-                  <div class="rv-stat">
-                    <div class="rv-stat-value">30+</div>
-                    <div class="rv-stat-label">Websites shipped</div>
-                  </div>
-                </div>
-                <div class="col-6">
-                  <div class="rv-stat">
-                    <div class="rv-stat-value">100%</div>
-                    <div class="rv-stat-label">Hand-crafted</div>
-                  </div>
-                </div>
-                <div class="col-6">
-                  <div class="rv-stat">
-                    <div class="rv-stat-value">A+</div>
-                    <div class="rv-stat-label">Performance focus</div>
-                  </div>
-                </div>
+              <div class="rv-card p-4 h-100">
+                <span class="rv-pill rv-pill-primary mb-2"><i class="bi bi-laptop"></i> Stack</span>
+                <h3 class="h6 mb-2">What I work with</h3>
+                <p class="text-body-secondary small mb-0">
+                  HTML, CSS, JavaScript, Bootstrap. Comfortable with React and
+                  small Python/FastAPI backends like the one powering this
+                  site's leaderboard.
+                </p>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- SERVICES -->
-      <section id="services" class="rv-section border-top">
+      <!-- EDUCATION -->
+      <section id="education" class="rv-section border-top">
         <div class="container">
           <div class="rv-section-head">
-            <span class="rv-kicker">02 · Services</span>
-            <h2 class="rv-h2">What I help with.</h2>
+            <span class="rv-kicker">02 · Education</span>
+            <h2 class="rv-h2">Where I studied.</h2>
           </div>
-          <div class="row g-3">
-            <div class="col-md-6 col-lg-3">
-              <div class="rv-card rv-service h-100">
-                <div class="rv-service-icon"><i class="bi bi-window-stack"></i></div>
-                <h3 class="rv-service-title">Marketing Sites</h3>
-                <p class="text-body-secondary mb-0">
-                  Fast, polished landing pages and marketing sites that convert.
-                </p>
+          <ol class="rv-edu">
+            <li class="rv-edu-item">
+              <span class="rv-edu-dot" style="--c:#1b84ff"><i class="bi bi-mortarboard-fill"></i></span>
+              <div class="rv-edu-body">
+                <span class="rv-edu-stage">College</span>
+                <h3 class="rv-edu-school">Dalubhasaang Politekniko ng Lungsod ng Baliwag</h3>
+                <p class="text-body-secondary mb-0 small">Tertiary education.</p>
               </div>
-            </div>
-            <div class="col-md-6 col-lg-3">
-              <div class="rv-card rv-service h-100">
-                <div class="rv-service-icon"><i class="bi bi-code-slash"></i></div>
-                <h3 class="rv-service-title">Web Apps</h3>
-                <p class="text-body-secondary mb-0">
-                  React and Next.js apps with clean UX and solid foundations.
-                </p>
+            </li>
+            <li class="rv-edu-item">
+              <span class="rv-edu-dot" style="--c:#17c653"><i class="bi bi-book-fill"></i></span>
+              <div class="rv-edu-body">
+                <span class="rv-edu-stage">Junior &amp; Senior High School</span>
+                <h3 class="rv-edu-school">Sulivan National High School</h3>
+                <p class="text-body-secondary mb-0 small">JHS and SHS in the same school.</p>
               </div>
-            </div>
-            <div class="col-md-6 col-lg-3">
-              <div class="rv-card rv-service h-100">
-                <div class="rv-service-icon"><i class="bi bi-bag-check"></i></div>
-                <h3 class="rv-service-title">E-commerce</h3>
-                <p class="text-body-secondary mb-0">
-                  Custom Shopify themes and storefronts that feel on-brand.
-                </p>
+            </li>
+            <li class="rv-edu-item">
+              <span class="rv-edu-dot" style="--c:#f6a500"><i class="bi bi-pencil-fill"></i></span>
+              <div class="rv-edu-body">
+                <span class="rv-edu-stage">Elementary</span>
+                <h3 class="rv-edu-school">Tilapayong Elementary School</h3>
+                <p class="text-body-secondary mb-0 small">Where it all started.</p>
               </div>
-            </div>
-            <div class="col-md-6 col-lg-3">
-              <div class="rv-card rv-service h-100">
-                <div class="rv-service-icon"><i class="bi bi-speedometer2"></i></div>
-                <h3 class="rv-service-title">Performance</h3>
-                <p class="text-body-secondary mb-0">
-                  Core Web Vitals audits, accessibility, and SEO fundamentals.
-                </p>
-              </div>
-            </div>
-          </div>
+            </li>
+          </ol>
         </div>
       </section>
 
@@ -255,71 +222,41 @@
           </div>
 
           <div class="row g-3">
-            <div class="col-md-6 col-lg-6">
+            <div class="col-md-6">
               <article class="rv-card rv-project h-100">
-                <div class="rv-project-visual" style="--c1:#e8f0fe;--c2:#d1e0fc"></div>
-                <div class="rv-project-body">
-                  <div class="rv-tags">
-                    <span class="rv-tag">Landing Page</span>
-                    <span class="rv-tag">Next.js</span>
-                  </div>
-                  <h3 class="rv-project-title">Nova — SaaS marketing site</h3>
-                  <p class="text-body-secondary mb-3">
-                    A fast, animated marketing site for a B2B SaaS launch.
-                    100 Lighthouse scores across the board.
-                  </p>
-                  <a class="rv-link" href="#">Case study <i class="bi bi-arrow-right-short"></i></a>
+                <div class="rv-project-visual" style="--c1:#e8f0fe;--c2:#d1e0fc">
+                  <i class="bi bi-mortarboard-fill rv-project-icon" style="color:#1b84ff"></i>
                 </div>
-              </article>
-            </div>
-            <div class="col-md-6 col-lg-6">
-              <article class="rv-card rv-project h-100">
-                <div class="rv-project-visual" style="--c1:#fff2e5;--c2:#ffe0cc"></div>
-                <div class="rv-project-body">
-                  <div class="rv-tags">
-                    <span class="rv-tag">E-commerce</span>
-                    <span class="rv-tag">Shopify</span>
-                  </div>
-                  <h3 class="rv-project-title">Ember &amp; Oak — Boutique store</h3>
-                  <p class="text-body-secondary mb-3">
-                    Custom Shopify theme with bespoke product pages and a
-                    buttery-smooth checkout flow.
-                  </p>
-                  <a class="rv-link" href="#">Case study <i class="bi bi-arrow-right-short"></i></a>
-                </div>
-              </article>
-            </div>
-            <div class="col-md-6 col-lg-6">
-              <article class="rv-card rv-project h-100">
-                <div class="rv-project-visual" style="--c1:#eef2f7;--c2:#e0e7f1"></div>
                 <div class="rv-project-body">
                   <div class="rv-tags">
                     <span class="rv-tag">Web App</span>
-                    <span class="rv-tag">React</span>
+                    <span class="rv-tag">School</span>
                   </div>
-                  <h3 class="rv-project-title">Trailhead — Tour booking platform</h3>
-                  <p class="text-body-secondary mb-3">
-                    Booking dashboard for a tour operator — calendar,
-                    payments, and automated emails in one place.
+                  <h3 class="rv-project-title">Enrollment System</h3>
+                  <p class="text-body-secondary mb-0">
+                    A web-based enrollment system for managing students,
+                    sections, and class schedules. Streamlines registration
+                    and record-keeping for schools.
                   </p>
-                  <a class="rv-link" href="#">Case study <i class="bi bi-arrow-right-short"></i></a>
                 </div>
               </article>
             </div>
-            <div class="col-md-6 col-lg-6">
+            <div class="col-md-6">
               <article class="rv-card rv-project h-100">
-                <div class="rv-project-visual" style="--c1:#f4f0ff;--c2:#e5dcfb"></div>
+                <div class="rv-project-visual" style="--c1:#fff2e5;--c2:#ffe0cc">
+                  <i class="bi bi-car-front-fill rv-project-icon" style="color:#f6a500"></i>
+                </div>
                 <div class="rv-project-body">
                   <div class="rv-tags">
-                    <span class="rv-tag">Portfolio</span>
-                    <span class="rv-tag">HTML/CSS</span>
+                    <span class="rv-tag">Web App</span>
+                    <span class="rv-tag">Maps</span>
                   </div>
-                  <h3 class="rv-project-title">Atelier — Photographer portfolio</h3>
-                  <p class="text-body-secondary mb-3">
-                    Minimal, image-first portfolio with a lightweight CMS the
-                    client actually enjoys using.
+                  <h3 class="rv-project-title">Ride Hailing System</h3>
+                  <p class="text-body-secondary mb-0">
+                    A ride-hailing platform that connects riders with drivers,
+                    with live request, accept, and tracking flow — built
+                    around a clean mobile-first interface.
                   </p>
-                  <a class="rv-link" href="#">Case study <i class="bi bi-arrow-right-short"></i></a>
                 </div>
               </article>
             </div>

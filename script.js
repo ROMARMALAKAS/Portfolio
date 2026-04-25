@@ -5,6 +5,40 @@
 // Year in footer
 document.getElementById("year").textContent = new Date().getFullYear();
 
+/* ---------- Hero typewriter ---------- */
+(function () {
+  const el = document.getElementById("rvTyper");
+  if (!el) return;
+  const phrases = ["A website developer.", "A web app builder.", "A problem solver."];
+  let pi = 0;        // phrase index
+  let ci = 0;        // char index
+  let deleting = false;
+  el.textContent = "";
+
+  function tick() {
+    const word = phrases[pi];
+    if (!deleting) {
+      ci++;
+      el.textContent = word.slice(0, ci);
+      if (ci === word.length) {
+        deleting = true;
+        return setTimeout(tick, 1400); // hold full text
+      }
+      return setTimeout(tick, 70 + Math.random() * 50);
+    } else {
+      ci--;
+      el.textContent = word.slice(0, ci);
+      if (ci === 0) {
+        deleting = false;
+        pi = (pi + 1) % phrases.length;
+        return setTimeout(tick, 350); // pause before next word
+      }
+      return setTimeout(tick, 35 + Math.random() * 25);
+    }
+  }
+  setTimeout(tick, 600);
+})();
+
 /* ---------- Theme toggle ---------- */
 (function () {
   const root = document.documentElement;
