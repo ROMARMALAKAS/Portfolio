@@ -1833,3 +1833,57 @@ kbd {
   /* Stretch piano keys to viewport */
   body.rv-game-active .rv-piano-wrap { padding-left: 0; padding-right: 0; }
 }
+
+/* =====================================================
+   Game-active layout: lock body scroll and make the game
+   stage fill the viewport so only the game is visible.
+   The stage itself can scroll internally if controls
+   overflow on small screens.
+   ===================================================== */
+body.rv-game-active { overflow: hidden; }
+body.rv-game-active #gameStage {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: var(--rv-bg);
+  padding: 10px clamp(10px, 2vw, 24px) 14px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+body.rv-game-active .rv-navbar,
+body.rv-game-active footer.rv-footer { display: none !important; }
+body.rv-game-active main > section:not(#playground) { display: none !important; }
+body.rv-game-active #playground.rv-section { padding: 0; }
+body.rv-game-active #gamePicker,
+body.rv-game-active #playground .rv-section-head { display: none !important; }
+body.rv-game-active #gameStage .rv-stage-head {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--rv-bg);
+  padding: 6px 4px 8px;
+  margin: 0 0 10px;
+  border-bottom: 1px solid var(--rv-border);
+}
+/* Tighten cards inside an active game to give the canvas more room */
+body.rv-game-active .rv-game-pane .rv-card { padding: 12px !important; }
+body.rv-game-active .rv-game-pane .row { --bs-gutter-x: 12px; }
+
+/* Phones: kill horizontal padding/borders so the canvas truly goes edge-to-edge */
+@media (max-width: 720px) {
+  body.rv-game-active #gameStage { padding-left: 0; padding-right: 0; }
+  body.rv-game-active #gameStage .rv-stage-head { padding-left: 12px; padding-right: 12px; }
+  body.rv-game-active #gameHowTo { margin-left: 10px; margin-right: 10px; }
+  body.rv-game-active .rv-game-pane .rv-card {
+    border-left: 0; border-right: 0; border-radius: 0; padding: 10px !important;
+  }
+  /* Cap canvas heights so the rest of the controls + leaderboard stay visible */
+  body.rv-game-active .rv-snake-wrap canvas,
+  body.rv-game-active .rv-bomber-wrap canvas { max-height: 55vh; }
+  body.rv-game-active .rv-game-wrap canvas { max-height: 55vh; max-width: 100%; }
+}
+
+/* Tablets / desktop: cap heights so the leaderboard column stays in view */
+@media (min-width: 721px) {
+  body.rv-game-active .rv-game-wrap canvas { max-height: 70vh; }
+}
