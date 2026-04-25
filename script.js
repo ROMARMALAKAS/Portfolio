@@ -39,31 +39,27 @@ document.getElementById("year").textContent = new Date().getFullYear();
   setTimeout(tick, 600);
 })();
 
-/* ---------- Theme toggle (avatar photo swaps with light/dark) ---------- */
+/* ---------- Theme toggle ---------- */
 (function () {
   const root = document.documentElement;
   const btn = document.getElementById("themeToggle");
   const icon = document.getElementById("themeIcon");
-  const lightImg = document.getElementById("rvAvatarLight");
-  const darkImg = document.getElementById("rvAvatarDark");
-
   const saved = localStorage.getItem("rv_theme");
   const initial = saved === "dark" || saved === "light" ? saved : "light";
-  apply(initial);
+  root.setAttribute("data-bs-theme", initial);
+  updateIcon(initial);
 
   btn.addEventListener("click", () => {
     const cur = root.getAttribute("data-bs-theme") === "dark" ? "dark" : "light";
-    apply(cur === "dark" ? "light" : "dark");
+    const next = cur === "dark" ? "light" : "dark";
+    root.setAttribute("data-bs-theme", next);
+    localStorage.setItem("rv_theme", next);
+    updateIcon(next);
   });
 
-  function apply(mode) {
-    root.setAttribute("data-bs-theme", mode);
-    localStorage.setItem("rv_theme", mode);
-    if (icon) icon.className = mode === "dark" ? "bi bi-sun" : "bi bi-moon-stars";
-    if (lightImg && darkImg) {
-      lightImg.classList.toggle("is-on", mode === "light");
-      darkImg.classList.toggle("is-on", mode === "dark");
-    }
+  function updateIcon(mode) {
+    if (!icon) return;
+    icon.className = mode === "dark" ? "bi bi-sun" : "bi bi-moon-stars";
   }
 })();
 
@@ -3178,4 +3174,163 @@ document.getElementById("year").textContent = new Date().getFullYear();
       }
     });
   }
+})();
+
+/* =====================================================
+   Chat with Romar — talks to /chat on the leaderboard API
+   ===================================================== */
+(function () {
+  const CHAT_URL =
+    (typeof window !== "undefined" && window.RV && window.RV.api
+      ? window.RV.api
+      : "https://leaderboard-api-zgbqyajg.fly.dev") + "/chat";
+
+  const root = document.getElementById("rvChat");
+  if (!root) return;
+
+  const bubble = document.getElementById("rvChatBubble");
+  const panel = document.getElementById("rvChatPanel");
+  const closeBtn = document.getElementById("rvChatClose");
+  const log = document.getElementById("rvChatLog");
+  const form = document.getElementById("rvChatForm");
+  const input = document.getElementById("rvChatInput");
+  const sendBtn = document.getElementById("rvChatSend");
+  const suggestionsBox = document.getElementById("rvChatSuggestions");
+
+  /** @type {{role: 'user'|'assistant', content: string}[]} */
+  const history = [];
+  let isSending = false;
+
+  function open() {
+    panel.classList.add("is-open");
+    panel.setAttribute("aria-hidden", "false");
+    bubble.classList.add("is-hidden");
+    setTimeout(() => input.focus(), 120);
+  }
+  function close() {
+    panel.classList.remove("is-open");
+    panel.setAttribute("aria-hidden", "true");
+    bubble.classList.remove("is-hidden");
+  }
+
+  bubble.addEventListener("click", open);
+  closeBtn.addEventListener("click", close);
+
+  function escapeHtml(s) {
+    return s
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+  }
+  function linkify(safeHtml) {
+    return safeHtml.replace(
+      /(https?:\/\/[^\s<]+)/g,
+      '<a href="$1" target="_blank" rel="noopener">$1</a>',
+    );
+  }
+
+  function appendMessage(role, text, opts) {
+    opts = opts || {};
+    const wrap = document.createElement("div");
+    wrap.className =
+      "rv-chat-msg " +
+      (role === "user"
+        ? "rv-chat-msg-user"
+        : role === "error"
+          ? "rv-chat-msg-bot rv-chat-msg-error"
+          : "rv-chat-msg-bot");
+    const b = document.createElement("div");
+    b.className = "rv-chat-bubble-msg";
+    if (opts.html) {
+      b.innerHTML = opts.html;
+    } else {
+      b.innerHTML = linkify(escapeHtml(text));
+    }
+    wrap.appendChild(b);
+    log.appendChild(wrap);
+    log.scrollTop = log.scrollHeight;
+    return wrap;
+  }
+
+  function appendTyping() {
+    const wrap = document.createElement("div");
+    wrap.className = "rv-chat-msg rv-chat-msg-bot";
+    const b = document.createElement("div");
+    b.className = "rv-chat-bubble-msg rv-chat-typing";
+    b.innerHTML = "<span></span><span></span><span></span>";
+    wrap.appendChild(b);
+    log.appendChild(wrap);
+    log.scrollTop = log.scrollHeight;
+    return wrap;
+  }
+
+  function setSending(on) {
+    isSending = on;
+    sendBtn.disabled = on;
+    input.disabled = on;
+  }
+
+  async function send(text) {
+    if (!text || isSending) return;
+    if (suggestionsBox) suggestionsBox.classList.add("is-hidden");
+    appendMessage("user", text);
+    history.push({ role: "user", content: text });
+    input.value = "";
+    setSending(true);
+    const typing = appendTyping();
+
+    try {
+      const res = await fetch(CHAT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: history.slice(-12) }),
+      });
+      typing.remove();
+      if (!res.ok) {
+        let msg = "Sorry, the assistant is unavailable right now.";
+        if (res.status === 429) msg = "Slow down a bit — too many messages in a short time.";
+        appendMessage("error", msg);
+        history.pop();
+        return;
+      }
+      const data = await res.json();
+      const reply = (data && data.reply ? data.reply : "").trim();
+      if (!reply) {
+        appendMessage("error", "Hmm, I didn't get an answer. Try again?");
+        history.pop();
+        return;
+      }
+      appendMessage("assistant", reply);
+      history.push({ role: "assistant", content: reply });
+    } catch (err) {
+      typing.remove();
+      appendMessage(
+        "error",
+        "Couldn't reach the assistant. Check your internet and try again.",
+      );
+      history.pop();
+    } finally {
+      setSending(false);
+      input.focus();
+    }
+  }
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const text = (input.value || "").trim().slice(0, 500);
+    if (text) send(text);
+  });
+
+  if (suggestionsBox) {
+    suggestionsBox.addEventListener("click", (e) => {
+      const btn = e.target.closest(".rv-chat-suggest");
+      if (!btn) return;
+      send(btn.textContent.trim());
+    });
+  }
+
+  // Allow Esc to close panel
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && panel.classList.contains("is-open")) close();
+  });
 })();
