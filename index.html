@@ -684,7 +684,7 @@
                   <div class="rv-card p-4">
                     <div class="d-flex flex-wrap justify-content-end align-items-start gap-2 mb-3">
                       <span class="rv-chip">Score <strong id="bbScore">0</strong></span>
-                      <span class="rv-chip">Time <strong id="bbTime">30</strong>s</span>
+                      <span class="rv-chip">Lives <strong id="bbLives">5</strong></span>
                     </div>
                     <div class="rv-game-wrap">
                       <canvas id="bbCanvas" width="640" height="360" aria-label="Basketball Shooting"></canvas>
@@ -790,8 +790,17 @@
               <div class="row g-3 justify-content-center">
                 <div class="col-lg-7 col-md-9">
                   <div class="rv-card p-4">
-                    <div class="d-flex flex-wrap justify-content-end align-items-start gap-2 mb-3">
-                      <span class="rv-chip">Score <strong id="snScore">0</strong></span>
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                      <div class="rv-mode-tabs btn-group btn-group-sm" role="group" aria-label="Snake mode">
+                        <input type="radio" class="btn-check" name="snMode" id="snModeClassic" value="classic" autocomplete="off" checked>
+                        <label class="btn btn-outline-primary" for="snModeClassic">Classic</label>
+                        <input type="radio" class="btn-check" name="snMode" id="snModeAdv" value="adventure" autocomplete="off">
+                        <label class="btn btn-outline-primary" for="snModeAdv">Adventure</label>
+                      </div>
+                      <div class="d-flex flex-wrap gap-2">
+                        <span class="rv-chip" id="snStageChip" hidden>Stage <strong id="snStage">1</strong></span>
+                        <span class="rv-chip">Score <strong id="snScore">0</strong></span>
+                      </div>
                     </div>
                     <div class="rv-game-wrap rv-snake-wrap">
                       <canvas id="snCanvas" width="384" height="576" aria-label="Snake"></canvas>

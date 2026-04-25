@@ -421,13 +421,15 @@ document.getElementById("year").textContent = new Date().getFullYear();
     },
     snake: {
       icon: "bi-dpad",
-      desc: "Classic Snake. Eat the food, grow the tail, don't bite yourself.",
+      desc: "Two modes: Classic (highest score) or Adventure (stages + power food + deadly boxes).",
       steps: [
+        "Pick a mode: Classic or Adventure.",
         "Use the on-screen D-pad (or arrow keys) to steer.",
-        "Eat the red dot → snake gets longer + score goes up.",
-        "Hitting your own tail or stopping = game over.",
-        "Walls wrap around — the snake reappears on the other side.",
-        "Highest score wins on the leaderboard.",
+        "Walls wrap around — leaving the top brings you out the bottom (and same for the sides).",
+        "Eat the red dot → snake grows + score +1.",
+        "Adventure: a gold ★ power food sometimes appears — +5 points, no growth.",
+        "Adventure: every 8 apples = next stage; each new stage adds a deadly box.",
+        "Touching your tail or any deadly box = game over. Highest score wins.",
       ],
     },
     reaction: {
@@ -475,12 +477,13 @@ document.getElementById("year").textContent = new Date().getFullYear();
     },
     basket: {
       icon: "bi-bullseye",
-      desc: "Hold the screen to charge power, release to shoot the ball.",
+      desc: "5 lives. Hold to charge power, release to shoot. Miss = lose a life.",
       steps: [
         "Press and HOLD anywhere on the court to charge power.",
         "The longer you hold, the harder the ball is thrown.",
         "Release to shoot at a fixed 60° arc — power decides distance.",
-        "Sink baskets to score. You have 30 seconds.",
+        "Sink the basket = +1 score. Miss = −1 life.",
+        "You start with 5 lives. Game ends at 0 lives.",
         "Highest score wins on the leaderboard.",
       ],
     },
@@ -521,7 +524,7 @@ document.getElementById("year").textContent = new Date().getFullYear();
       icon: "bi-controller",
       desc: "Bomberman 2D. Place bombs, blast walls and enemies, survive.",
       steps: [
-        "Use the on-screen D-pad (or arrow keys) to walk through the grid.",
+        "Tap and HOLD an arrow button (or arrow key) to walk; release to stop.",
         "Tap the BOMB button (or Space) to drop a bomb where you stand.",
         "Bombs explode after a short fuse — get out of the cross-shaped blast.",
         "Blasts destroy soft walls (brown) and any enemy or you caught in them.",
@@ -1454,7 +1457,7 @@ document.getElementById("year").textContent = new Date().getFullYear();
   if (!canvas) return;
   const ctx = canvas.getContext("2d");
   const scoreEl = document.getElementById("bbScore");
-  const timeEl = document.getElementById("bbTime");
+  const livesEl = document.getElementById("bbLives");
   const overlay = document.getElementById("bbOverlay");
   const titleEl = document.getElementById("bbTitle");
   const msgEl = document.getElementById("bbMsg");
@@ -1465,12 +1468,12 @@ document.getElementById("year").textContent = new Date().getFullYear();
   const GRAV = 900;
   const BALL_R = 15;
   const MAX_HOLD_MS = 1500; // fully-charged hold duration
+  const START_LIVES = 5;
 
   let running = false;
   let score = 0;
-  let timeLeft = 30;
+  let lives = START_LIVES;
   let rafId = null;
-  let startedAt = 0;
   let lastTs = 0;
 
   // Ball resting position (player side)
@@ -1587,10 +1590,6 @@ document.getElementById("year").textContent = new Date().getFullYear();
 
     if (charging) chargeNow = ts;
 
-    timeLeft = Math.max(0, 30 - Math.floor((ts - startedAt) / 1000));
-    timeEl.textContent = String(timeLeft);
-    if (timeLeft <= 0) { end(); return; }
-
     // Move hoop up/down for challenge
     hoop.y += hoop.moveDir * 20 * dt;
     if (hoop.y < 90) { hoop.y = 90; hoop.moveDir = 1; }
@@ -1618,9 +1617,14 @@ document.getElementById("year").textContent = new Date().getFullYear();
         scoreEl.textContent = String(score);
       }
 
-      // Off screen -> reset ball
+      // Off screen -> shot is over. If didn't score, lose a life.
       if (ball.y > H + 40 || ball.x > W + 40 || ball.x < -40) {
+        if (!ball._scored) {
+          lives = Math.max(0, lives - 1);
+          livesEl.textContent = String(lives);
+        }
         resetBall();
+        if (lives <= 0) { end(); return; }
       }
     }
 
@@ -1639,13 +1643,12 @@ document.getElementById("year").textContent = new Date().getFullYear();
 
   function start() {
     score = 0;
-    timeLeft = 30;
+    lives = START_LIVES;
     scoreEl.textContent = "0";
-    timeEl.textContent = "30";
+    livesEl.textContent = String(START_LIVES);
     resetBall();
     running = true;
     charging = false;
-    startedAt = performance.now();
     lastTs = 0;
     overlay.classList.add("is-hidden");
     rafId = requestAnimationFrame(frame);
@@ -1656,7 +1659,7 @@ document.getElementById("year").textContent = new Date().getFullYear();
     charging = false;
     cancelAnimationFrame(rafId);
     if (window.RV) window.RV.submitScore("basket", score, "high");
-    titleEl.textContent = "Time's up!";
+    titleEl.textContent = "Out of lives";
     msgEl.textContent = `You scored ${score} bucket${score === 1 ? "" : "s"}.`;
     startBtn.textContent = "Play again";
     overlay.classList.remove("is-hidden");
@@ -2752,52 +2755,120 @@ document.getElementById("year").textContent = new Date().getFullYear();
   if (!canvas) return;
   const ctx = canvas.getContext("2d");
   const scoreEl = document.getElementById("snScore");
+  const stageEl = document.getElementById("snStage");
+  const stageChip = document.getElementById("snStageChip");
   const overlay = document.getElementById("snOverlay");
   const titleEl = document.getElementById("snTitle");
   const msgEl = document.getElementById("snMsg");
   const startBtn = document.getElementById("snStart");
+  const modeRadios = document.querySelectorAll('input[name="snMode"]');
 
   const W = canvas.width;
   const H = canvas.height;
   const CELL = 24;
   const COLS = W / CELL; // 16
   const ROWS = H / CELL; // 24
+  const STAGE_GOAL = 8; // apples per stage in adventure
 
+  let mode = "classic";
   let snake = [];
   let dir = { x: 0, y: -1 };
   let queuedDir = null;
   let food = null;
+  let powerFood = null;
+  let boxes = [];
   let score = 0;
+  let stage = 1;
+  let stageEaten = 0;
   let tickMs = 180;
   let running = false;
   let tickId = null;
 
+  function getMode() {
+    const r = document.querySelector('input[name="snMode"]:checked');
+    return (r && r.value) || "classic";
+  }
+
   function reset() {
+    mode = getMode();
     const cx = Math.floor(COLS / 2);
     const cy = Math.floor(ROWS / 2) + 3;
-    // Start snake going up (portrait friendly)
     snake = [{ x: cx, y: cy }, { x: cx, y: cy + 1 }, { x: cx, y: cy + 2 }];
     dir = { x: 0, y: -1 };
     queuedDir = null;
     score = 0;
+    stage = 1;
+    stageEaten = 0;
     tickMs = 180;
+    boxes = [];
+    powerFood = null;
     placeFood();
+    if (mode === "adventure") {
+      stageChip.hidden = false;
+      stageEl.textContent = "1";
+      maybeSpawnPowerFood();
+    } else {
+      stageChip.hidden = true;
+    }
     scoreEl.textContent = "0";
     draw();
   }
 
+  function isCellTaken(x, y) {
+    if (snake.some((s) => s.x === x && s.y === y)) return true;
+    if (food && food.x === x && food.y === y) return true;
+    if (powerFood && powerFood.x === x && powerFood.y === y) return true;
+    if (boxes.some((b) => b.x === x && b.y === y)) return true;
+    return false;
+  }
+
   function placeFood() {
-    while (true) {
+    for (let i = 0; i < 500; i++) {
       const f = { x: Math.floor(Math.random() * COLS), y: Math.floor(Math.random() * ROWS) };
-      if (!snake.some((s) => s.x === f.x && s.y === f.y)) { food = f; return; }
+      if (!isCellTaken(f.x, f.y)) { food = f; return; }
     }
   }
 
+  function maybeSpawnPowerFood() {
+    if (mode !== "adventure") return;
+    if (powerFood) return;
+    if (Math.random() > 0.4) return; // 40% chance per stage / per food eaten
+    for (let i = 0; i < 200; i++) {
+      const f = { x: Math.floor(Math.random() * COLS), y: Math.floor(Math.random() * ROWS) };
+      if (!isCellTaken(f.x, f.y)) { powerFood = f; return; }
+    }
+  }
+
+  function addBoxesForStage() {
+    // Stage N → (N-1) deadly boxes (so stage 1 = none, stage 2 = 1, …)
+    const target = stage - 1;
+    let safety = 200;
+    while (boxes.length < target && safety-- > 0) {
+      const b = { x: Math.floor(Math.random() * COLS), y: Math.floor(Math.random() * ROWS) };
+      // Don't drop a box right next to the snake's head
+      const head = snake[0];
+      if (Math.abs(b.x - head.x) + Math.abs(b.y - head.y) < 4) continue;
+      if (isCellTaken(b.x, b.y)) continue;
+      boxes.push(b);
+    }
+  }
+
+  function nextStage() {
+    stage++;
+    stageEaten = 0;
+    stageEl.textContent = String(stage);
+    score += 10; // stage-clear bonus
+    scoreEl.textContent = String(score);
+    addBoxesForStage();
+    powerFood = null;
+    maybeSpawnPowerFood();
+  }
+
   function draw() {
-    ctx.fillStyle = "#ffffff";
+    const isDark = document.documentElement.getAttribute("data-bs-theme") === "dark";
+    ctx.fillStyle = isDark ? "#15161c" : "#ffffff";
     ctx.fillRect(0, 0, W, H);
-    // subtle grid
-    ctx.strokeStyle = "#f2f4f7";
+    ctx.strokeStyle = isDark ? "#23252e" : "#f2f4f7";
     ctx.lineWidth = 1;
     for (let i = 1; i < COLS; i++) {
       ctx.beginPath(); ctx.moveTo(i * CELL, 0); ctx.lineTo(i * CELL, H); ctx.stroke();
@@ -2805,11 +2876,35 @@ document.getElementById("year").textContent = new Date().getFullYear();
     for (let i = 1; i < ROWS; i++) {
       ctx.beginPath(); ctx.moveTo(0, i * CELL); ctx.lineTo(W, i * CELL); ctx.stroke();
     }
+    // boxes (deadly)
+    boxes.forEach((b) => {
+      ctx.fillStyle = "#1f1f29";
+      ctx.fillRect(b.x * CELL + 2, b.y * CELL + 2, CELL - 4, CELL - 4);
+      ctx.strokeStyle = "#f1416c";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(b.x * CELL + 2.5, b.y * CELL + 2.5, CELL - 5, CELL - 5);
+    });
     // food
-    ctx.fillStyle = "#f1416c";
-    ctx.beginPath();
-    ctx.arc(food.x * CELL + CELL / 2, food.y * CELL + CELL / 2, CELL / 2 - 3, 0, Math.PI * 2);
-    ctx.fill();
+    if (food) {
+      ctx.fillStyle = "#f1416c";
+      ctx.beginPath();
+      ctx.arc(food.x * CELL + CELL / 2, food.y * CELL + CELL / 2, CELL / 2 - 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    // power food (gold star-like)
+    if (powerFood) {
+      const cx = powerFood.x * CELL + CELL / 2;
+      const cy = powerFood.y * CELL + CELL / 2;
+      ctx.fillStyle = "#f6c000";
+      ctx.beginPath();
+      ctx.arc(cx, cy, CELL / 2 - 2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#fff";
+      ctx.font = "bold 14px system-ui";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("★", cx, cy + 1);
+    }
     // snake
     snake.forEach((s, i) => {
       ctx.fillStyle = i === 0 ? "#0b8a3e" : "#17c653";
@@ -2819,23 +2914,37 @@ document.getElementById("year").textContent = new Date().getFullYear();
 
   function step() {
     if (queuedDir) {
-      // Prevent reversing into self
       if (!(queuedDir.x === -dir.x && queuedDir.y === -dir.y)) dir = queuedDir;
       queuedDir = null;
     }
-    const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
-    if (head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS) return gameOver();
+    // Wrap-around: leaving an edge re-enters the opposite side.
+    const head = {
+      x: (snake[0].x + dir.x + COLS) % COLS,
+      y: (snake[0].y + dir.y + ROWS) % ROWS,
+    };
     if (snake.some((s) => s.x === head.x && s.y === head.y)) return gameOver();
+    if (boxes.some((b) => b.x === head.x && b.y === head.y)) return gameOver();
     snake.unshift(head);
-    if (head.x === food.x && head.y === food.y) {
+
+    let ate = false;
+    if (food && head.x === food.x && head.y === food.y) {
+      ate = true;
       score++;
       scoreEl.textContent = String(score);
       tickMs = Math.max(60, 180 - score * 4);
       placeFood();
+      maybeSpawnPowerFood();
+      stageEaten++;
+      if (mode === "adventure" && stageEaten >= STAGE_GOAL) nextStage();
       restartTimer();
-    } else {
-      snake.pop();
+    } else if (powerFood && head.x === powerFood.x && head.y === powerFood.y) {
+      // Power food: bonus points, doesn't grow snake
+      score += 5;
+      scoreEl.textContent = String(score);
+      powerFood = null;
+      ate = true; // skip pop (still grow by 1 cell as a small reward)
     }
+    if (!ate) snake.pop();
     draw();
   }
 
@@ -3025,14 +3134,13 @@ document.getElementById("year").textContent = new Date().getFullYear();
   const livesEl = document.getElementById("bmLives");
   const bombsEl = document.getElementById("bmBombs");
 
-  // Portrait playfield (taller than wide). CELL_SIZE chosen so canvas pixel
-  // size is around 440 x 600 — same proportions as Snake (2:3) for a consistent
-  // big-screen-in-portrait look.
-  const CELL_SIZE = 40;
+  // Portrait playfield, kept compact so the D-pad + bomb button stay
+  // on-screen on phones without scrolling.
+  const CELL_SIZE = 34;
   const N_COLS = 11;
-  const N_ROWS = 15;
-  canvas.width = N_COLS * CELL_SIZE;   // 440
-  canvas.height = N_ROWS * CELL_SIZE;  // 600
+  const N_ROWS = 13;
+  canvas.width = N_COLS * CELL_SIZE;   // 374
+  canvas.height = N_ROWS * CELL_SIZE;  // 442
 
   // Map codes
   // 0 empty, 1 indestructible wall, 2 destructible block
@@ -3410,59 +3518,59 @@ document.getElementById("year").textContent = new Date().getFullYear();
     }
   }
 
-  // D-pad pointer model: each active pointer (finger / mouse) maps to the
-  // direction button it is currently over. Sliding the finger across buttons
-  // updates the direction. Lifting the finger releases it. Using document-level
-  // pointermove + elementsFromPoint avoids the touch-capture issue where
-  // pointerenter on sibling buttons doesn't fire on Android Chrome / iOS Safari.
-  const activePointers = new Map(); // pointerId -> dir
+  // Per-button pointer handling. Each direction button independently
+  // tracks whether a pointer is currently pressing it. heldButtons keeps
+  // the press count per direction, so multi-touch (e.g. two fingers on
+  // the same direction) still releases cleanly.
   const dpad = document.querySelector(".rv-bomber-dpad");
+  const heldButtons = { up: 0, down: 0, left: 0, right: 0 };
 
-  function dirFromPoint(x, y) {
-    if (!dpad) return null;
-    const els = document.elementsFromPoint(x, y);
-    for (const el of els) {
-      const btn = el && el.closest ? el.closest("[data-bomber-dir]") : null;
-      if (btn && dpad.contains(btn)) return btn.getAttribute("data-bomber-dir");
-    }
-    return null;
+  function pressBtn(d) {
+    heldButtons[d]++;
+    pressDir(d);
+  }
+  function releaseBtn(d) {
+    if (heldButtons[d] > 0) heldButtons[d]--;
+    if (heldButtons[d] === 0) releaseDir(d);
   }
 
-  function setPointerDir(pointerId, d) {
-    const prev = activePointers.get(pointerId);
-    if (prev === d) return;
-    if (prev) {
-      activePointers.delete(pointerId);
-      if (![...activePointers.values()].includes(prev)) releaseDir(prev);
-    }
-    if (d) {
-      activePointers.set(pointerId, d);
-      pressDir(d);
-    }
+  function bindDirButton(btn) {
+    const d = btn.getAttribute("data-bomber-dir");
+    if (!d) return;
+    let activePointer = null;
+    const onDown = (ev) => {
+      ev.preventDefault();
+      if (activePointer !== null) return;
+      activePointer = ev.pointerId;
+      try { btn.setPointerCapture(ev.pointerId); } catch (e) {}
+      pressBtn(d);
+    };
+    const onEnd = (ev) => {
+      if (activePointer === null) return;
+      if (ev && ev.pointerId !== activePointer) return;
+      activePointer = null;
+      releaseBtn(d);
+    };
+    btn.addEventListener("pointerdown", onDown);
+    btn.addEventListener("pointerup", onEnd);
+    btn.addEventListener("pointercancel", onEnd);
+    btn.addEventListener("pointerleave", onEnd);
+    btn.addEventListener("lostpointercapture", onEnd);
+    btn.addEventListener("contextmenu", (ev) => ev.preventDefault());
   }
-  function clearPointer(pointerId) { setPointerDir(pointerId, null); }
 
   if (dpad) {
-    dpad.addEventListener("pointerdown", (ev) => {
-      const d = dirFromPoint(ev.clientX, ev.clientY);
-      if (!d) return;
-      ev.preventDefault();
-      // Release implicit pointer capture so pointermove keeps firing as the
-      // finger slides between buttons (otherwise touch is captured by the
-      // first button hit).
-      try { ev.target.releasePointerCapture && ev.target.releasePointerCapture(ev.pointerId); } catch (e) {}
-      setPointerDir(ev.pointerId, d);
-    });
+    dpad.querySelectorAll("[data-bomber-dir]").forEach(bindDirButton);
     dpad.addEventListener("contextmenu", (ev) => ev.preventDefault());
   }
 
-  document.addEventListener("pointermove", (ev) => {
-    if (!activePointers.has(ev.pointerId)) return;
-    const d = dirFromPoint(ev.clientX, ev.clientY);
-    setPointerDir(ev.pointerId, d);
+  // Safety net: any pointerup on the document fully clears anything still
+  // showing as held (covers cases where the OS never delivers pointerup).
+  document.addEventListener("pointerup", () => {
+    ["up", "down", "left", "right"].forEach((d) => {
+      while (heldButtons[d] > 0) releaseBtn(d);
+    });
   });
-  document.addEventListener("pointerup", (ev) => clearPointer(ev.pointerId));
-  document.addEventListener("pointercancel", (ev) => clearPointer(ev.pointerId));
 
   if (bombBtn) {
     bombBtn.addEventListener("pointerdown", (ev) => { ev.preventDefault(); dropBomb(); });
