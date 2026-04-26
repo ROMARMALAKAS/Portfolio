@@ -82,6 +82,16 @@
             <li class="nav-item ms-lg-2">
               <a class="btn btn-primary btn-sm px-3" href="#contact">Contact</a>
             </li>
+            <li class="nav-item ms-lg-1">
+              <button
+                type="button"
+                class="nav-link rv-admin-link"
+                id="rvAdminMenuBtn"
+              >
+                <i class="bi bi-shield-lock"></i>
+                <span>Admin</span>
+              </button>
+            </li>
           </ul>
         </div>
       </div>
@@ -1242,6 +1252,154 @@
         <p class="rv-donate-foot">
           Every bit helps me keep building. <i class="bi bi-stars"></i>
         </p>
+      </div>
+    </div>
+
+    <!-- ADMIN LOGIN MODAL -->
+    <div
+      class="rv-admin-overlay"
+      id="rvAdminLoginOverlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="rvAdminLoginTitle"
+      hidden
+    >
+      <div class="rv-admin-modal rv-admin-modal-sm">
+        <button
+          type="button"
+          class="rv-admin-close"
+          id="rvAdminLoginClose"
+          aria-label="Close login dialog"
+        >
+          <i class="bi bi-x-lg"></i>
+        </button>
+        <h3 class="rv-admin-title" id="rvAdminLoginTitle">
+          <i class="bi bi-shield-lock"></i> Admin login
+        </h3>
+        <p class="rv-admin-sub">
+          For Romar only. Visitors don't need to sign in to use the site.
+        </p>
+        <form class="rv-admin-form" id="rvAdminLoginForm" novalidate>
+          <label class="rv-admin-label">
+            Username
+            <input
+              type="text"
+              id="rvAdminUser"
+              class="rv-admin-input"
+              autocomplete="username"
+              required
+            />
+          </label>
+          <label class="rv-admin-label">
+            Password
+            <input
+              type="password"
+              id="rvAdminPass"
+              class="rv-admin-input"
+              autocomplete="current-password"
+              required
+            />
+          </label>
+          <p class="rv-admin-error" id="rvAdminLoginError" hidden></p>
+          <button type="submit" class="rv-admin-submit" id="rvAdminLoginSubmit">
+            <i class="bi bi-box-arrow-in-right"></i>
+            <span>Sign in</span>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ADMIN DASHBOARD MODAL -->
+    <div
+      class="rv-admin-overlay"
+      id="rvAdminDashOverlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="rvAdminDashTitle"
+      hidden
+    >
+      <div class="rv-admin-modal rv-admin-modal-lg">
+        <button
+          type="button"
+          class="rv-admin-close"
+          id="rvAdminDashClose"
+          aria-label="Close dashboard"
+        >
+          <i class="bi bi-x-lg"></i>
+        </button>
+        <div class="rv-admin-head">
+          <div>
+            <h3 class="rv-admin-title m-0" id="rvAdminDashTitle">
+              <i class="bi bi-speedometer2"></i> Dashboard
+            </h3>
+            <p class="rv-admin-sub m-0">Welcome back, Romar.</p>
+          </div>
+          <button
+            type="button"
+            class="rv-admin-logout"
+            id="rvAdminLogoutBtn"
+          >
+            <i class="bi bi-box-arrow-right"></i> Sign out
+          </button>
+        </div>
+
+        <div class="rv-admin-stats" id="rvAdminStats">
+          <div class="rv-admin-card">
+            <span class="rv-admin-card-label">Visits today</span>
+            <span class="rv-admin-card-value" id="rvStatVisitsToday">—</span>
+          </div>
+          <div class="rv-admin-card">
+            <span class="rv-admin-card-label">Visits this week</span>
+            <span class="rv-admin-card-value" id="rvStatVisitsWeek">—</span>
+          </div>
+          <div class="rv-admin-card">
+            <span class="rv-admin-card-label">Visits all-time</span>
+            <span class="rv-admin-card-value" id="rvStatVisitsTotal">—</span>
+          </div>
+        </div>
+
+        <section class="rv-admin-section">
+          <h4 class="rv-admin-section-title">Visits over the last 7 days</h4>
+          <div class="rv-admin-spark" id="rvAdminSpark" aria-hidden="true"></div>
+        </section>
+
+        <section class="rv-admin-section">
+          <h4 class="rv-admin-section-title">Most played games</h4>
+          <div class="rv-admin-table-wrap">
+            <table class="rv-admin-table" id="rvAdminGames">
+              <thead>
+                <tr><th>Game</th><th class="num">Plays</th><th class="num">Players</th></tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="rv-admin-section">
+          <h4 class="rv-admin-section-title">Top players</h4>
+          <div class="rv-admin-table-wrap">
+            <table class="rv-admin-table" id="rvAdminPlayers">
+              <thead>
+                <tr><th>Player</th><th class="num">Games</th><th class="num">Total score</th></tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="rv-admin-section">
+          <h4 class="rv-admin-section-title">Bookings</h4>
+          <div class="rv-admin-table-wrap">
+            <table class="rv-admin-table" id="rvAdminBookings">
+              <thead>
+                <tr><th>Date</th><th>Name</th><th>Email</th><th>Note</th></tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+
+        <p class="rv-admin-foot" id="rvAdminFoot"></p>
       </div>
     </div>
 

@@ -3800,3 +3800,244 @@ document.getElementById("year").textContent = new Date().getFullYear();
     if (e.key === "Escape" && !overlay.hidden) close();
   });
 })();
+
+/* ===== Admin login + dashboard + visit tracking ===== */
+(function () {
+  const API = "https://leaderboard-api-zgbqyajg.fly.dev";
+  const TOKEN_KEY = "rv_admin_token";
+
+  // 1) Visit tracking — fire-and-forget on every page load.
+  try {
+    fetch(API + "/track/visit", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        path: location.pathname || "/",
+        referrer: (document.referrer || "").slice(0, 300),
+      }),
+      keepalive: true,
+    }).catch(() => {});
+  } catch (_) {}
+
+  // 2) Admin DOM hooks
+  const menuBtn = document.getElementById("rvAdminMenuBtn");
+  const loginOverlay = document.getElementById("rvAdminLoginOverlay");
+  const loginClose = document.getElementById("rvAdminLoginClose");
+  const loginForm = document.getElementById("rvAdminLoginForm");
+  const userInput = document.getElementById("rvAdminUser");
+  const passInput = document.getElementById("rvAdminPass");
+  const errorEl = document.getElementById("rvAdminLoginError");
+  const submitBtn = document.getElementById("rvAdminLoginSubmit");
+  const dashOverlay = document.getElementById("rvAdminDashOverlay");
+  const dashClose = document.getElementById("rvAdminDashClose");
+  const logoutBtn = document.getElementById("rvAdminLogoutBtn");
+
+  if (!menuBtn || !loginOverlay || !dashOverlay) return;
+
+  const showError = (msg) => {
+    errorEl.textContent = msg || "";
+    errorEl.hidden = !msg;
+  };
+
+  const openOverlay = (el) => {
+    el.hidden = false;
+    document.body.classList.add("rv-admin-open");
+  };
+  const closeOverlay = (el) => {
+    el.hidden = true;
+    document.body.classList.remove("rv-admin-open");
+  };
+
+  const collapseMobileNav = () => {
+    const nav = document.getElementById("rvNav");
+    if (nav && nav.classList.contains("show")) {
+      try { window.bootstrap?.Collapse.getInstance(nav)?.hide(); } catch (_) {}
+    }
+  };
+
+  const openLogin = () => {
+    showError("");
+    loginForm.reset();
+    openOverlay(loginOverlay);
+    setTimeout(() => userInput.focus(), 50);
+  };
+  const closeLogin = () => closeOverlay(loginOverlay);
+
+  // Click handler — if we already have a valid token, jump to dashboard.
+  menuBtn.addEventListener("click", async () => {
+    collapseMobileNav();
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (token) {
+      try {
+        const r = await fetch(API + "/admin/check", {
+          headers: { Authorization: "Bearer " + token },
+        });
+        const j = await r.json();
+        if (r.ok && j.ok) {
+          openDashboard(token);
+          return;
+        }
+      } catch (_) {}
+      localStorage.removeItem(TOKEN_KEY);
+    }
+    openLogin();
+  });
+  loginClose.addEventListener("click", closeLogin);
+  loginOverlay.addEventListener("click", (e) => {
+    if (e.target === loginOverlay) closeLogin();
+  });
+
+  loginForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    showError("");
+    submitBtn.disabled = true;
+    try {
+      const r = await fetch(API + "/admin/login", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          username: userInput.value.trim(),
+          password: passInput.value,
+        }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        showError(j.detail || "Login failed.");
+        return;
+      }
+      localStorage.setItem(TOKEN_KEY, j.token);
+      closeLogin();
+      openDashboard(j.token);
+    } catch (err) {
+      showError("Network error. Please try again.");
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
+
+  // ===== Dashboard =====
+  dashClose.addEventListener("click", () => closeOverlay(dashOverlay));
+  dashOverlay.addEventListener("click", (e) => {
+    if (e.target === dashOverlay) closeOverlay(dashOverlay);
+  });
+  logoutBtn.addEventListener("click", async () => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    localStorage.removeItem(TOKEN_KEY);
+    closeOverlay(dashOverlay);
+    if (token) {
+      try {
+        await fetch(API + "/admin/logout", {
+          method: "POST",
+          headers: { Authorization: "Bearer " + token },
+        });
+      } catch (_) {}
+    }
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+    if (!loginOverlay.hidden) closeLogin();
+    else if (!dashOverlay.hidden) closeOverlay(dashOverlay);
+  });
+
+  async function openDashboard(token) {
+    openOverlay(dashOverlay);
+    document.getElementById("rvStatVisitsToday").textContent = "…";
+    document.getElementById("rvStatVisitsWeek").textContent = "…";
+    document.getElementById("rvStatVisitsTotal").textContent = "…";
+    try {
+      const r = await fetch(API + "/admin/stats", {
+        headers: { Authorization: "Bearer " + token },
+      });
+      if (r.status === 401) {
+        localStorage.removeItem(TOKEN_KEY);
+        closeOverlay(dashOverlay);
+        openLogin();
+        return;
+      }
+      const j = await r.json();
+      renderDashboard(j);
+    } catch (err) {
+      document.getElementById("rvAdminFoot").textContent =
+        "Failed to load stats: " + (err && err.message ? err.message : err);
+    }
+  }
+
+  function renderDashboard(s) {
+    const fmt = (n) => Number(n || 0).toLocaleString();
+    document.getElementById("rvStatVisitsToday").textContent = fmt(s.visits.today);
+    document.getElementById("rvStatVisitsWeek").textContent = fmt(s.visits.week);
+    document.getElementById("rvStatVisitsTotal").textContent = fmt(s.visits.total);
+
+    // Sparkline
+    const spark = document.getElementById("rvAdminSpark");
+    spark.innerHTML = "";
+    const days = s.visits.by_day || [];
+    const maxN = Math.max(1, ...days.map((d) => d.count));
+    days.forEach((d) => {
+      const pct = Math.max(2, Math.round((d.count / maxN) * 100));
+      const bar = document.createElement("div");
+      bar.className = "rv-admin-spark-bar";
+      bar.style.height = pct + "%";
+      const dayShort = d.day.slice(5).replace("-", "/");
+      bar.dataset.day = dayShort;
+      bar.dataset.count = d.count;
+      spark.appendChild(bar);
+    });
+
+    // Most played games
+    const gamesBody = document.querySelector("#rvAdminGames tbody");
+    gamesBody.innerHTML = "";
+    if (!s.top_games || !s.top_games.length) {
+      gamesBody.innerHTML = '<tr class="empty-row"><td colspan="3">No game plays yet.</td></tr>';
+    } else {
+      const labels = {
+        snake: "Snake", piano: "Piano", tiles: "Piano Tiles", math: "Math Quiz",
+        english: "English Quiz", basket: "Basketball", bomber: "Bomberman",
+        guess: "Guess the Number", slide: "Sliding Puzzle", reaction: "Reaction Time",
+        sudoku: "Sudoku", memory: "Memory Match", whack: "Whack-a-mole",
+      };
+      s.top_games.forEach((g) => {
+        const tr = document.createElement("tr");
+        const name = labels[g.game] || g.game;
+        tr.innerHTML = `<td>${escapeHtml(name)}</td><td class="num">${fmt(g.plays)}</td><td class="num">${fmt(g.players)}</td>`;
+        gamesBody.appendChild(tr);
+      });
+    }
+
+    // Top players
+    const playersBody = document.querySelector("#rvAdminPlayers tbody");
+    playersBody.innerHTML = "";
+    if (!s.top_players || !s.top_players.length) {
+      playersBody.innerHTML = '<tr class="empty-row"><td colspan="3">No players yet.</td></tr>';
+    } else {
+      s.top_players.forEach((p) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${escapeHtml(p.username)}</td><td class="num">${fmt(p.games_played)}</td><td class="num">${fmt(p.total_score)}</td>`;
+        playersBody.appendChild(tr);
+      });
+    }
+
+    // Bookings
+    const bookBody = document.querySelector("#rvAdminBookings tbody");
+    bookBody.innerHTML = "";
+    if (!s.bookings || !s.bookings.length) {
+      bookBody.innerHTML = '<tr class="empty-row"><td colspan="4">No bookings yet.</td></tr>';
+    } else {
+      s.bookings.forEach((b) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${escapeHtml(b.date)}</td><td>${escapeHtml(b.name)}</td><td><a href="mailto:${escapeHtml(b.email)}">${escapeHtml(b.email)}</a></td><td>${escapeHtml(b.note || "—")}</td>`;
+        bookBody.appendChild(tr);
+      });
+    }
+
+    document.getElementById("rvAdminFoot").textContent =
+      "Updated " + new Date(s.generated_at * 1000).toLocaleString();
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+})();
