@@ -3773,3 +3773,30 @@ document.getElementById("year").textContent = new Date().getFullYear();
     if (e.key === "Escape" && panel.classList.contains("is-open")) close();
   });
 })();
+
+/* ===== Donate modal ===== */
+(function () {
+  const btn = document.getElementById("rvDonateBtn");
+  const overlay = document.getElementById("rvDonateOverlay");
+  const closeBtn = document.getElementById("rvDonateClose");
+  if (!btn || !overlay || !closeBtn) return;
+
+  const open = () => {
+    overlay.hidden = false;
+    document.body.classList.add("rv-donate-open");
+    closeBtn.focus({ preventScroll: true });
+  };
+  const close = () => {
+    overlay.hidden = true;
+    document.body.classList.remove("rv-donate-open");
+  };
+
+  btn.addEventListener("click", open);
+  closeBtn.addEventListener("click", close);
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) close();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !overlay.hidden) close();
+  });
+})();

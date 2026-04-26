@@ -37,9 +37,20 @@
     <!-- NAV -->
     <nav class="navbar navbar-expand-lg rv-navbar sticky-top">
       <div class="container">
-        <a class="navbar-brand d-flex align-items-center gap-2" href="#top">
-          <span class="fw-semibold">Romar Villafuerte</span>
-        </a>
+        <div class="rv-brand-stack">
+          <a class="navbar-brand d-flex align-items-center gap-2 m-0" href="#top">
+            <span class="fw-semibold">Romar Villafuerte</span>
+          </a>
+          <button
+            type="button"
+            class="rv-donate-btn"
+            id="rvDonateBtn"
+            aria-label="Donate to Romar"
+          >
+            <i class="bi bi-heart-fill"></i>
+            <span>Donate</span>
+          </button>
+        </div>
         <div class="d-flex align-items-center gap-2 ms-auto order-lg-3">
           <button
             class="btn btn-icon btn-light-subtle"
@@ -1188,6 +1199,43 @@
         </span>
       </div>
     </footer>
+
+    <!-- DONATE MODAL -->
+    <div
+      class="rv-donate-overlay"
+      id="rvDonateOverlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="rvDonateTitle"
+      hidden
+    >
+      <div class="rv-donate-modal">
+        <button
+          type="button"
+          class="rv-donate-close"
+          id="rvDonateClose"
+          aria-label="Close donate dialog"
+        >
+          <i class="bi bi-x-lg"></i>
+        </button>
+        <h3 class="rv-donate-title" id="rvDonateTitle">
+          <i class="bi bi-heart-fill text-danger"></i> Support Romar
+        </h3>
+        <p class="rv-donate-sub">
+          Scan the QR with your GCash app to send a tip. Thank you!
+        </p>
+        <div class="rv-donate-qr-wrap">
+          <img
+            src="assets/donate-qr.jpg"
+            alt="GCash donation QR for Romar Villafuerte"
+            class="rv-donate-qr"
+          />
+        </div>
+        <p class="rv-donate-foot">
+          Every bit helps me keep building. <i class="bi bi-stars"></i>
+        </p>
+      </div>
+    </div>
 
     <!-- Bootstrap bundle (for nav collapse + tabs) -->
     <script
