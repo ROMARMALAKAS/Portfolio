@@ -228,6 +228,29 @@ kbd {
   font-size: 0.85rem;
   color: var(--rv-text-dim);
 }
+.rv-donate-download {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: var(--rv-primary, #2563eb);
+  color: #fff;
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-decoration: none;
+  margin-bottom: 12px;
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+.rv-donate-download:hover,
+.rv-donate-download:focus-visible {
+  color: #fff;
+  text-decoration: none;
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+  outline: none;
+}
+.rv-donate-download i { font-size: 0.95rem; }
 body.rv-donate-open { overflow: hidden; }
 .rv-navbar .nav-link {
   color: var(--rv-text-dim);
