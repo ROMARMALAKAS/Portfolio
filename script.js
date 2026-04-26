@@ -3995,34 +3995,61 @@ document.getElementById("year").textContent = new Date().getFullYear();
     else if (!dashOverlay.hidden) closeOverlay(dashOverlay);
   });
 
+  let currentToken = null;
+
   async function openDashboard(token) {
+    currentToken = token;
     openOverlay(dashOverlay);
-    document.getElementById("rvStatVisitsToday").textContent = "…";
-    document.getElementById("rvStatVisitsWeek").textContent = "…";
-    document.getElementById("rvStatVisitsTotal").textContent = "…";
+    activateTab("overview");
+    ["rvStatVisitsToday","rvStatVisitsWeek","rvStatVisitsMonth","rvStatVisitsTotal","rvStatMsgTotal","rvStatTopProject"]
+      .forEach((id) => { const el = document.getElementById(id); if (el) el.textContent = "…"; });
+    const auth = { Authorization: "Bearer " + token };
     try {
-      const r = await fetch(API + "/admin/stats", {
-        headers: { Authorization: "Bearer " + token },
-      });
-      if (r.status === 401) {
+      const [statsR, stats2R] = await Promise.all([
+        fetch(API + "/admin/stats", { headers: auth }),
+        fetch(API + "/admin/stats2", { headers: auth }),
+      ]);
+      if (statsR.status === 401 || stats2R.status === 401) {
         localStorage.removeItem(TOKEN_KEY);
         closeOverlay(dashOverlay);
         openLogin();
         return;
       }
-      const j = await r.json();
-      renderDashboard(j);
+      const stats = await statsR.json();
+      const stats2 = await stats2R.json().catch(() => ({}));
+      renderDashboard(stats, stats2);
     } catch (err) {
       document.getElementById("rvAdminFoot").textContent =
         "Failed to load stats: " + (err && err.message ? err.message : err);
     }
   }
 
-  function renderDashboard(s) {
+  function renderDashboard(s, s2) {
     const fmt = (n) => Number(n || 0).toLocaleString();
     document.getElementById("rvStatVisitsToday").textContent = fmt(s.visits.today);
     document.getElementById("rvStatVisitsWeek").textContent = fmt(s.visits.week);
     document.getElementById("rvStatVisitsTotal").textContent = fmt(s.visits.total);
+    if (s2 && s2.ok) {
+      document.getElementById("rvStatVisitsMonth").textContent = fmt(s2.visits_month);
+      document.getElementById("rvStatMsgTotal").textContent =
+        fmt(s2.messages_total) + (s2.messages_unread ? ` (${s2.messages_unread} new)` : "");
+      const topProj = (s2.most_viewed_projects && s2.most_viewed_projects[0]) || null;
+      document.getElementById("rvStatTopProject").textContent = topProj
+        ? `${topProj.title} · ${fmt(topProj.views)} views`
+        : "—";
+      // Update messages tab badge
+      const badge = document.getElementById("rvAdminMsgBadge");
+      if (s2.messages_unread > 0) {
+        badge.textContent = String(s2.messages_unread);
+        badge.hidden = false;
+      } else {
+        badge.hidden = true;
+      }
+    } else {
+      document.getElementById("rvStatVisitsMonth").textContent = "0";
+      document.getElementById("rvStatMsgTotal").textContent = "0";
+      document.getElementById("rvStatTopProject").textContent = "—";
+    }
 
     // Sparkline
     const spark = document.getElementById("rvAdminSpark");
@@ -4094,5 +4121,519 @@ document.getElementById("year").textContent = new Date().getFullYear();
     return String(s == null ? "" : s)
       .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+
+  // ===== Tab switching =====
+  const tabs = Array.from(document.querySelectorAll(".rv-admin-tab"));
+  const panes = Array.from(document.querySelectorAll(".rv-admin-pane"));
+  function activateTab(name) {
+    tabs.forEach((t) => t.classList.toggle("is-active", t.dataset.tab === name));
+    panes.forEach((p) => {
+      const on = p.dataset.pane === name;
+      p.classList.toggle("is-active", on);
+      p.hidden = !on;
+    });
+    if (!currentToken) return;
+    if (name === "profile") loadProfile();
+    if (name === "projects") loadProjects();
+    if (name === "messages") loadMessages();
+  }
+  tabs.forEach((t) => t.addEventListener("click", () => activateTab(t.dataset.tab)));
+
+  // ===== Profile editor =====
+  async function loadProfile() {
+    const r = await fetch(API + "/profile");
+    if (!r.ok) return;
+    const j = await r.json();
+    const p = j.profile || {};
+    const set = (id, v) => {
+      const el = document.getElementById(id);
+      if (el) el.value = v || "";
+    };
+    set("rvProfName", p.name);
+    set("rvProfTitle", p.title);
+    set("rvProfBio", p.bio);
+    set("rvProfAvatar", p.avatar_url);
+    set("rvProfResume", p.resume_url);
+    set("rvProfEmail", p.email_public);
+    set("rvProfLocation", p.location);
+    set("rvProfGithub", p.github_url);
+    set("rvProfFacebook", p.facebook_url);
+    set("rvProfLinkedin", p.linkedin_url);
+  }
+
+  const profileForm = document.getElementById("rvAdminProfileForm");
+  if (profileForm) {
+    profileForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const get = (id) => (document.getElementById(id).value || "").trim();
+      const errEl = document.getElementById("rvProfError");
+      const okEl = document.getElementById("rvProfSuccess");
+      errEl.hidden = true; okEl.hidden = true;
+      const saveBtn = document.getElementById("rvProfSave");
+      saveBtn.disabled = true;
+      try {
+        const body = {
+          name: get("rvProfName"),
+          title: get("rvProfTitle"),
+          bio: get("rvProfBio"),
+          avatar_url: get("rvProfAvatar"),
+          resume_url: get("rvProfResume"),
+          email_public: get("rvProfEmail"),
+          github_url: get("rvProfGithub"),
+          facebook_url: get("rvProfFacebook"),
+          linkedin_url: get("rvProfLinkedin"),
+          location: get("rvProfLocation"),
+        };
+        const r = await fetch(API + "/admin/profile", {
+          method: "PUT",
+          headers: {
+            "content-type": "application/json",
+            Authorization: "Bearer " + currentToken,
+          },
+          body: JSON.stringify(body),
+        });
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok) {
+          errEl.textContent = j.detail || "Failed to save profile.";
+          errEl.hidden = false;
+          return;
+        }
+        okEl.hidden = false;
+        // Re-apply public profile bindings live
+        if (window.rvApplyPublicProfile) window.rvApplyPublicProfile(j.profile);
+        setTimeout(() => { okEl.hidden = true; }, 2500);
+      } catch (err) {
+        errEl.textContent = "Network error.";
+        errEl.hidden = false;
+      } finally {
+        saveBtn.disabled = false;
+      }
+    });
+  }
+
+  // ===== Projects manager =====
+  async function loadProjects() {
+    const list = document.getElementById("rvAdminProjectsList");
+    list.innerHTML = '<p class="rv-admin-sub">Loading projects…</p>';
+    try {
+      const r = await fetch(API + "/projects?all=true");
+      const j = await r.json();
+      const items = j.projects || [];
+      if (!items.length) {
+        list.innerHTML = '<p class="rv-admin-sub">No projects yet. Click "Add project" to create one.</p>';
+        return;
+      }
+      list.innerHTML = "";
+      items.forEach((p) => list.appendChild(renderProjectRow(p)));
+    } catch (err) {
+      list.innerHTML = '<p class="rv-admin-sub">Failed to load projects.</p>';
+    }
+  }
+
+  function renderProjectRow(p) {
+    const row = document.createElement("div");
+    row.className = "rv-admin-project-row" + (p.hidden ? " is-hidden" : "");
+    const flags = [];
+    if (p.featured) flags.push('<span class="rv-admin-flag rv-admin-flag-feat">★ Featured</span>');
+    if (p.hidden) flags.push('<span class="rv-admin-flag rv-admin-flag-hidden">Hidden</span>');
+    const techStr = (p.tech || []).slice(0, 4).join(" · ");
+    const thumb = p.image_url
+      ? `<img src="${escapeHtml(p.image_url)}" alt="" loading="lazy" />`
+      : `<i class="bi bi-collection"></i>`;
+    row.innerHTML = `
+      <div class="rv-admin-project-thumb">${thumb}</div>
+      <div class="rv-admin-project-meta">
+        <h5 class="rv-admin-project-title">
+          <span>${escapeHtml(p.title)}</span>
+          <span class="rv-admin-project-flags">${flags.join("")}</span>
+        </h5>
+        <p class="rv-admin-project-desc">${escapeHtml(p.description || "—")}</p>
+        <p class="rv-admin-project-stats">${escapeHtml(techStr || "no tech listed")} · ${Number(p.views || 0).toLocaleString()} views</p>
+      </div>
+      <div class="rv-admin-project-actions">
+        <button type="button" class="rv-admin-icon-btn ${p.featured ? "is-on" : ""}" data-act="feature" title="Toggle featured" aria-label="Toggle featured"><i class="bi bi-star${p.featured ? "-fill" : ""}"></i></button>
+        <button type="button" class="rv-admin-icon-btn" data-act="visibility" title="${p.hidden ? "Show on site" : "Hide from site"}" aria-label="Toggle visibility"><i class="bi bi-eye${p.hidden ? "-slash" : ""}"></i></button>
+        <button type="button" class="rv-admin-icon-btn" data-act="edit" title="Edit project" aria-label="Edit project"><i class="bi bi-pencil"></i></button>
+        <button type="button" class="rv-admin-icon-btn is-danger" data-act="delete" title="Delete project" aria-label="Delete project"><i class="bi bi-trash"></i></button>
+      </div>
+    `;
+    row.querySelector('[data-act="feature"]').addEventListener("click", () =>
+      saveProjectField(p, { featured: !p.featured })
+    );
+    row.querySelector('[data-act="visibility"]').addEventListener("click", () =>
+      saveProjectField(p, { hidden: !p.hidden })
+    );
+    row.querySelector('[data-act="edit"]').addEventListener("click", () => openProjectEditor(p));
+    row.querySelector('[data-act="delete"]').addEventListener("click", async () => {
+      const ok = await rvConfirm({
+        heading: "Delete project?",
+        body: `"${p.title}" will be removed from your portfolio. This can't be undone.`,
+        okText: "Delete",
+        okClass: "rv-admin-btn-danger",
+      });
+      if (!ok) return;
+      const r = await fetch(API + `/admin/projects/${p.id}`, {
+        method: "DELETE",
+        headers: { Authorization: "Bearer " + currentToken },
+      });
+      if (r.ok) {
+        loadProjects();
+        if (window.rvLoadPublicProjects) window.rvLoadPublicProjects();
+      }
+    });
+    return row;
+  }
+
+  async function saveProjectField(p, patch) {
+    const body = {
+      title: p.title,
+      description: p.description,
+      image_url: p.image_url,
+      tech: (p.tech || []).join(", "),
+      github_url: p.github_url,
+      demo_url: p.demo_url,
+      featured: p.featured,
+      hidden: p.hidden,
+      sort_order: p.sort_order || 100,
+      ...patch,
+    };
+    const r = await fetch(API + `/admin/projects/${p.id}`, {
+      method: "PUT",
+      headers: { "content-type": "application/json", Authorization: "Bearer " + currentToken },
+      body: JSON.stringify(body),
+    });
+    if (r.ok) {
+      loadProjects();
+      if (window.rvLoadPublicProjects) window.rvLoadPublicProjects();
+    }
+  }
+
+  // Project editor modal
+  const projEditOverlay = document.getElementById("rvProjectEditOverlay");
+  const projEditClose = document.getElementById("rvProjectEditClose");
+  const projEditCancel = document.getElementById("rvProjEditCancel");
+  const projEditForm = document.getElementById("rvProjectEditForm");
+  const projEditError = document.getElementById("rvProjEditError");
+  let projEditingId = null;
+
+  document.getElementById("rvProjAddBtn").addEventListener("click", () => openProjectEditor(null));
+
+  function openProjectEditor(p) {
+    projEditingId = p ? p.id : null;
+    document.getElementById("rvProjectEditHeading").textContent = p ? "Edit project" : "Add project";
+    const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ""; };
+    set("rvProjEditId", p ? p.id : "");
+    set("rvProjEditTitleInput", p ? p.title : "");
+    set("rvProjEditDesc", p ? p.description : "");
+    set("rvProjEditImage", p ? p.image_url : "");
+    set("rvProjEditTech", p ? (p.tech || []).join(", ") : "");
+    set("rvProjEditGithub", p ? p.github_url : "");
+    set("rvProjEditDemo", p ? p.demo_url : "");
+    document.getElementById("rvProjEditFeatured").checked = !!(p && p.featured);
+    document.getElementById("rvProjEditHidden").checked = !!(p && p.hidden);
+    document.getElementById("rvProjEditSort").value = p && p.sort_order != null ? p.sort_order : 100;
+    projEditError.hidden = true;
+    openOverlay(projEditOverlay);
+    setTimeout(() => document.getElementById("rvProjEditTitleInput").focus(), 50);
+  }
+  function closeProjectEditor() { closeOverlay(projEditOverlay); }
+  projEditClose.addEventListener("click", closeProjectEditor);
+  projEditCancel.addEventListener("click", closeProjectEditor);
+  projEditOverlay.addEventListener("click", (e) => { if (e.target === projEditOverlay) closeProjectEditor(); });
+
+  projEditForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const get = (id) => (document.getElementById(id).value || "").trim();
+    const body = {
+      title: get("rvProjEditTitleInput"),
+      description: get("rvProjEditDesc"),
+      image_url: get("rvProjEditImage"),
+      tech: get("rvProjEditTech"),
+      github_url: get("rvProjEditGithub"),
+      demo_url: get("rvProjEditDemo"),
+      featured: document.getElementById("rvProjEditFeatured").checked,
+      hidden: document.getElementById("rvProjEditHidden").checked,
+      sort_order: parseInt(get("rvProjEditSort"), 10) || 100,
+    };
+    if (!body.title) {
+      projEditError.textContent = "Title is required.";
+      projEditError.hidden = false;
+      return;
+    }
+    const url = projEditingId ? `${API}/admin/projects/${projEditingId}` : `${API}/admin/projects`;
+    const method = projEditingId ? "PUT" : "POST";
+    const r = await fetch(url, {
+      method,
+      headers: { "content-type": "application/json", Authorization: "Bearer " + currentToken },
+      body: JSON.stringify(body),
+    });
+    if (!r.ok) {
+      const j = await r.json().catch(() => ({}));
+      projEditError.textContent = j.detail || "Failed to save project.";
+      projEditError.hidden = false;
+      return;
+    }
+    closeProjectEditor();
+    loadProjects();
+    if (window.rvLoadPublicProjects) window.rvLoadPublicProjects();
+  });
+
+  // ===== Messages =====
+  async function loadMessages() {
+    const sub = document.getElementById("rvAdminMsgSub");
+    const list = document.getElementById("rvAdminMessagesList");
+    sub.textContent = "Loading…";
+    list.innerHTML = "";
+    try {
+      const r = await fetch(API + "/admin/messages", {
+        headers: { Authorization: "Bearer " + currentToken },
+      });
+      const j = await r.json();
+      const items = j.items || [];
+      const unread = j.unread || 0;
+      sub.textContent = items.length === 0
+        ? "No messages yet. Visitors who use the contact form will appear here."
+        : `${items.length} message${items.length === 1 ? "" : "s"}${unread ? ` · ${unread} unread` : ""}`;
+      // Update badge
+      const badge = document.getElementById("rvAdminMsgBadge");
+      if (unread > 0) {
+        badge.textContent = String(unread);
+        badge.hidden = false;
+      } else {
+        badge.hidden = true;
+      }
+      items.forEach((m) => list.appendChild(renderMessageRow(m)));
+    } catch (err) {
+      sub.textContent = "Failed to load messages.";
+    }
+  }
+
+  function renderMessageRow(m) {
+    const row = document.createElement("div");
+    row.className = "rv-admin-message" + (m.read ? "" : " is-unread");
+    const date = new Date((m.ts || 0) * 1000).toLocaleString();
+    const subject = m.subject || "(no subject)";
+    const replySubject = encodeURIComponent("Re: " + subject);
+    const replyBody = encodeURIComponent(`\n\n----\nOn ${date}, ${m.name} <${m.email}> wrote:\n${m.body || ""}`);
+    const mailto = `mailto:${m.email}?subject=${replySubject}&body=${replyBody}`;
+    row.innerHTML = `
+      <div class="rv-admin-message-head">
+        <div>
+          <span class="rv-admin-message-from">${escapeHtml(m.name)}</span>
+          <span class="rv-admin-message-email">&lt;${escapeHtml(m.email)}&gt;</span>
+        </div>
+        <span class="rv-admin-message-time">${escapeHtml(date)}</span>
+      </div>
+      <p class="rv-admin-message-subject">${escapeHtml(subject)}</p>
+      <p class="rv-admin-message-body">${escapeHtml(m.body || "")}</p>
+      <div class="rv-admin-message-actions">
+        <a class="rv-admin-msg-btn is-primary" href="${mailto}"><i class="bi bi-reply"></i> Reply</a>
+        <button type="button" class="rv-admin-msg-btn" data-act="read"><i class="bi bi-check2"></i> ${m.read ? "Mark unread" : "Mark read"}</button>
+        <button type="button" class="rv-admin-msg-btn is-danger" data-act="delete"><i class="bi bi-trash"></i> Delete</button>
+      </div>
+    `;
+    row.querySelector('[data-act="read"]').addEventListener("click", async () => {
+      await fetch(API + `/admin/messages/${m.id}`, {
+        method: "PUT",
+        headers: { "content-type": "application/json", Authorization: "Bearer " + currentToken },
+        body: JSON.stringify({ read: !m.read }),
+      });
+      loadMessages();
+    });
+    row.querySelector('[data-act="delete"]').addEventListener("click", async () => {
+      const ok = await rvConfirm({
+        heading: "Delete message?",
+        body: `Message from ${m.name} will be permanently deleted.`,
+        okText: "Delete",
+        okClass: "rv-admin-btn-danger",
+      });
+      if (!ok) return;
+      await fetch(API + `/admin/messages/${m.id}`, {
+        method: "DELETE",
+        headers: { Authorization: "Bearer " + currentToken },
+      });
+      loadMessages();
+    });
+    return row;
+  }
+})();
+
+/* ---------- Public profile loader + projects renderer + contact form ---------- */
+(function () {
+  const API = "https://leaderboard-api-zgbqyajg.fly.dev";
+
+  function setText(id, v) {
+    const el = document.getElementById(id);
+    if (el && v) el.textContent = v;
+  }
+  function setHref(id, v, hideIfEmpty) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (v) {
+      el.href = v;
+      el.hidden = false;
+    } else if (hideIfEmpty) {
+      el.hidden = true;
+    }
+  }
+
+  function applyProfile(p) {
+    if (!p) return;
+    setText("rvBrandName", p.name);
+    setText("rvHeroName", p.name);
+    if (p.email_public) {
+      const emailBtn = document.getElementById("rvContactEmailBtn");
+      const emailLabel = document.getElementById("rvContactEmailLabel");
+      if (emailBtn) emailBtn.href = "mailto:" + p.email_public;
+      if (emailLabel) emailLabel.textContent = p.email_public;
+    }
+    setHref("rvContactGithub", p.github_url, true);
+    setHref("rvContactLinkedin", p.linkedin_url, true);
+    setHref("rvContactFacebook", p.facebook_url, true);
+    if (p.resume_url) {
+      const r = document.getElementById("rvHeroResume");
+      if (r) { r.href = p.resume_url; r.hidden = false; }
+    }
+    if (p.avatar_url) {
+      // Update chat avatar background-image if it's set
+      document.querySelectorAll(".rv-chat-avatar").forEach((el) => {
+        el.style.backgroundImage = `url("${p.avatar_url}")`;
+      });
+    }
+  }
+  window.rvApplyPublicProfile = applyProfile;
+
+  fetch(API + "/profile")
+    .then((r) => r.json())
+    .then((j) => applyProfile(j.profile))
+    .catch(() => {});
+
+  function applyProjects(items) {
+    const container = document.getElementById("rvProjectsList");
+    if (!container) return;
+    container.innerHTML = "";
+    if (!items || !items.length) {
+      container.innerHTML = '<p class="text-body-secondary">No projects to show yet.</p>';
+      return;
+    }
+    const palette = [
+      { c1: "#e8f0fe", c2: "#d1e0fc", icon: "bi-mortarboard-fill", color: "#1b84ff" },
+      { c1: "#fff2e5", c2: "#ffe0cc", icon: "bi-car-front-fill", color: "#f6a500" },
+      { c1: "#e9fbe6", c2: "#cdf2c6", icon: "bi-bar-chart-fill", color: "#16a34a" },
+      { c1: "#fce8f6", c2: "#f7c5e2", icon: "bi-camera-fill", color: "#db2777" },
+      { c1: "#e6e8fb", c2: "#cdd1f3", icon: "bi-cpu-fill", color: "#4338ca" },
+      { c1: "#fff7d6", c2: "#fde9a8", icon: "bi-lightning-charge-fill", color: "#ca8a04" },
+    ];
+    items.forEach((p, i) => {
+      const sty = palette[i % palette.length];
+      const col = document.createElement("div");
+      col.className = "col-md-6";
+      const tagsHtml = (p.tech || []).slice(0, 4).map((t) =>
+        `<span class="rv-tag">${escape(t)}</span>`
+      ).join("");
+      const linksHtml = [
+        p.demo_url ? `<a class="btn btn-light-primary btn-sm" href="${escape(p.demo_url)}" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right"></i> Live demo</a>` : "",
+        p.github_url ? `<a class="btn btn-light-secondary btn-sm" href="${escape(p.github_url)}" target="_blank" rel="noopener"><i class="bi bi-github"></i> Code</a>` : "",
+      ].filter(Boolean).join(" ");
+      const visual = p.image_url
+        ? `<div class="rv-project-visual" style="background-image:url('${escape(p.image_url)}');background-size:cover;background-position:center"></div>`
+        : `<div class="rv-project-visual" style="--c1:${sty.c1};--c2:${sty.c2}"><i class="bi ${sty.icon} rv-project-icon" style="color:${sty.color}"></i></div>`;
+      const featuredBadge = p.featured ? `<span class="rv-tag" style="background:#fef3c7;color:#92400e">★ Featured</span>` : "";
+      col.innerHTML = `
+        <article class="rv-card rv-project h-100" data-project-id="${p.id}">
+          ${visual}
+          <div class="rv-project-body">
+            <div class="rv-tags">${featuredBadge}${tagsHtml}</div>
+            <h3 class="rv-project-title">${escape(p.title)}</h3>
+            <p class="text-body-secondary mb-2">${escape(p.description || "")}</p>
+            ${linksHtml ? `<div class="d-flex flex-wrap gap-2 mt-2">${linksHtml}</div>` : ""}
+          </div>
+        </article>
+      `;
+      container.appendChild(col);
+    });
+
+    // Attach click-to-track for view counting (only count once per session per project)
+    const seen = new Set();
+    container.querySelectorAll("[data-project-id]").forEach((el) => {
+      const id = parseInt(el.dataset.projectId, 10);
+      el.addEventListener("click", () => {
+        if (seen.has(id)) return;
+        seen.add(id);
+        try {
+          fetch(API + "/track/project-view", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ project_id: id }),
+            keepalive: true,
+          }).catch(() => {});
+        } catch (_) {}
+      });
+    });
+  }
+
+  function escape(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+
+  function loadPublicProjects() {
+    fetch(API + "/projects")
+      .then((r) => r.json())
+      .then((j) => applyProjects(j.projects || []))
+      .catch(() => {});
+  }
+  window.rvLoadPublicProjects = loadPublicProjects;
+  loadPublicProjects();
+
+  // ===== Contact form =====
+  const form = document.getElementById("rvContactForm");
+  if (form) {
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const get = (id) => (document.getElementById(id).value || "").trim();
+      const msgEl = document.getElementById("rvContactMsg");
+      const submit = document.getElementById("rvContactSubmit");
+      msgEl.hidden = true; msgEl.classList.remove("is-error", "is-success");
+
+      const name = get("rvContactName");
+      const email = get("rvContactEmail");
+      const subject = get("rvContactSubject");
+      const body = get("rvContactBody");
+
+      if (!name || !email || !body) {
+        msgEl.textContent = "Please fill in your name, email, and message.";
+        msgEl.classList.add("is-error");
+        msgEl.hidden = false;
+        return;
+      }
+      submit.disabled = true;
+      try {
+        const r = await fetch(API + "/messages", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ name, email, subject, body }),
+        });
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok) {
+          msgEl.textContent = j.detail || "Failed to send message. Please try again later.";
+          msgEl.classList.add("is-error");
+          msgEl.hidden = false;
+          return;
+        }
+        msgEl.textContent = "Thanks! Your message has been sent. Romar will get back to you at " + email + ".";
+        msgEl.classList.add("is-success");
+        msgEl.hidden = false;
+        form.reset();
+      } catch (err) {
+        msgEl.textContent = "Network error. Please try again.";
+        msgEl.classList.add("is-error");
+        msgEl.hidden = false;
+      } finally {
+        submit.disabled = false;
+      }
+    });
   }
 })();

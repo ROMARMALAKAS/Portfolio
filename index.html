@@ -39,7 +39,7 @@
       <div class="container">
         <div class="rv-brand-stack">
           <a class="navbar-brand d-flex align-items-center gap-2 m-0" href="#top">
-            <span class="fw-semibold">Romar Villafuerte</span>
+            <span class="fw-semibold" id="rvBrandName">Romar Villafuerte</span>
           </a>
           <button
             type="button"
@@ -107,7 +107,7 @@
                 <span class="rv-eyebrow-dot"></span> Available for new projects
               </span>
               <h1 class="rv-display mt-3 mb-3">
-                Hi, I'm Romar Villafuerte.<br />
+                Hi, I'm <span id="rvHeroName">Romar Villafuerte</span>.<br />
                 <span class="text-muted-strong rv-typer" id="rvTyper" aria-live="polite">A website developer.</span>
               </h1>
               <p class="lead text-body-secondary mb-4">
@@ -120,6 +120,9 @@
                 </a>
                 <a href="#contact" class="btn btn-light-primary btn-lg px-4">
                   Get in touch
+                </a>
+                <a id="rvHeroResume" href="#" class="btn btn-outline-secondary btn-lg px-4" target="_blank" rel="noopener" hidden>
+                  <i class="bi bi-file-earmark-text"></i> Resume
                 </a>
               </div>
             </div>
@@ -241,46 +244,7 @@
             </a>
           </div>
 
-          <div class="row g-3">
-            <div class="col-md-6">
-              <article class="rv-card rv-project h-100">
-                <div class="rv-project-visual" style="--c1:#e8f0fe;--c2:#d1e0fc">
-                  <i class="bi bi-mortarboard-fill rv-project-icon" style="color:#1b84ff"></i>
-                </div>
-                <div class="rv-project-body">
-                  <div class="rv-tags">
-                    <span class="rv-tag">Web App</span>
-                    <span class="rv-tag">School</span>
-                  </div>
-                  <h3 class="rv-project-title">Enrollment System</h3>
-                  <p class="text-body-secondary mb-0">
-                    A web-based enrollment system for managing students,
-                    sections, and class schedules. Streamlines registration
-                    and record-keeping for schools.
-                  </p>
-                </div>
-              </article>
-            </div>
-            <div class="col-md-6">
-              <article class="rv-card rv-project h-100">
-                <div class="rv-project-visual" style="--c1:#fff2e5;--c2:#ffe0cc">
-                  <i class="bi bi-car-front-fill rv-project-icon" style="color:#f6a500"></i>
-                </div>
-                <div class="rv-project-body">
-                  <div class="rv-tags">
-                    <span class="rv-tag">Web App</span>
-                    <span class="rv-tag">Maps</span>
-                  </div>
-                  <h3 class="rv-project-title">Ride Hailing System</h3>
-                  <p class="text-body-secondary mb-0">
-                    A ride-hailing platform that connects riders with drivers,
-                    with live request, accept, and tracking flow — built
-                    around a clean mobile-first interface.
-                  </p>
-                </div>
-              </article>
-            </div>
-          </div>
+          <div class="row g-3" id="rvProjectsList"></div>
         </div>
       </section>
 
@@ -1096,24 +1060,34 @@
           <div class="d-flex flex-column align-items-center gap-3">
             <a
               class="btn btn-primary btn-lg px-4"
+              id="rvContactEmailBtn"
               href="mailto:romarmalakass@gmail.com"
             >
-              <i class="bi bi-envelope"></i> romarmalakass@gmail.com
+              <i class="bi bi-envelope"></i>
+              <span id="rvContactEmailLabel">romarmalakass@gmail.com</span>
             </a>
-            <div class="d-flex flex-wrap justify-content-center gap-2">
+            <div class="d-flex flex-wrap justify-content-center gap-2" id="rvContactSocials">
               <a
                 class="btn btn-light-secondary btn-sm"
+                id="rvContactGithub"
                 href="https://github.com/ROMARMALAKAS"
                 target="_blank"
                 rel="noopener"
               >
                 <i class="bi bi-github"></i> GitHub
               </a>
-              <a class="btn btn-light-secondary btn-sm" href="#" aria-label="LinkedIn">
+              <a
+                class="btn btn-light-secondary btn-sm"
+                id="rvContactLinkedin"
+                href="#"
+                aria-label="LinkedIn"
+                hidden
+              >
                 <i class="bi bi-linkedin"></i> LinkedIn
               </a>
               <a
                 class="btn btn-light-secondary btn-sm"
+                id="rvContactFacebook"
                 href="https://www.facebook.com/share/1BJX3bLk66/"
                 target="_blank"
                 rel="noopener"
@@ -1123,6 +1097,29 @@
               </a>
             </div>
           </div>
+
+          <p class="rv-contact-or">or send a message right here</p>
+
+          <form class="rv-contact-form" id="rvContactForm" novalidate>
+            <div class="rv-contact-row">
+              <label class="rv-contact-label">Your name
+                <input type="text" id="rvContactName" class="rv-contact-input" maxlength="80" required />
+              </label>
+              <label class="rv-contact-label">Your email
+                <input type="email" id="rvContactEmail" class="rv-contact-input" maxlength="120" required />
+              </label>
+            </div>
+            <label class="rv-contact-label">Subject (optional)
+              <input type="text" id="rvContactSubject" class="rv-contact-input" maxlength="140" />
+            </label>
+            <label class="rv-contact-label">Message
+              <textarea id="rvContactBody" class="rv-contact-textarea" maxlength="4000" required placeholder="Tell Romar what you have in mind…"></textarea>
+            </label>
+            <p class="rv-contact-msg" id="rvContactMsg" hidden></p>
+            <button type="submit" class="btn btn-primary" id="rvContactSubmit">
+              <i class="bi bi-send"></i> Send message
+            </button>
+          </form>
         </div>
       </section>
     </main>
@@ -1354,63 +1351,210 @@
           </button>
         </div>
 
-        <div class="rv-admin-stats" id="rvAdminStats">
-          <div class="rv-admin-card">
-            <span class="rv-admin-card-label">Visits today</span>
-            <span class="rv-admin-card-value" id="rvStatVisitsToday">—</span>
+        <nav class="rv-admin-tabs" role="tablist">
+          <button type="button" class="rv-admin-tab is-active" data-tab="overview" role="tab">
+            <i class="bi bi-speedometer2"></i> Overview
+          </button>
+          <button type="button" class="rv-admin-tab" data-tab="profile" role="tab">
+            <i class="bi bi-person-badge"></i> Profile
+          </button>
+          <button type="button" class="rv-admin-tab" data-tab="projects" role="tab">
+            <i class="bi bi-collection"></i> Projects
+          </button>
+          <button type="button" class="rv-admin-tab" data-tab="messages" role="tab">
+            <i class="bi bi-envelope"></i> Messages
+            <span class="rv-admin-badge" id="rvAdminMsgBadge" hidden>0</span>
+          </button>
+        </nav>
+
+        <!-- OVERVIEW TAB -->
+        <div class="rv-admin-pane is-active" data-pane="overview">
+          <div class="rv-admin-stats" id="rvAdminStats">
+            <div class="rv-admin-card">
+              <span class="rv-admin-card-label">Visits today</span>
+              <span class="rv-admin-card-value" id="rvStatVisitsToday">—</span>
+            </div>
+            <div class="rv-admin-card">
+              <span class="rv-admin-card-label">Visits this week</span>
+              <span class="rv-admin-card-value" id="rvStatVisitsWeek">—</span>
+            </div>
+            <div class="rv-admin-card">
+              <span class="rv-admin-card-label">Visits this month</span>
+              <span class="rv-admin-card-value" id="rvStatVisitsMonth">—</span>
+            </div>
+            <div class="rv-admin-card">
+              <span class="rv-admin-card-label">Visits all-time</span>
+              <span class="rv-admin-card-value" id="rvStatVisitsTotal">—</span>
+            </div>
+            <div class="rv-admin-card">
+              <span class="rv-admin-card-label">Total messages</span>
+              <span class="rv-admin-card-value" id="rvStatMsgTotal">—</span>
+            </div>
+            <div class="rv-admin-card">
+              <span class="rv-admin-card-label">Most viewed project</span>
+              <span class="rv-admin-card-value rv-admin-card-value-sm" id="rvStatTopProject">—</span>
+            </div>
           </div>
-          <div class="rv-admin-card">
-            <span class="rv-admin-card-label">Visits this week</span>
-            <span class="rv-admin-card-value" id="rvStatVisitsWeek">—</span>
-          </div>
-          <div class="rv-admin-card">
-            <span class="rv-admin-card-label">Visits all-time</span>
-            <span class="rv-admin-card-value" id="rvStatVisitsTotal">—</span>
-          </div>
+
+          <section class="rv-admin-section">
+            <h4 class="rv-admin-section-title">Visits over the last 7 days</h4>
+            <div class="rv-admin-spark" id="rvAdminSpark" aria-hidden="true"></div>
+          </section>
+
+          <section class="rv-admin-section">
+            <h4 class="rv-admin-section-title">Most played games</h4>
+            <div class="rv-admin-table-wrap">
+              <table class="rv-admin-table" id="rvAdminGames">
+                <thead>
+                  <tr><th>Game</th><th class="num">Plays</th><th class="num">Players</th></tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="rv-admin-section">
+            <h4 class="rv-admin-section-title">Top players</h4>
+            <div class="rv-admin-table-wrap">
+              <table class="rv-admin-table" id="rvAdminPlayers">
+                <thead>
+                  <tr><th>Player</th><th class="num">Games</th><th class="num">Total score</th></tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="rv-admin-section">
+            <h4 class="rv-admin-section-title">Bookings</h4>
+            <div class="rv-admin-table-wrap">
+              <table class="rv-admin-table" id="rvAdminBookings">
+                <thead>
+                  <tr><th>Date</th><th>Name</th><th>Email</th><th>Note</th></tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </section>
+
+          <p class="rv-admin-foot" id="rvAdminFoot"></p>
         </div>
 
-        <section class="rv-admin-section">
-          <h4 class="rv-admin-section-title">Visits over the last 7 days</h4>
-          <div class="rv-admin-spark" id="rvAdminSpark" aria-hidden="true"></div>
-        </section>
+        <!-- PROFILE TAB -->
+        <div class="rv-admin-pane" data-pane="profile" hidden>
+          <form class="rv-admin-form rv-admin-grid-form" id="rvAdminProfileForm" novalidate>
+            <label class="rv-admin-label">Display name
+              <input type="text" class="rv-admin-input" id="rvProfName" maxlength="80" required />
+            </label>
+            <label class="rv-admin-label">Title / role
+              <input type="text" class="rv-admin-input" id="rvProfTitle" maxlength="120" placeholder="Website Developer" />
+            </label>
+            <label class="rv-admin-label rv-admin-label-full">Bio
+              <textarea class="rv-admin-input rv-admin-textarea" id="rvProfBio" rows="3" maxlength="2000" placeholder="Short bio shown on your portfolio"></textarea>
+            </label>
+            <label class="rv-admin-label">Profile picture URL
+              <input type="url" class="rv-admin-input" id="rvProfAvatar" maxlength="500" placeholder="https://…" />
+            </label>
+            <label class="rv-admin-label">Resume URL
+              <input type="url" class="rv-admin-input" id="rvProfResume" maxlength="500" placeholder="https://…/resume.pdf" />
+            </label>
+            <label class="rv-admin-label">Public email
+              <input type="email" class="rv-admin-input" id="rvProfEmail" maxlength="120" />
+            </label>
+            <label class="rv-admin-label">Location
+              <input type="text" class="rv-admin-input" id="rvProfLocation" maxlength="80" placeholder="Philippines" />
+            </label>
+            <label class="rv-admin-label">GitHub URL
+              <input type="url" class="rv-admin-input" id="rvProfGithub" maxlength="300" />
+            </label>
+            <label class="rv-admin-label">Facebook URL
+              <input type="url" class="rv-admin-input" id="rvProfFacebook" maxlength="300" />
+            </label>
+            <label class="rv-admin-label">LinkedIn URL
+              <input type="url" class="rv-admin-input" id="rvProfLinkedin" maxlength="300" />
+            </label>
+            <p class="rv-admin-error rv-admin-label-full" id="rvProfError" hidden></p>
+            <p class="rv-admin-success rv-admin-label-full" id="rvProfSuccess" hidden>Saved.</p>
+            <div class="rv-admin-form-actions rv-admin-label-full">
+              <button type="submit" class="rv-admin-submit" id="rvProfSave">
+                <i class="bi bi-check2"></i> <span>Save profile</span>
+              </button>
+            </div>
+          </form>
+        </div>
 
-        <section class="rv-admin-section">
-          <h4 class="rv-admin-section-title">Most played games</h4>
-          <div class="rv-admin-table-wrap">
-            <table class="rv-admin-table" id="rvAdminGames">
-              <thead>
-                <tr><th>Game</th><th class="num">Plays</th><th class="num">Players</th></tr>
-              </thead>
-              <tbody></tbody>
-            </table>
+        <!-- PROJECTS TAB -->
+        <div class="rv-admin-pane" data-pane="projects" hidden>
+          <div class="rv-admin-section-head">
+            <p class="rv-admin-sub m-0">Add, edit, hide, feature, or delete the projects shown in your portfolio's Work section.</p>
+            <button type="button" class="rv-admin-submit rv-admin-submit-sm" id="rvProjAddBtn">
+              <i class="bi bi-plus-lg"></i> <span>Add project</span>
+            </button>
           </div>
-        </section>
+          <div class="rv-admin-projects" id="rvAdminProjectsList"></div>
+        </div>
 
-        <section class="rv-admin-section">
-          <h4 class="rv-admin-section-title">Top players</h4>
-          <div class="rv-admin-table-wrap">
-            <table class="rv-admin-table" id="rvAdminPlayers">
-              <thead>
-                <tr><th>Player</th><th class="num">Games</th><th class="num">Total score</th></tr>
-              </thead>
-              <tbody></tbody>
-            </table>
+        <!-- MESSAGES TAB -->
+        <div class="rv-admin-pane" data-pane="messages" hidden>
+          <p class="rv-admin-sub" id="rvAdminMsgSub">Loading…</p>
+          <div class="rv-admin-messages" id="rvAdminMessagesList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROJECT EDIT MODAL -->
+    <div
+      class="rv-admin-overlay"
+      id="rvProjectEditOverlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="rvProjectEditTitle"
+      hidden
+    >
+      <div class="rv-admin-modal rv-admin-modal-md">
+        <button type="button" class="rv-admin-close" id="rvProjectEditClose" aria-label="Close project editor">
+          <i class="bi bi-x-lg"></i>
+        </button>
+        <h3 class="rv-admin-title" id="rvProjectEditTitle">
+          <i class="bi bi-pencil-square"></i> <span id="rvProjectEditHeading">Edit project</span>
+        </h3>
+        <form class="rv-admin-form rv-admin-grid-form" id="rvProjectEditForm" novalidate>
+          <input type="hidden" id="rvProjEditId" />
+          <label class="rv-admin-label rv-admin-label-full">Title
+            <input type="text" class="rv-admin-input" id="rvProjEditTitleInput" maxlength="120" required />
+          </label>
+          <label class="rv-admin-label rv-admin-label-full">Description
+            <textarea class="rv-admin-input rv-admin-textarea" id="rvProjEditDesc" rows="3" maxlength="2000"></textarea>
+          </label>
+          <label class="rv-admin-label rv-admin-label-full">Image URL
+            <input type="url" class="rv-admin-input" id="rvProjEditImage" maxlength="500" placeholder="https://…" />
+          </label>
+          <label class="rv-admin-label rv-admin-label-full">Tech stack <span class="rv-admin-hint">(comma-separated, e.g. React, Node, Postgres)</span>
+            <input type="text" class="rv-admin-input" id="rvProjEditTech" maxlength="300" />
+          </label>
+          <label class="rv-admin-label">GitHub URL
+            <input type="url" class="rv-admin-input" id="rvProjEditGithub" maxlength="300" />
+          </label>
+          <label class="rv-admin-label">Live demo URL
+            <input type="url" class="rv-admin-input" id="rvProjEditDemo" maxlength="300" />
+          </label>
+          <label class="rv-admin-label rv-admin-checkbox">
+            <input type="checkbox" id="rvProjEditFeatured" /> Featured
+          </label>
+          <label class="rv-admin-label rv-admin-checkbox">
+            <input type="checkbox" id="rvProjEditHidden" /> Hidden from public site
+          </label>
+          <label class="rv-admin-label">Sort order <span class="rv-admin-hint">(lower = earlier)</span>
+            <input type="number" class="rv-admin-input" id="rvProjEditSort" min="0" max="10000" value="100" />
+          </label>
+          <p class="rv-admin-error rv-admin-label-full" id="rvProjEditError" hidden></p>
+          <div class="rv-admin-form-actions rv-admin-label-full">
+            <button type="button" class="rv-admin-btn-ghost" id="rvProjEditCancel">Cancel</button>
+            <button type="submit" class="rv-admin-submit" id="rvProjEditSave">
+              <i class="bi bi-check2"></i> <span>Save</span>
+            </button>
           </div>
-        </section>
-
-        <section class="rv-admin-section">
-          <h4 class="rv-admin-section-title">Bookings</h4>
-          <div class="rv-admin-table-wrap">
-            <table class="rv-admin-table" id="rvAdminBookings">
-              <thead>
-                <tr><th>Date</th><th>Name</th><th>Email</th><th>Note</th></tr>
-              </thead>
-              <tbody></tbody>
-            </table>
-          </div>
-        </section>
-
-        <p class="rv-admin-foot" id="rvAdminFoot"></p>
+        </form>
       </div>
     </div>
 
