@@ -1292,13 +1292,24 @@
           </label>
           <label class="rv-admin-label">
             Password
-            <input
-              type="password"
-              id="rvAdminPass"
-              class="rv-admin-input"
-              autocomplete="current-password"
-              required
-            />
+            <span class="rv-admin-pass-wrap">
+              <input
+                type="password"
+                id="rvAdminPass"
+                class="rv-admin-input rv-admin-pass-input"
+                autocomplete="current-password"
+                required
+              />
+              <button
+                type="button"
+                class="rv-admin-pass-toggle"
+                id="rvAdminPassToggle"
+                aria-label="Show password"
+                aria-pressed="false"
+              >
+                <i class="bi bi-eye" id="rvAdminPassToggleIcon"></i>
+              </button>
+            </span>
           </label>
           <p class="rv-admin-error" id="rvAdminLoginError" hidden></p>
           <button type="submit" class="rv-admin-submit" id="rvAdminLoginSubmit">
@@ -1400,6 +1411,42 @@
         </section>
 
         <p class="rv-admin-foot" id="rvAdminFoot"></p>
+      </div>
+    </div>
+
+    <!-- ADMIN CONFIRM (generic) -->
+    <div
+      class="rv-admin-overlay rv-admin-confirm-overlay"
+      id="rvAdminConfirmOverlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="rvAdminConfirmTitle"
+      hidden
+    >
+      <div class="rv-admin-modal rv-admin-modal-sm">
+        <h3 class="rv-admin-title" id="rvAdminConfirmTitle">
+          <i class="bi bi-question-circle"></i>
+          <span id="rvAdminConfirmHeading">Are you sure?</span>
+        </h3>
+        <p class="rv-admin-sub" id="rvAdminConfirmBody">
+          This action cannot be undone.
+        </p>
+        <div class="rv-admin-confirm-actions">
+          <button
+            type="button"
+            class="rv-admin-btn-ghost"
+            id="rvAdminConfirmCancel"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            class="rv-admin-btn-danger"
+            id="rvAdminConfirmOk"
+          >
+            Yes, sign out
+          </button>
+        </div>
       </div>
     </div>
 

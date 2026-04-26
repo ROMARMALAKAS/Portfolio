@@ -538,6 +538,68 @@ body.rv-donate-open { overflow: hidden; }
   text-align: right;
 }
 body.rv-admin-open { overflow: hidden; }
+.rv-admin-pass-wrap {
+  position: relative;
+  display: block;
+}
+.rv-admin-pass-input {
+  padding-right: 44px;
+}
+.rv-admin-pass-toggle {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--rv-text-dim);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.rv-admin-pass-toggle:hover,
+.rv-admin-pass-toggle:focus-visible {
+  background: var(--rv-neutral-soft);
+  color: var(--rv-text);
+  outline: none;
+}
+.rv-admin-confirm-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+.rv-admin-btn-ghost {
+  padding: 9px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--rv-border);
+  background: transparent;
+  color: var(--rv-text);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.rv-admin-btn-ghost:hover { background: var(--rv-neutral-soft); }
+.rv-admin-btn-danger {
+  padding: 9px 16px;
+  border-radius: 10px;
+  border: none;
+  background: #ef4444;
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: filter 0.15s ease, transform 0.15s ease;
+}
+.rv-admin-btn-danger:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
 .rv-navbar .nav-link {
   color: var(--rv-text-dim);
   font-weight: 500;

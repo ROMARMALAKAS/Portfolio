@@ -3887,6 +3887,53 @@ document.getElementById("year").textContent = new Date().getFullYear();
     if (e.target === loginOverlay) closeLogin();
   });
 
+  // Show/hide password toggle
+  const passToggle = document.getElementById("rvAdminPassToggle");
+  const passToggleIcon = document.getElementById("rvAdminPassToggleIcon");
+  if (passToggle && passInput && passToggleIcon) {
+    passToggle.addEventListener("click", () => {
+      const showing = passInput.type === "text";
+      passInput.type = showing ? "password" : "text";
+      passToggle.setAttribute("aria-pressed", showing ? "false" : "true");
+      passToggle.setAttribute("aria-label", showing ? "Show password" : "Hide password");
+      passToggleIcon.className = showing ? "bi bi-eye" : "bi bi-eye-slash";
+    });
+  }
+
+  // Generic confirm dialog (used by Sign out + future delete flows)
+  const confirmOverlay = document.getElementById("rvAdminConfirmOverlay");
+  const confirmHeading = document.getElementById("rvAdminConfirmHeading");
+  const confirmBody = document.getElementById("rvAdminConfirmBody");
+  const confirmOk = document.getElementById("rvAdminConfirmOk");
+  const confirmCancel = document.getElementById("rvAdminConfirmCancel");
+  let confirmResolver = null;
+  function rvConfirm({ heading = "Are you sure?", body = "", okText = "Yes", okClass = "rv-admin-btn-danger" } = {}) {
+    return new Promise((resolve) => {
+      confirmResolver = resolve;
+      confirmHeading.textContent = heading;
+      confirmBody.textContent = body;
+      confirmOk.textContent = okText;
+      confirmOk.className = okClass;
+      openOverlay(confirmOverlay);
+      setTimeout(() => confirmCancel.focus(), 50);
+    });
+  }
+  function closeConfirm(value) {
+    closeOverlay(confirmOverlay);
+    if (confirmResolver) {
+      const r = confirmResolver;
+      confirmResolver = null;
+      r(value);
+    }
+  }
+  confirmOk.addEventListener("click", () => closeConfirm(true));
+  confirmCancel.addEventListener("click", () => closeConfirm(false));
+  confirmOverlay.addEventListener("click", (e) => {
+    if (e.target === confirmOverlay) closeConfirm(false);
+  });
+  // expose for other admin features that may want it later
+  window.rvAdminConfirm = rvConfirm;
+
   loginForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     showError("");
@@ -3921,6 +3968,13 @@ document.getElementById("year").textContent = new Date().getFullYear();
     if (e.target === dashOverlay) closeOverlay(dashOverlay);
   });
   logoutBtn.addEventListener("click", async () => {
+    const ok = await rvConfirm({
+      heading: "Sign out?",
+      body: "You'll need to enter your password again to view the dashboard.",
+      okText: "Yes, sign out",
+      okClass: "rv-admin-btn-danger",
+    });
+    if (!ok) return;
     const token = localStorage.getItem(TOKEN_KEY);
     localStorage.removeItem(TOKEN_KEY);
     closeOverlay(dashOverlay);
@@ -3936,7 +3990,8 @@ document.getElementById("year").textContent = new Date().getFullYear();
 
   document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
-    if (!loginOverlay.hidden) closeLogin();
+    if (!confirmOverlay.hidden) closeConfirm(false);
+    else if (!loginOverlay.hidden) closeLogin();
     else if (!dashOverlay.hidden) closeOverlay(dashOverlay);
   });
 
