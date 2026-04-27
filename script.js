@@ -9,31 +9,41 @@ document.getElementById("year").textContent = new Date().getFullYear();
 (function () {
   const el = document.getElementById("rvTyper");
   if (!el) return;
-  const phrases = ["A website developer.", "A web app builder.", "A problem solver."];
+  const phrases = [
+    "Website developer.",
+    "Web app builder.",
+    "Problem solver.",
+  ];
   let pi = 0;        // phrase index
   let ci = 0;        // char index
   let deleting = false;
   el.textContent = "";
+  // Use a non-breaking space so the line never collapses height while typing.
+  const ZWSP = "\u200B";
+
+  // Reserve the line height once based on the longest phrase so the hero never
+  // jumps as the text grows / shrinks.
+  el.style.display = "inline-block";
 
   function tick() {
     const word = phrases[pi];
     if (!deleting) {
       ci++;
-      el.textContent = word.slice(0, ci);
+      el.textContent = word.slice(0, ci) || ZWSP;
       if (ci === word.length) {
         deleting = true;
-        return setTimeout(tick, 1400); // hold full text
+        return setTimeout(tick, 1800); // hold full text longer
       }
-      return setTimeout(tick, 70 + Math.random() * 50);
+      return setTimeout(tick, 60); // steady, no jitter — feels less buggy
     } else {
       ci--;
-      el.textContent = word.slice(0, ci);
+      el.textContent = word.slice(0, ci) || ZWSP;
       if (ci === 0) {
         deleting = false;
         pi = (pi + 1) % phrases.length;
-        return setTimeout(tick, 350); // pause before next word
+        return setTimeout(tick, 500); // longer pause before next phrase
       }
-      return setTimeout(tick, 35 + Math.random() * 25);
+      return setTimeout(tick, 30);
     }
   }
   setTimeout(tick, 600);
@@ -4136,6 +4146,7 @@ document.getElementById("year").textContent = new Date().getFullYear();
     if (!currentToken) return;
     if (name === "profile") loadProfile();
     if (name === "projects") loadProjects();
+    if (name === "testimonials") loadTestimonialsAdmin();
     if (name === "messages") loadMessages();
   }
   tabs.forEach((t) => t.addEventListener("click", () => activateTab(t.dataset.tab)));
@@ -4289,6 +4300,8 @@ document.getElementById("year").textContent = new Date().getFullYear();
     const body = {
       title: p.title,
       description: p.description,
+      long_description: p.long_description || "",
+      role: p.role || "",
       image_url: p.image_url,
       tech: (p.tech || []).join(", "),
       github_url: p.github_url,
@@ -4326,6 +4339,8 @@ document.getElementById("year").textContent = new Date().getFullYear();
     set("rvProjEditId", p ? p.id : "");
     set("rvProjEditTitleInput", p ? p.title : "");
     set("rvProjEditDesc", p ? p.description : "");
+    set("rvProjEditRole", p ? p.role : "");
+    set("rvProjEditLong", p ? p.long_description : "");
     set("rvProjEditImage", p ? p.image_url : "");
     set("rvProjEditTech", p ? (p.tech || []).join(", ") : "");
     set("rvProjEditGithub", p ? p.github_url : "");
@@ -4348,6 +4363,8 @@ document.getElementById("year").textContent = new Date().getFullYear();
     const body = {
       title: get("rvProjEditTitleInput"),
       description: get("rvProjEditDesc"),
+      role: get("rvProjEditRole"),
+      long_description: document.getElementById("rvProjEditLong").value,
       image_url: get("rvProjEditImage"),
       tech: get("rvProjEditTech"),
       github_url: get("rvProjEditGithub"),
@@ -4377,6 +4394,162 @@ document.getElementById("year").textContent = new Date().getFullYear();
     closeProjectEditor();
     loadProjects();
     if (window.rvLoadPublicProjects) window.rvLoadPublicProjects();
+  });
+
+  // ===== Testimonials manager (admin) =====
+  const testiEditOverlay = document.getElementById("rvTestiEditOverlay");
+  const testiEditClose = document.getElementById("rvTestiEditClose");
+  const testiEditCancel = document.getElementById("rvTestiEditCancel");
+  const testiEditForm = document.getElementById("rvTestiEditForm");
+  const testiEditError = document.getElementById("rvTestiEditError");
+  let testiEditingId = null;
+
+  const testiAddBtn = document.getElementById("rvTestiAddBtn");
+  if (testiAddBtn) testiAddBtn.addEventListener("click", () => openTestiEditor(null));
+
+  async function loadTestimonialsAdmin() {
+    const list = document.getElementById("rvAdminTestimonialsList");
+    if (!list) return;
+    list.innerHTML = '<p class="rv-admin-sub">Loading testimonials…</p>';
+    try {
+      const r = await fetch(API + "/testimonials?all=true");
+      const j = await r.json();
+      const items = j.items || [];
+      if (!items.length) {
+        list.innerHTML = '<p class="rv-admin-sub">No testimonials yet. Click "Add testimonial" to add one.</p>';
+        return;
+      }
+      list.innerHTML = "";
+      items.forEach((t) => list.appendChild(renderTestimonialRow(t)));
+    } catch (err) {
+      list.innerHTML = '<p class="rv-admin-sub">Failed to load testimonials.</p>';
+    }
+  }
+
+  function renderTestimonialRow(t) {
+    const row = document.createElement("div");
+    row.className = "rv-admin-project-row" + (t.hidden ? " is-hidden" : "");
+    const flags = [];
+    if (t.hidden) flags.push('<span class="rv-admin-flag rv-admin-flag-hidden">Hidden</span>');
+    const initials = (t.author || "?")
+      .split(/\s+/).map((w) => w[0]).filter(Boolean).slice(0, 2).join("").toUpperCase();
+    const thumb = t.avatar_url
+      ? `<img src="${escapeHtml(t.avatar_url)}" alt="" loading="lazy" />`
+      : `<span class="rv-admin-project-thumb-initials">${escapeHtml(initials)}</span>`;
+    const quote = (t.quote || "").length > 140 ? (t.quote.slice(0, 140) + "…") : (t.quote || "");
+    row.innerHTML = `
+      <div class="rv-admin-project-thumb">${thumb}</div>
+      <div class="rv-admin-project-meta">
+        <h5 class="rv-admin-project-title">
+          <span>${escapeHtml(t.author || "—")}</span>
+          <span class="rv-admin-project-flags">${flags.join("")}</span>
+        </h5>
+        <p class="rv-admin-project-desc">"${escapeHtml(quote)}"</p>
+        <p class="rv-admin-project-stats">${escapeHtml(t.role || "no role")}</p>
+      </div>
+      <div class="rv-admin-project-actions">
+        <button type="button" class="rv-admin-icon-btn" data-act="visibility" title="${t.hidden ? "Show on site" : "Hide from site"}" aria-label="Toggle visibility"><i class="bi bi-eye${t.hidden ? "-slash" : ""}"></i></button>
+        <button type="button" class="rv-admin-icon-btn" data-act="edit" title="Edit" aria-label="Edit testimonial"><i class="bi bi-pencil"></i></button>
+        <button type="button" class="rv-admin-icon-btn is-danger" data-act="delete" title="Delete" aria-label="Delete testimonial"><i class="bi bi-trash"></i></button>
+      </div>
+    `;
+    row.querySelector('[data-act="visibility"]').addEventListener("click", () =>
+      saveTestimonialField(t, { hidden: !t.hidden })
+    );
+    row.querySelector('[data-act="edit"]').addEventListener("click", () => openTestiEditor(t));
+    row.querySelector('[data-act="delete"]').addEventListener("click", async () => {
+      const ok = await rvConfirm({
+        heading: "Delete testimonial?",
+        body: `The quote from "${t.author}" will be removed. This can't be undone.`,
+        okText: "Delete",
+        okClass: "rv-admin-btn-danger",
+      });
+      if (!ok) return;
+      const r = await fetch(API + `/admin/testimonials/${t.id}`, {
+        method: "DELETE",
+        headers: { Authorization: "Bearer " + currentToken },
+      });
+      if (r.ok) {
+        loadTestimonialsAdmin();
+        if (window.rvLoadPublicTestimonials) window.rvLoadPublicTestimonials();
+      }
+    });
+    return row;
+  }
+
+  async function saveTestimonialField(t, patch) {
+    const body = {
+      quote: t.quote,
+      author: t.author,
+      role: t.role || "",
+      avatar_url: t.avatar_url || "",
+      hidden: t.hidden,
+      sort_order: t.sort_order || 100,
+      ...patch,
+    };
+    const r = await fetch(API + `/admin/testimonials/${t.id}`, {
+      method: "PUT",
+      headers: { "content-type": "application/json", Authorization: "Bearer " + currentToken },
+      body: JSON.stringify(body),
+    });
+    if (r.ok) {
+      loadTestimonialsAdmin();
+      if (window.rvLoadPublicTestimonials) window.rvLoadPublicTestimonials();
+    }
+  }
+
+  function openTestiEditor(t) {
+    testiEditingId = t ? t.id : null;
+    document.getElementById("rvTestiEditHeading").textContent = t ? "Edit testimonial" : "Add testimonial";
+    const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ""; };
+    set("rvTestiEditId", t ? t.id : "");
+    set("rvTestiEditQuote", t ? t.quote : "");
+    set("rvTestiEditAuthor", t ? t.author : "");
+    set("rvTestiEditRole", t ? t.role : "");
+    set("rvTestiEditAvatar", t ? t.avatar_url : "");
+    document.getElementById("rvTestiEditHidden").checked = !!(t && t.hidden);
+    document.getElementById("rvTestiEditSort").value = t && t.sort_order != null ? t.sort_order : 100;
+    testiEditError.hidden = true;
+    openOverlay(testiEditOverlay);
+    setTimeout(() => document.getElementById("rvTestiEditQuote").focus(), 50);
+  }
+  function closeTestiEditor() { closeOverlay(testiEditOverlay); }
+  if (testiEditClose) testiEditClose.addEventListener("click", closeTestiEditor);
+  if (testiEditCancel) testiEditCancel.addEventListener("click", closeTestiEditor);
+  if (testiEditOverlay) testiEditOverlay.addEventListener("click", (e) => { if (e.target === testiEditOverlay) closeTestiEditor(); });
+
+  if (testiEditForm) testiEditForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const get = (id) => (document.getElementById(id).value || "").trim();
+    const body = {
+      quote: get("rvTestiEditQuote"),
+      author: get("rvTestiEditAuthor"),
+      role: get("rvTestiEditRole"),
+      avatar_url: get("rvTestiEditAvatar"),
+      hidden: document.getElementById("rvTestiEditHidden").checked,
+      sort_order: parseInt(get("rvTestiEditSort"), 10) || 100,
+    };
+    if (!body.quote || !body.author) {
+      testiEditError.textContent = "Quote and author are required.";
+      testiEditError.hidden = false;
+      return;
+    }
+    const url = testiEditingId ? `${API}/admin/testimonials/${testiEditingId}` : `${API}/admin/testimonials`;
+    const method = testiEditingId ? "PUT" : "POST";
+    const r = await fetch(url, {
+      method,
+      headers: { "content-type": "application/json", Authorization: "Bearer " + currentToken },
+      body: JSON.stringify(body),
+    });
+    if (!r.ok) {
+      const j = await r.json().catch(() => ({}));
+      testiEditError.textContent = j.detail || "Failed to save testimonial.";
+      testiEditError.hidden = false;
+      return;
+    }
+    closeTestiEditor();
+    loadTestimonialsAdmin();
+    if (window.rvLoadPublicTestimonials) window.rvLoadPublicTestimonials();
   });
 
   // ===== Messages =====
@@ -4540,18 +4713,56 @@ document.getElementById("year").textContent = new Date().getFullYear();
         ? `<div class="rv-project-visual" style="background-image:url('${escape(p.image_url)}');background-size:cover;background-position:center"></div>`
         : `<div class="rv-project-visual" style="--c1:${sty.c1};--c2:${sty.c2}"><i class="bi ${sty.icon} rv-project-icon" style="color:${sty.color}"></i></div>`;
       const featuredBadge = p.featured ? `<span class="rv-tag" style="background:#fef3c7;color:#92400e">★ Featured</span>` : "";
+      const roleHtml = p.role
+        ? `<p class="rv-project-role"><i class="bi bi-person-badge"></i>${escape(p.role)}</p>`
+        : "";
+      let caseHtml = "";
+      if ((p.long_description || "").trim()) {
+        const paragraphs = p.long_description
+          .split(/\n\s*\n/)
+          .map((para) => `<p>${escape(para.trim())}</p>`)
+          .join("");
+        caseHtml = `
+          <button type="button" class="rv-project-case-toggle" aria-expanded="false">
+            <i class="bi bi-chevron-down"></i> Read the case study
+          </button>
+          <div class="rv-project-case" hidden>${paragraphs}</div>
+        `;
+      }
       col.innerHTML = `
         <article class="rv-card rv-project h-100" data-project-id="${p.id}">
           ${visual}
           <div class="rv-project-body">
             <div class="rv-tags">${featuredBadge}${tagsHtml}</div>
             <h3 class="rv-project-title">${escape(p.title)}</h3>
+            ${roleHtml}
             <p class="text-body-secondary mb-2">${escape(p.description || "")}</p>
             ${linksHtml ? `<div class="d-flex flex-wrap gap-2 mt-2">${linksHtml}</div>` : ""}
+            ${caseHtml}
           </div>
         </article>
       `;
       container.appendChild(col);
+    });
+
+    // Wire up case-study expand/collapse toggles
+    container.querySelectorAll(".rv-project-case-toggle").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const card = btn.closest(".rv-project");
+        const panel = card && card.querySelector(".rv-project-case");
+        if (!panel) return;
+        const isHidden = panel.hasAttribute("hidden");
+        if (isHidden) {
+          panel.removeAttribute("hidden");
+          btn.setAttribute("aria-expanded", "true");
+          btn.innerHTML = '<i class="bi bi-chevron-up"></i> Hide case study';
+        } else {
+          panel.setAttribute("hidden", "");
+          btn.setAttribute("aria-expanded", "false");
+          btn.innerHTML = '<i class="bi bi-chevron-down"></i> Read the case study';
+        }
+      });
     });
 
     // Attach click-to-track for view counting (only count once per session per project)
@@ -4587,6 +4798,53 @@ document.getElementById("year").textContent = new Date().getFullYear();
   }
   window.rvLoadPublicProjects = loadPublicProjects;
   loadPublicProjects();
+
+  // ===== Testimonials (public) =====
+  function applyTestimonials(items) {
+    const container = document.getElementById("rvTestimonialsList");
+    if (!container) return;
+    container.innerHTML = "";
+    if (!items || !items.length) {
+      const sec = document.getElementById("testimonials");
+      if (sec) sec.style.display = "none";
+      return;
+    }
+    items.forEach((t) => {
+      const col = document.createElement("div");
+      col.className = "col-md-6 col-lg-4";
+      const initials = (t.author || "?")
+        .split(/\s+/)
+        .map((w) => w[0])
+        .filter(Boolean)
+        .slice(0, 2)
+        .join("")
+        .toUpperCase();
+      const avatar = t.avatar_url
+        ? `<div class="rv-testimonial-avatar" style="background-image:url('${escape(t.avatar_url)}')"></div>`
+        : `<div class="rv-testimonial-avatar">${escape(initials)}</div>`;
+      col.innerHTML = `
+        <article class="rv-testimonial-card">
+          <p class="rv-testimonial-quote">${escape(t.quote || "")}</p>
+          <div class="rv-testimonial-meta">
+            ${avatar}
+            <div>
+              <div class="rv-testimonial-author">${escape(t.author || "")}</div>
+              ${t.role ? `<div class="rv-testimonial-role">${escape(t.role)}</div>` : ""}
+            </div>
+          </div>
+        </article>
+      `;
+      container.appendChild(col);
+    });
+  }
+  function loadPublicTestimonials() {
+    fetch(API + "/testimonials")
+      .then((r) => r.json())
+      .then((j) => applyTestimonials(j.items || []))
+      .catch(() => {});
+  }
+  window.rvLoadPublicTestimonials = loadPublicTestimonials;
+  loadPublicTestimonials();
 
   // ===== Contact form =====
   const form = document.getElementById("rvContactForm");

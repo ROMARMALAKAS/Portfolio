@@ -3,10 +3,32 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0b0f1a" />
     <meta
       name="description"
-      content="Romar Villafuerte — Website Developer. Minimalist, professional, and interactive portfolio."
+      content="Romar Villafuerte — Website Developer based in the Philippines. I build clean, fast websites and small web apps with HTML, CSS, JavaScript, React, and FastAPI."
     />
+    <meta name="author" content="Romar Villafuerte" />
+    <meta name="keywords" content="Romar Villafuerte, website developer, web developer Philippines, frontend, React, HTML, CSS, JavaScript, FastAPI portfolio" />
+    <link rel="canonical" href="https://romar-villafuerte.vercel.app/" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Romar Villafuerte" />
+    <meta property="og:title" content="Romar Villafuerte — Website Developer" />
+    <meta property="og:description" content="I build clean, fast websites and small web apps. HTML, CSS, JavaScript, React, FastAPI. Available for freelance & full-time." />
+    <meta property="og:url" content="https://romar-villafuerte.vercel.app/" />
+    <meta property="og:image" content="https://romar-villafuerte.vercel.app/assets/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Romar Villafuerte — Website Developer" />
+
+    <!-- Twitter / X -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Romar Villafuerte — Website Developer" />
+    <meta name="twitter:description" content="I build clean, fast websites and small web apps. HTML, CSS, JavaScript, React, FastAPI." />
+    <meta name="twitter:image" content="https://romar-villafuerte.vercel.app/assets/og-image.png" />
+
     <title>Romar Villafuerte — Website Developer</title>
 
     <!-- Fonts -->
@@ -30,7 +52,12 @@
     <link rel="stylesheet" href="styles.css" />
     <link
       rel="icon"
-      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230b0f1a'/%3E%3Ctext x='50%25' y='54%25' text-anchor='middle' font-family='Inter,Arial' font-weight='800' font-size='30' fill='%23ffffff'%3ERV%3C/text%3E%3C/svg%3E"
+      type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%232563eb'/%3E%3Cstop offset='1' stop-color='%231d4ed8'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='14' fill='url(%23g)'/%3E%3Ctext x='50%25' y='56%25' text-anchor='middle' font-family='Inter,Arial,sans-serif' font-weight='800' font-size='30' fill='%23ffffff'%3ERV%3C/text%3E%3C/svg%3E"
+    />
+    <link
+      rel="apple-touch-icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%232563eb'/%3E%3Cstop offset='1' stop-color='%231d4ed8'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='180' height='180' rx='40' fill='url(%23g)'/%3E%3Ctext x='50%25' y='56%25' text-anchor='middle' font-family='Inter,Arial,sans-serif' font-weight='800' font-size='84' fill='%23ffffff'%3ERV%3C/text%3E%3C/svg%3E"
     />
   </head>
   <body>
@@ -77,11 +104,12 @@
             <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
             <li class="nav-item"><a class="nav-link" href="#education">Education</a></li>
             <li class="nav-item"><a class="nav-link" href="#projects">Work</a></li>
+            <li class="nav-item"><a class="nav-link" href="#testimonials">Testimonials</a></li>
             <li class="nav-item"><a class="nav-link" href="#schedule">Schedule</a></li>
-            <li class="nav-item"><a class="nav-link" href="#playground">Playground</a></li>
             <li class="nav-item ms-lg-2">
               <a class="btn btn-primary btn-sm px-3" href="#contact">Contact</a>
             </li>
+            <li class="nav-item ms-lg-1"><a class="nav-link rv-nav-fun" href="#playground" title="Mini games — for fun"><i class="bi bi-controller"></i> Games</a></li>
             <li class="nav-item ms-lg-1">
               <button
                 type="button"
@@ -97,7 +125,7 @@
       </div>
     </nav>
 
-    <main id="top">
+    <main id="top" class="rv-main">
       <!-- HERO -->
       <section class="rv-section rv-hero">
         <div class="container">
@@ -171,24 +199,56 @@
           </div>
           <div class="row g-4">
             <div class="col-lg-7">
-              <p class="text-body-secondary mb-3">
+              <p class="text-body-secondary mb-3" id="rvAboutPara1">
                 I'm a website developer based in the Philippines. I enjoy the
                 whole process of shipping a website — from sketching an idea
                 to making sure it loads fast and feels good to use.
               </p>
-              <p class="text-body-secondary mb-0">
+              <p class="text-body-secondary mb-3" id="rvAboutPara2">
                 If it lives in a browser, I can probably build it.
               </p>
+              <div class="rv-about-goal" id="rvAboutGoal">
+                <span class="rv-pill rv-pill-primary"><i class="bi bi-compass"></i> Looking for</span>
+                <p class="mb-0" id="rvAboutGoalText">Junior frontend / full-stack roles, or freelance projects where I can ship something real and learn fast.</p>
+              </div>
             </div>
             <div class="col-lg-5">
-              <div class="rv-card p-4 h-100">
-                <span class="rv-pill rv-pill-primary mb-2"><i class="bi bi-laptop"></i> Stack</span>
-                <h3 class="h6 mb-2">What I work with</h3>
-                <p class="text-body-secondary small mb-0">
-                  HTML, CSS, JavaScript, Bootstrap. Comfortable with React and
-                  small Python/FastAPI backends like the one powering this
-                  site's leaderboard.
-                </p>
+              <div class="rv-card rv-skills-card p-4 h-100">
+                <span class="rv-pill rv-pill-primary mb-2"><i class="bi bi-laptop"></i> Skills &amp; tools</span>
+                <h3 class="h6 mb-3">What I work with</h3>
+                <div class="rv-skills">
+                  <div class="rv-skill-group">
+                    <span class="rv-skill-label"><i class="bi bi-code-slash"></i> Languages</span>
+                    <div class="rv-skill-chips">
+                      <span class="rv-skill-chip">HTML</span>
+                      <span class="rv-skill-chip">CSS</span>
+                      <span class="rv-skill-chip">JavaScript</span>
+                      <span class="rv-skill-chip">PHP</span>
+                      <span class="rv-skill-chip">Python</span>
+                      <span class="rv-skill-chip">SQL</span>
+                    </div>
+                  </div>
+                  <div class="rv-skill-group">
+                    <span class="rv-skill-label"><i class="bi bi-stack"></i> Frameworks</span>
+                    <div class="rv-skill-chips">
+                      <span class="rv-skill-chip">React</span>
+                      <span class="rv-skill-chip">Bootstrap</span>
+                      <span class="rv-skill-chip">FastAPI</span>
+                      <span class="rv-skill-chip">Node.js</span>
+                    </div>
+                  </div>
+                  <div class="rv-skill-group">
+                    <span class="rv-skill-label"><i class="bi bi-tools"></i> Tools</span>
+                    <div class="rv-skill-chips">
+                      <span class="rv-skill-chip">Git</span>
+                      <span class="rv-skill-chip">VS Code</span>
+                      <span class="rv-skill-chip">Figma</span>
+                      <span class="rv-skill-chip">MySQL</span>
+                      <span class="rv-skill-chip">SQLite</span>
+                      <span class="rv-skill-chip">Vercel</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -248,11 +308,24 @@
         </div>
       </section>
 
+      <!-- TESTIMONIALS -->
+      <section id="testimonials" class="rv-section border-top rv-section-testimonials">
+        <div class="container">
+          <div class="rv-section-head">
+            <span class="rv-kicker">04 · Testimonials</span>
+            <h2 class="rv-h2">Kind words from people I've worked with.</h2>
+          </div>
+          <div class="row g-3" id="rvTestimonialsList">
+            <!-- Filled in by script.js -->
+          </div>
+        </div>
+      </section>
+
       <!-- SCHEDULE / CALENDAR -->
       <section id="schedule" class="rv-section border-top">
         <div class="container">
           <div class="rv-section-head">
-            <span class="rv-kicker">04 · Schedule</span>
+            <span class="rv-kicker">05 · Schedule</span>
             <h2 class="rv-h2">Book a call or check availability.</h2>
             <p class="text-body-secondary mb-0">
               A live calendar of my availability this month. Click any day to
@@ -416,15 +489,15 @@
       </section>
 
       <!-- PLAYGROUND -->
-      <section id="playground" class="rv-section border-top">
+      <section id="playground" class="rv-section border-top rv-section-playground">
         <div class="container">
           <div class="rv-section-head d-flex flex-wrap justify-content-between align-items-end gap-3">
             <div>
-              <span class="rv-kicker">05 · Playground</span>
+              <span class="rv-kicker">07 · Just for fun</span>
               <h2 class="rv-h2 mb-2">Play. Compete. Leaderboard.</h2>
               <p class="text-body-secondary mb-0">
-                13 games hidden behind one button. Tap <strong>Select games</strong>,
-                pick one, enter a username and your score lands on the board.
+                A side project — 13 mini-games sharing one global leaderboard. Tap <strong>Select games</strong>,
+                pick one, enter a username and your score lands on the board. Optional and unrelated to the work above.
               </p>
             </div>
             <div class="d-flex flex-wrap gap-2 align-items-center">
@@ -1361,6 +1434,9 @@
           <button type="button" class="rv-admin-tab" data-tab="projects" role="tab">
             <i class="bi bi-collection"></i> Projects
           </button>
+          <button type="button" class="rv-admin-tab" data-tab="testimonials" role="tab">
+            <i class="bi bi-chat-quote"></i> Testimonials
+          </button>
           <button type="button" class="rv-admin-tab" data-tab="messages" role="tab">
             <i class="bi bi-envelope"></i> Messages
             <span class="rv-admin-badge" id="rvAdminMsgBadge" hidden>0</span>
@@ -1568,6 +1644,22 @@
           </section>
         </div>
 
+        <!-- TESTIMONIALS TAB -->
+        <div class="rv-admin-pane" data-pane="testimonials" hidden>
+          <section class="rv-admin-panel">
+            <header class="rv-admin-panel-head">
+              <div>
+                <h4 class="rv-admin-panel-title"><i class="bi bi-chat-quote"></i> Testimonials</h4>
+                <p class="rv-admin-panel-sub">Quotes shown in the public Testimonials section. Add real ones as you collect them.</p>
+              </div>
+              <button type="button" class="rv-admin-submit rv-admin-submit-sm" id="rvTestiAddBtn">
+                <i class="bi bi-plus-lg"></i> <span>Add testimonial</span>
+              </button>
+            </header>
+            <div class="rv-admin-projects" id="rvAdminTestimonialsList"></div>
+          </section>
+        </div>
+
         <!-- MESSAGES TAB -->
         <div class="rv-admin-pane" data-pane="messages" hidden>
           <section class="rv-admin-panel">
@@ -1604,8 +1696,14 @@
           <label class="rv-admin-label rv-admin-label-full">Title
             <input type="text" class="rv-admin-input" id="rvProjEditTitleInput" maxlength="120" required />
           </label>
-          <label class="rv-admin-label rv-admin-label-full">Description
-            <textarea class="rv-admin-input rv-admin-textarea" id="rvProjEditDesc" rows="3" maxlength="2000"></textarea>
+          <label class="rv-admin-label rv-admin-label-full">Short description <span class="rv-admin-hint">(1–2 lines, shown on the card)</span>
+            <textarea class="rv-admin-input rv-admin-textarea" id="rvProjEditDesc" rows="2" maxlength="2000"></textarea>
+          </label>
+          <label class="rv-admin-label rv-admin-label-full">My role
+            <input type="text" class="rv-admin-input" id="rvProjEditRole" maxlength="200" placeholder="e.g. Solo developer — frontend, backend, database" />
+          </label>
+          <label class="rv-admin-label rv-admin-label-full">Case study <span class="rv-admin-hint">(Problem → What I built → Result. Separate paragraphs with a blank line.)</span>
+            <textarea class="rv-admin-input rv-admin-textarea" id="rvProjEditLong" rows="6" maxlength="8000" placeholder="Problem: …\n\nWhat I built: …\n\nResult: …"></textarea>
           </label>
           <label class="rv-admin-label rv-admin-label-full">Image URL
             <input type="url" class="rv-admin-input" id="rvProjEditImage" maxlength="500" placeholder="https://…" />
@@ -1632,6 +1730,53 @@
           <div class="rv-admin-form-actions rv-admin-label-full">
             <button type="button" class="rv-admin-btn-ghost" id="rvProjEditCancel">Cancel</button>
             <button type="submit" class="rv-admin-submit" id="rvProjEditSave">
+              <i class="bi bi-check2"></i> <span>Save</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- TESTIMONIAL EDIT MODAL -->
+    <div
+      class="rv-admin-overlay"
+      id="rvTestiEditOverlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="rvTestiEditTitle"
+      hidden
+    >
+      <div class="rv-admin-modal rv-admin-modal-md">
+        <button type="button" class="rv-admin-close" id="rvTestiEditClose" aria-label="Close testimonial editor">
+          <i class="bi bi-x-lg"></i>
+        </button>
+        <h3 class="rv-admin-title" id="rvTestiEditTitle">
+          <i class="bi bi-chat-quote"></i> <span id="rvTestiEditHeading">Edit testimonial</span>
+        </h3>
+        <form class="rv-admin-form rv-admin-grid-form" id="rvTestiEditForm" novalidate>
+          <input type="hidden" id="rvTestiEditId" />
+          <label class="rv-admin-label rv-admin-label-full">Quote
+            <textarea class="rv-admin-input rv-admin-textarea" id="rvTestiEditQuote" rows="4" maxlength="600" required></textarea>
+          </label>
+          <label class="rv-admin-label">Author name
+            <input type="text" class="rv-admin-input" id="rvTestiEditAuthor" maxlength="120" required />
+          </label>
+          <label class="rv-admin-label">Role / company
+            <input type="text" class="rv-admin-input" id="rvTestiEditRole" maxlength="160" placeholder="e.g. Capstone client" />
+          </label>
+          <label class="rv-admin-label rv-admin-label-full">Avatar URL <span class="rv-admin-hint">(optional — initials shown otherwise)</span>
+            <input type="url" class="rv-admin-input" id="rvTestiEditAvatar" maxlength="500" placeholder="https://…" />
+          </label>
+          <label class="rv-admin-label rv-admin-checkbox">
+            <input type="checkbox" id="rvTestiEditHidden" /> Hidden from public site
+          </label>
+          <label class="rv-admin-label">Sort order <span class="rv-admin-hint">(lower = earlier)</span>
+            <input type="number" class="rv-admin-input" id="rvTestiEditSort" min="0" max="10000" value="100" />
+          </label>
+          <p class="rv-admin-error rv-admin-label-full" id="rvTestiEditError" hidden></p>
+          <div class="rv-admin-form-actions rv-admin-label-full">
+            <button type="button" class="rv-admin-btn-ghost" id="rvTestiEditCancel">Cancel</button>
+            <button type="submit" class="rv-admin-submit" id="rvTestiEditSave">
               <i class="bi bi-check2"></i> <span>Save</span>
             </button>
           </div>

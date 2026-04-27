@@ -1249,6 +1249,153 @@ body.rv-admin-open { overflow: hidden; }
   color: var(--rv-text-dim);
   font-size: 0.85rem;
 }
+
+/* Reorder main sections so Playground (Games) lives below Contact */
+.rv-main { display: flex; flex-direction: column; }
+.rv-main > * { order: 0; }
+.rv-main > .rv-section-playground { order: 99; }
+
+/* Testimonials */
+.rv-section-testimonials { background: var(--rv-neutral-soft); }
+.rv-testimonial-card {
+  background: var(--rv-bg, #fff);
+  border: 1px solid var(--rv-border);
+  border-radius: 16px;
+  padding: 22px 22px 18px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: relative;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.rv-testimonial-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(8, 12, 24, 0.08);
+}
+.rv-testimonial-card::before {
+  content: "\201C";
+  position: absolute;
+  top: -10px;
+  left: 16px;
+  font-family: "Georgia", serif;
+  font-size: 4rem;
+  line-height: 1;
+  color: var(--rv-primary, #2563eb);
+  opacity: 0.18;
+}
+.rv-testimonial-quote {
+  flex: 1;
+  font-size: 0.97rem;
+  line-height: 1.6;
+  color: var(--rv-text);
+  margin: 0;
+}
+.rv-testimonial-meta { display: flex; align-items: center; gap: 12px; margin-top: auto; }
+.rv-testimonial-avatar {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: var(--rv-primary-soft);
+  color: var(--rv-primary);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 0.95rem;
+  flex: 0 0 40px;
+  background-size: cover;
+  background-position: center;
+}
+.rv-testimonial-author { font-weight: 700; font-size: 0.92rem; color: var(--rv-text); }
+.rv-testimonial-role { font-size: 0.78rem; color: var(--rv-text-dim); }
+
+/* Project — case-study expand */
+.rv-project { display: flex; flex-direction: column; }
+.rv-project-role {
+  font-size: 0.78rem;
+  color: var(--rv-text-dim);
+  margin: 0 0 6px;
+  font-weight: 500;
+}
+.rv-project-role i { color: var(--rv-primary, #2563eb); margin-right: 4px; }
+.rv-project-case {
+  margin-top: 10px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--rv-border);
+}
+.rv-project-case[hidden] { display: none; }
+.rv-project-case p {
+  margin: 0 0 10px;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--rv-text);
+}
+.rv-project-case p:last-child { margin-bottom: 0; }
+.rv-project-case-toggle {
+  border: none;
+  background: transparent;
+  color: var(--rv-primary, #2563eb);
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 6px 0 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  align-self: flex-start;
+}
+.rv-project-case-toggle:hover { text-decoration: underline; }
+
+/* "Games" nav link — softer/secondary look so the eye lands on Contact first */
+.rv-nav-fun { font-size: 0.85rem; opacity: 0.75; }
+.rv-nav-fun:hover { opacity: 1; }
+
+/* About — skills + goal */
+.rv-about-goal {
+  margin-top: 8px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--rv-primary-soft);
+  border: 1px solid color-mix(in srgb, var(--rv-primary, #2563eb) 30%, transparent);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+.rv-about-goal p {
+  color: var(--rv-text);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+.rv-skills { display: flex; flex-direction: column; gap: 14px; }
+.rv-skill-group { display: flex; flex-direction: column; gap: 8px; }
+.rv-skill-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--rv-text-dim);
+}
+.rv-skill-label i { color: var(--rv-primary, #2563eb); }
+.rv-skill-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.rv-skill-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: var(--rv-neutral-soft);
+  border: 1px solid var(--rv-border);
+  color: var(--rv-text);
+  font-size: 0.82rem;
+  font-weight: 500;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.rv-skill-chip:hover {
+  background: var(--rv-primary-soft);
+  border-color: color-mix(in srgb, var(--rv-primary, #2563eb) 35%, transparent);
+}
 .rv-chip strong { color: var(--rv-text); font-weight: 700; }
 .rv-status { display: inline-flex; align-items: center; gap: 6px; color: var(--rv-text-dim); font-size: 0.85rem; }
 .rv-status-dot {
