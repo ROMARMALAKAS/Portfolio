@@ -4930,9 +4930,11 @@
   const toggle = document.getElementById("rvBgmToggle");
   if (!frame || !toggle) return;
 
-  let playing = false; // muted autoplay counts as "not playing aloud"
+  let player = null;
+  let playing = false;
   let unlocked = false;
 
+  // Lightweight postMessage helper (works even before YT API is ready)
   const send = (func, args) => {
     try {
       frame.contentWindow.postMessage(
@@ -4941,6 +4943,33 @@
       );
     } catch (_) {}
   };
+
+  // Load YouTube IFrame API
+  if (!window.YT || !window.YT.Player) {
+    const tag = document.createElement("script");
+    tag.src = "https://www.youtube.com/iframe_api";
+    document.head.appendChild(tag);
+  }
+  function setupPlayer() {
+    try {
+      player = new YT.Player("rvBgm", {
+        events: {
+          onReady: () => {
+            try { player.mute(); player.playVideo(); } catch (_) {}
+          },
+          onStateChange: (e) => {
+            if (e.data === YT.PlayerState.ENDED) {
+              try { player.seekTo(0); player.playVideo(); } catch (_) {}
+            }
+          },
+        },
+      });
+    } catch (_) {
+      setTimeout(setupPlayer, 300);
+    }
+  }
+  window.onYouTubeIframeAPIReady = setupPlayer;
+  if (window.YT && window.YT.Player) setupPlayer();
 
   const setIcon = () => {
     toggle.innerHTML = playing
@@ -4952,50 +4981,121 @@
   setIcon();
 
   const startAloud = () => {
-    send("unMute");
-    send("setVolume", [35]);
-    send("playVideo");
+    if (player && player.unMute) {
+      try { player.unMute(); player.setVolume(35); player.playVideo(); } catch (_) {}
+    } else {
+      send("unMute"); send("setVolume", [35]); send("playVideo");
+    }
     playing = true;
     unlocked = true;
     setIcon();
   };
-
-  toggle.addEventListener("click", (e) => {
-    e.stopPropagation();
-    if (playing) {
-      send("mute");
-      send("pauseVideo");
-      playing = false;
+  const stopAloud = () => {
+    if (player && player.mute) {
+      try { player.mute(); player.pauseVideo(); } catch (_) {}
     } else {
-      startAloud();
-      return;
+      send("mute"); send("pauseVideo");
     }
+    playing = false;
     setIcon();
-  });
+  };
 
-  // First user interaction anywhere → unmute background song
+  // Auto-unmute on first interaction (scroll, tap, key, click)
   const firstInteract = (e) => {
     if (unlocked) return;
     if (e && e.target && e.target.closest && e.target.closest("#rvBgmToggle")) return;
     startAloud();
-    window.removeEventListener("pointerdown", firstInteract);
-    window.removeEventListener("keydown", firstInteract);
-    window.removeEventListener("touchstart", firstInteract);
-    window.removeEventListener("scroll", firstInteract);
   };
-  window.addEventListener("pointerdown", firstInteract, { once: false });
-  window.addEventListener("keydown", firstInteract, { once: false });
-  window.addEventListener("touchstart", firstInteract, { once: false, passive: true });
-  window.addEventListener("scroll", firstInteract, { once: false, passive: true });
+  const events = ["pointerdown", "touchstart", "keydown", "scroll", "wheel", "click"];
+  events.forEach((ev) =>
+    window.addEventListener(ev, firstInteract, { passive: true, capture: true })
+  );
 
-  // Pause background when visitor plays a song in Now Playing
+  // Pause when Now Playing is used
   const picker = document.querySelector(".rv-album-picker");
   if (picker) {
     picker.addEventListener("click", (e) => {
       if (!e.target.closest(".rv-album-btn")) return;
-      send("pauseVideo");
-      playing = false;
-      setIcon();
+      stopAloud();
     });
   }
+
+  /* ---------- Draggable ---------- */
+  const STORAGE_KEY = "rv_bgm_toggle_pos";
+  const PAD = 10;
+  const DRAG_THRESHOLD = 6;
+
+  function applyPos(x, y) {
+    const w = toggle.offsetWidth || 52;
+    const h = toggle.offsetHeight || 52;
+    const maxX = window.innerWidth - w - PAD;
+    const maxY = window.innerHeight - h - PAD;
+    x = Math.max(PAD, Math.min(maxX, x));
+    y = Math.max(PAD, Math.min(maxY, y));
+    toggle.style.left = x + "px";
+    toggle.style.top = y + "px";
+    toggle.style.right = "auto";
+    toggle.style.bottom = "auto";
+  }
+
+  // Restore saved position
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+    if (saved && typeof saved.x === "number" && typeof saved.y === "number") {
+      applyPos(saved.x, saved.y);
+    }
+  } catch (_) {}
+
+  let dragging = false;
+  let dragMoved = false;
+  let startX = 0, startY = 0, startLeft = 0, startTop = 0;
+
+  toggle.addEventListener("pointerdown", (e) => {
+    dragging = true;
+    dragMoved = false;
+    const r = toggle.getBoundingClientRect();
+    startX = e.clientX;
+    startY = e.clientY;
+    startLeft = r.left;
+    startTop = r.top;
+    try { toggle.setPointerCapture(e.pointerId); } catch (_) {}
+    toggle.classList.add("is-dragging");
+  });
+  toggle.addEventListener("pointermove", (e) => {
+    if (!dragging) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    if (!dragMoved && (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD)) {
+      dragMoved = true;
+    }
+    if (dragMoved) applyPos(startLeft + dx, startTop + dy);
+  });
+  const endDrag = (e) => {
+    if (!dragging) return;
+    dragging = false;
+    toggle.classList.remove("is-dragging");
+    try { toggle.releasePointerCapture(e.pointerId); } catch (_) {}
+    if (dragMoved) {
+      const r = toggle.getBoundingClientRect();
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ x: r.left, y: r.top }));
+      } catch (_) {}
+    }
+  };
+  toggle.addEventListener("pointerup", endDrag);
+  toggle.addEventListener("pointercancel", endDrag);
+
+  // Click = toggle mute/play (unless it was actually a drag)
+  toggle.addEventListener("click", (e) => {
+    if (dragMoved) { e.preventDefault(); e.stopPropagation(); dragMoved = false; return; }
+    e.stopPropagation();
+    if (playing) stopAloud();
+    else startAloud();
+  });
+
+  // Keep in bounds on resize
+  window.addEventListener("resize", () => {
+    const r = toggle.getBoundingClientRect();
+    if (r.left || r.top) applyPos(r.left, r.top);
+  });
 })();
