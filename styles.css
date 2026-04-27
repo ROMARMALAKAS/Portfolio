@@ -3084,3 +3084,27 @@ body.rv-game-active .rv-game-pane .row { --bs-gutter-x: 12px; }
   margin-right: 10px;
   opacity: 0.5;
 }
+
+/* =====================================================
+   Now Playing — Spotify embed
+   ===================================================== */
+.rv-spotify-wrap {
+  background: linear-gradient(135deg, rgba(30,215,96,0.10) 0%, rgba(37,99,235,0.08) 100%);
+  border: 1px solid rgba(30,215,96,0.25);
+  border-radius: 16px;
+  padding: 14px;
+  max-width: 720px;
+}
+[data-bs-theme="dark"] .rv-spotify-wrap {
+  background: linear-gradient(135deg, rgba(30,215,96,0.12) 0%, rgba(37,99,235,0.12) 100%);
+  border-color: rgba(30,215,96,0.35);
+}
+.rv-spotify-wrap iframe {
+  display: block;
+  width: 100%;
+  min-height: 352px;
+}
+@media (max-width: 575.98px) {
+  .rv-spotify-wrap { padding: 10px; }
+  .rv-spotify-wrap iframe { min-height: 320px; }
+}
