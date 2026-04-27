@@ -5099,3 +5099,66 @@
     if (r.left || r.top) applyPos(r.left, r.top);
   });
 })();
+
+/* ---------- Scroll-reveal animations (IntersectionObserver) ---------- */
+(function () {
+  if (typeof IntersectionObserver === "undefined") return;
+
+  // Auto-tag common elements so we don't have to edit every section.
+  const autoTargets = [
+    ".rv-section-head",
+    ".rv-section .rv-card",
+    ".rv-edu-item",
+    ".rv-project-card",
+    ".rv-testimonial",
+    ".rv-kicker",
+    ".rv-about-goal",
+    ".rv-ticker-wrap",
+    ".rv-spotify-wrap",
+    ".rv-album-picker",
+    ".rv-hero .rv-stat-card",
+    ".rv-hero .rv-hero-body",
+  ];
+  autoTargets.forEach((sel) => {
+    document.querySelectorAll(sel).forEach((el, idx) => {
+      if (!el.classList.contains("rv-reveal")) {
+        el.classList.add("rv-reveal");
+        // Small stagger for siblings
+        if (idx > 0 && idx <= 5) el.setAttribute("data-delay", String(idx * 100));
+      }
+    });
+  });
+
+  const io = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("is-visible");
+          io.unobserve(entry.target);
+        }
+      });
+    },
+    { threshold: 0.12, rootMargin: "0px 0px -40px 0px" }
+  );
+
+  const attach = (root) => {
+    (root || document).querySelectorAll(".rv-reveal:not(.is-visible)").forEach((el) => io.observe(el));
+  };
+  attach(document);
+
+  // Re-scan when the project list / testimonials render dynamically.
+  const rescanSelectors = ["#rvProjectsList", "#rvTestimonialsList"];
+  rescanSelectors.forEach((sel) => {
+    const node = document.querySelector(sel);
+    if (!node) return;
+    const mo = new MutationObserver(() => {
+      node.querySelectorAll(".rv-project-card, .rv-testimonial").forEach((el) => {
+        if (!el.classList.contains("rv-reveal")) {
+          el.classList.add("rv-reveal");
+          io.observe(el);
+        }
+      });
+    });
+    mo.observe(node, { childList: true, subtree: true });
+  });
+})();

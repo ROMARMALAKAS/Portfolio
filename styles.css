@@ -3260,3 +3260,138 @@ body.rv-game-active .rv-game-pane .row { --bs-gutter-x: 12px; }
     font-size: 1rem;
   }
 }
+
+/* ==============================================
+   Edge-to-edge skills ticker (news-ticker style)
+   ============================================== */
+.rv-ticker-wrap {
+  margin-top: 2.25rem;
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
+}
+.rv-ticker-row {
+  overflow: hidden;
+  width: 100%;
+}
+.rv-ticker-track {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  padding: 6px 0;
+  white-space: nowrap;
+  animation: rvTickerLeft 36s linear infinite;
+  will-change: transform;
+}
+.rv-ticker-track.rv-ticker-reverse {
+  animation-name: rvTickerRight;
+  animation-duration: 42s;
+}
+.rv-ticker-row:hover .rv-ticker-track { animation-play-state: paused; }
+
+@keyframes rvTickerLeft {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+@keyframes rvTickerRight {
+  0%   { transform: translateX(-50%); }
+  100% { transform: translateX(0); }
+}
+
+.rv-ticker-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--rv-text, #0b0f1a);
+  background: linear-gradient(135deg, rgba(27,132,255,0.12), rgba(23,198,83,0.12));
+  border: 1px solid rgba(27,132,255,0.25);
+  flex-shrink: 0;
+}
+[data-bs-theme="dark"] .rv-ticker-label {
+  color: #e5e7eb;
+  background: linear-gradient(135deg, rgba(27,132,255,0.18), rgba(23,198,83,0.18));
+  border-color: rgba(27,132,255,0.35);
+}
+
+.rv-tchip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 14px;
+  background: #fff;
+  color: #0b0f1a;
+  border: 1px solid rgba(0,0,0,0.08);
+  font-weight: 600;
+  font-size: 0.95rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  flex-shrink: 0;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.rv-tchip:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px color-mix(in srgb, var(--c, #1b84ff) 25%, transparent);
+  border-color: var(--c, #1b84ff);
+}
+.rv-tchip img {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+[data-bs-theme="dark"] .rv-tchip {
+  background: rgba(17,24,39,0.9);
+  color: #e5e7eb;
+  border-color: rgba(255,255,255,0.08);
+}
+[data-bs-theme="dark"] .rv-tchip[style*="#000000"] img,
+[data-bs-theme="dark"] .rv-tchip[style*="003B57"] img {
+  filter: invert(1) brightness(1.6);
+}
+
+@media (max-width: 575.98px) {
+  .rv-ticker-track { gap: 10px; animation-duration: 28s; }
+  .rv-ticker-track.rv-ticker-reverse { animation-duration: 32s; }
+  .rv-tchip { padding: 8px 13px; font-size: 0.88rem; border-radius: 12px; }
+  .rv-tchip img { width: 18px; height: 18px; }
+  .rv-ticker-label { padding: 6px 11px; font-size: 0.7rem; }
+}
+
+/* ==============================================
+   Scroll-reveal animations
+   ============================================== */
+.rv-reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, opacity;
+}
+.rv-reveal-left  { transform: translateX(-28px); }
+.rv-reveal-right { transform: translateX(28px); }
+.rv-reveal-scale { transform: scale(0.94); }
+.rv-reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0) translateX(0) scale(1);
+}
+.rv-reveal[data-delay="100"] { transition-delay: 0.1s; }
+.rv-reveal[data-delay="200"] { transition-delay: 0.2s; }
+.rv-reveal[data-delay="300"] { transition-delay: 0.3s; }
+.rv-reveal[data-delay="400"] { transition-delay: 0.4s; }
+.rv-reveal[data-delay="500"] { transition-delay: 0.5s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .rv-ticker-track { animation: none !important; }
+  .rv-reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
+}
