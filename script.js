@@ -4923,3 +4923,79 @@
     frame.src = `https://www.youtube.com/embed/${ytId}?rel=0&modestbranding=1&autoplay=1`;
   });
 })();
+
+/* ---------- Background music (Fitterkarma — Kalapastangan, looped) ---------- */
+(function () {
+  const frame = document.getElementById("rvBgm");
+  const toggle = document.getElementById("rvBgmToggle");
+  if (!frame || !toggle) return;
+
+  let playing = false; // muted autoplay counts as "not playing aloud"
+  let unlocked = false;
+
+  const send = (func, args) => {
+    try {
+      frame.contentWindow.postMessage(
+        JSON.stringify({ event: "command", func, args: args || [] }),
+        "*"
+      );
+    } catch (_) {}
+  };
+
+  const setIcon = () => {
+    toggle.innerHTML = playing
+      ? '<i class="bi bi-volume-up-fill"></i>'
+      : '<i class="bi bi-volume-mute-fill"></i>';
+    toggle.classList.toggle("is-playing", playing);
+    toggle.setAttribute("aria-pressed", playing ? "true" : "false");
+  };
+  setIcon();
+
+  const startAloud = () => {
+    send("unMute");
+    send("setVolume", [35]);
+    send("playVideo");
+    playing = true;
+    unlocked = true;
+    setIcon();
+  };
+
+  toggle.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (playing) {
+      send("mute");
+      send("pauseVideo");
+      playing = false;
+    } else {
+      startAloud();
+      return;
+    }
+    setIcon();
+  });
+
+  // First user interaction anywhere → unmute background song
+  const firstInteract = (e) => {
+    if (unlocked) return;
+    if (e && e.target && e.target.closest && e.target.closest("#rvBgmToggle")) return;
+    startAloud();
+    window.removeEventListener("pointerdown", firstInteract);
+    window.removeEventListener("keydown", firstInteract);
+    window.removeEventListener("touchstart", firstInteract);
+    window.removeEventListener("scroll", firstInteract);
+  };
+  window.addEventListener("pointerdown", firstInteract, { once: false });
+  window.addEventListener("keydown", firstInteract, { once: false });
+  window.addEventListener("touchstart", firstInteract, { once: false, passive: true });
+  window.addEventListener("scroll", firstInteract, { once: false, passive: true });
+
+  // Pause background when visitor plays a song in Now Playing
+  const picker = document.querySelector(".rv-album-picker");
+  if (picker) {
+    picker.addEventListener("click", (e) => {
+      if (!e.target.closest(".rv-album-btn")) return;
+      send("pauseVideo");
+      playing = false;
+      setIcon();
+    });
+  }
+})();

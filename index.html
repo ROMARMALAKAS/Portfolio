@@ -270,10 +270,10 @@
           <div class="rv-album-picker" role="tablist" aria-label="Choose an album">
             <button
               type="button"
-              class="rv-album-btn rv-album-opm"
+              class="rv-album-btn rv-album-opm is-active"
               data-yt-id="ypA7vViok08"
               role="tab"
-              aria-selected="false"
+              aria-selected="true"
             >
               <span class="rv-album-cover" aria-hidden="true">
                 <i class="bi bi-music-note-list"></i>
@@ -350,10 +350,10 @@
             </button>
             <button
               type="button"
-              class="rv-album-btn rv-album-fitter is-active"
+              class="rv-album-btn rv-album-fitter"
               data-yt-id="YRqz58yOCLc"
               role="tab"
-              aria-selected="true"
+              aria-selected="false"
             >
               <span class="rv-album-cover" aria-hidden="true">FK</span>
               <span class="rv-album-meta">
@@ -368,7 +368,7 @@
             <div class="rv-yt-frame">
               <iframe
                 id="rvSpotifyEmbed"
-                src="https://www.youtube.com/embed/YRqz58yOCLc?rel=0&modestbranding=1&autoplay=1&mute=1&playsinline=1"
+                src="https://www.youtube.com/embed/ypA7vViok08?rel=0&modestbranding=1&playsinline=1"
                 title="Romar's OPM albums"
                 frameborder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -1971,5 +1971,26 @@
       src="https://cdn.jsdelivr.net/npm/tone@14.8.49/build/Tone.js"
     ></script>
     <script src="script.js" defer></script>
+
+    <!-- Background music (Fitterkarma — Kalapastangan, looped) -->
+    <div class="rv-bgm" aria-hidden="true">
+      <iframe
+        id="rvBgm"
+        src="https://www.youtube.com/embed/YRqz58yOCLc?autoplay=1&mute=1&loop=1&playlist=YRqz58yOCLc&controls=0&rel=0&modestbranding=1&playsinline=1&enablejsapi=1"
+        title="Background music"
+        frameborder="0"
+        allow="autoplay; encrypted-media"
+      ></iframe>
+    </div>
+    <button
+      type="button"
+      class="rv-bgm-toggle"
+      id="rvBgmToggle"
+      aria-label="Toggle background music"
+      aria-pressed="false"
+      title="Background: Fitterkarma — Kalapastangan"
+    >
+      <i class="bi bi-volume-mute-fill"></i>
+    </button>
   </body>
 </html>

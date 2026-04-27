@@ -3200,3 +3200,62 @@ body.rv-game-active .rv-game-pane .row { --bs-gutter-x: 12px; }
   .rv-spotify-wrap iframe { min-height: 320px; }
   .rv-yt-frame iframe { min-height: 0; }
 }
+
+/* Background music (hidden iframe + floating toggle) */
+.rv-bgm {
+  position: fixed;
+  bottom: 0; right: 0;
+  width: 1px; height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  z-index: -1;
+}
+.rv-bgm iframe { width: 160px; height: 90px; border: 0; }
+
+.rv-bgm-toggle {
+  position: fixed;
+  bottom: 22px; left: 22px;
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  background: var(--rv-card-bg, #fff);
+  border: 1px solid rgba(30,215,96,0.4);
+  color: var(--rv-text, #0b0f1a);
+  display: inline-flex;
+  align-items: center; justify-content: center;
+  font-size: 1.15rem;
+  box-shadow: 0 8px 22px rgba(0,0,0,0.14);
+  cursor: pointer;
+  z-index: 1040;
+  transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+}
+[data-bs-theme="dark"] .rv-bgm-toggle {
+  background: rgba(17,24,39,0.92);
+  color: #e5e7eb;
+  border-color: rgba(30,215,96,0.5);
+}
+.rv-bgm-toggle:hover { transform: scale(1.08); border-color: #1ed760; }
+.rv-bgm-toggle.is-playing {
+  background: #1ed760;
+  color: #062210;
+  border-color: #1ed760;
+}
+.rv-bgm-toggle.is-playing::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid rgba(30,215,96,0.5);
+  animation: rvBgmPulse 1.6s ease-out infinite;
+}
+@keyframes rvBgmPulse {
+  0%   { transform: scale(1);   opacity: 0.7; }
+  100% { transform: scale(1.35); opacity: 0; }
+}
+@media (max-width: 575.98px) {
+  .rv-bgm-toggle {
+    bottom: 90px; left: 14px;
+    width: 42px; height: 42px;
+    font-size: 1rem;
+  }
+}
