@@ -4930,9 +4930,12 @@
   const toggle = document.getElementById("rvBgmToggle");
   if (!frame || !toggle) return;
 
+  const BGM_START = 43; // Chorus timestamp (seconds)
+
   let player = null;
   let playing = false;
   let unlocked = false;
+  let pendingAloud = false; // scroll happened before player ready
 
   // Lightweight postMessage helper (works even before YT API is ready)
   const send = (func, args) => {
@@ -4955,11 +4958,21 @@
       player = new YT.Player("rvBgm", {
         events: {
           onReady: () => {
-            try { player.mute(); player.playVideo(); } catch (_) {}
+            try {
+              player.mute();
+              player.seekTo(BGM_START, true);
+              player.playVideo();
+              if (pendingAloud) {
+                // User already scrolled — unmute now
+                player.unMute();
+                player.setVolume(35);
+                player.playVideo();
+              }
+            } catch (_) {}
           },
           onStateChange: (e) => {
             if (e.data === YT.PlayerState.ENDED) {
-              try { player.seekTo(0); player.playVideo(); } catch (_) {}
+              try { player.seekTo(BGM_START, true); player.playVideo(); } catch (_) {}
             }
           },
         },
@@ -4980,15 +4993,30 @@
   };
   setIcon();
 
-  const startAloud = () => {
+  const tryUnmute = () => {
+    let ok = false;
     if (player && player.unMute) {
-      try { player.unMute(); player.setVolume(35); player.playVideo(); } catch (_) {}
-    } else {
-      send("unMute"); send("setVolume", [35]); send("playVideo");
+      try {
+        player.unMute();
+        player.setVolume(35);
+        player.playVideo();
+        ok = true;
+      } catch (_) {}
     }
+    // Always send postMessage too (reaches iframe even before YT API ready)
+    send("unMute");
+    send("setVolume", [35]);
+    send("playVideo");
+    return ok;
+  };
+  const startAloud = () => {
     playing = true;
     unlocked = true;
+    pendingAloud = true;
     setIcon();
+    // Fire-and-retry: 0ms, 150ms, 400ms, 900ms, 1800ms
+    tryUnmute();
+    [150, 400, 900, 1800].forEach((ms) => setTimeout(tryUnmute, ms));
   };
   const stopAloud = () => {
     if (player && player.mute) {
