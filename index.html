@@ -1369,64 +1369,100 @@
 
         <!-- OVERVIEW TAB -->
         <div class="rv-admin-pane is-active" data-pane="overview">
-          <div class="rv-admin-stats" id="rvAdminStats">
-            <div class="rv-admin-card">
-              <span class="rv-admin-card-label">Visits today</span>
-              <span class="rv-admin-card-value" id="rvStatVisitsToday">—</span>
+          <section class="rv-admin-panel">
+            <header class="rv-admin-panel-head">
+              <div>
+                <h4 class="rv-admin-panel-title"><i class="bi bi-bar-chart-line"></i> At a glance</h4>
+                <p class="rv-admin-panel-sub">Snapshot of how your portfolio is doing right now.</p>
+              </div>
+            </header>
+            <div class="rv-admin-stats" id="rvAdminStats">
+              <div class="rv-admin-card rv-admin-card-blue">
+                <span class="rv-admin-card-icon"><i class="bi bi-eye"></i></span>
+                <span class="rv-admin-card-label">Visits today</span>
+                <span class="rv-admin-card-value" id="rvStatVisitsToday">—</span>
+              </div>
+              <div class="rv-admin-card rv-admin-card-blue">
+                <span class="rv-admin-card-icon"><i class="bi bi-calendar-week"></i></span>
+                <span class="rv-admin-card-label">Visits this week</span>
+                <span class="rv-admin-card-value" id="rvStatVisitsWeek">—</span>
+              </div>
+              <div class="rv-admin-card rv-admin-card-blue">
+                <span class="rv-admin-card-icon"><i class="bi bi-calendar-month"></i></span>
+                <span class="rv-admin-card-label">Visits this month</span>
+                <span class="rv-admin-card-value" id="rvStatVisitsMonth">—</span>
+              </div>
+              <div class="rv-admin-card rv-admin-card-violet">
+                <span class="rv-admin-card-icon"><i class="bi bi-infinity"></i></span>
+                <span class="rv-admin-card-label">Visits all-time</span>
+                <span class="rv-admin-card-value" id="rvStatVisitsTotal">—</span>
+              </div>
+              <div class="rv-admin-card rv-admin-card-rose">
+                <span class="rv-admin-card-icon"><i class="bi bi-envelope"></i></span>
+                <span class="rv-admin-card-label">Total messages</span>
+                <span class="rv-admin-card-value" id="rvStatMsgTotal">—</span>
+              </div>
+              <div class="rv-admin-card rv-admin-card-amber">
+                <span class="rv-admin-card-icon"><i class="bi bi-trophy"></i></span>
+                <span class="rv-admin-card-label">Most viewed project</span>
+                <span class="rv-admin-card-value rv-admin-card-value-sm" id="rvStatTopProject">—</span>
+              </div>
             </div>
-            <div class="rv-admin-card">
-              <span class="rv-admin-card-label">Visits this week</span>
-              <span class="rv-admin-card-value" id="rvStatVisitsWeek">—</span>
-            </div>
-            <div class="rv-admin-card">
-              <span class="rv-admin-card-label">Visits this month</span>
-              <span class="rv-admin-card-value" id="rvStatVisitsMonth">—</span>
-            </div>
-            <div class="rv-admin-card">
-              <span class="rv-admin-card-label">Visits all-time</span>
-              <span class="rv-admin-card-value" id="rvStatVisitsTotal">—</span>
-            </div>
-            <div class="rv-admin-card">
-              <span class="rv-admin-card-label">Total messages</span>
-              <span class="rv-admin-card-value" id="rvStatMsgTotal">—</span>
-            </div>
-            <div class="rv-admin-card">
-              <span class="rv-admin-card-label">Most viewed project</span>
-              <span class="rv-admin-card-value rv-admin-card-value-sm" id="rvStatTopProject">—</span>
-            </div>
-          </div>
+          </section>
 
-          <section class="rv-admin-section">
-            <h4 class="rv-admin-section-title">Visits over the last 7 days</h4>
+          <section class="rv-admin-panel">
+            <header class="rv-admin-panel-head">
+              <div>
+                <h4 class="rv-admin-panel-title"><i class="bi bi-graph-up"></i> Traffic — last 7 days</h4>
+                <p class="rv-admin-panel-sub">Daily visit totals. Hover a bar to see the count.</p>
+              </div>
+            </header>
             <div class="rv-admin-spark" id="rvAdminSpark" aria-hidden="true"></div>
           </section>
 
-          <section class="rv-admin-section">
-            <h4 class="rv-admin-section-title">Most played games</h4>
-            <div class="rv-admin-table-wrap">
-              <table class="rv-admin-table" id="rvAdminGames">
-                <thead>
-                  <tr><th>Game</th><th class="num">Plays</th><th class="num">Players</th></tr>
-                </thead>
-                <tbody></tbody>
-              </table>
-            </div>
-          </section>
+          <div class="rv-admin-panel-row">
+            <section class="rv-admin-panel">
+              <header class="rv-admin-panel-head">
+                <div>
+                  <h4 class="rv-admin-panel-title"><i class="bi bi-controller"></i> Most played games</h4>
+                  <p class="rv-admin-panel-sub">Ranked by total plays.</p>
+                </div>
+              </header>
+              <div class="rv-admin-table-wrap">
+                <table class="rv-admin-table" id="rvAdminGames">
+                  <thead>
+                    <tr><th>Game</th><th class="num">Plays</th><th class="num">Players</th></tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </section>
 
-          <section class="rv-admin-section">
-            <h4 class="rv-admin-section-title">Top players</h4>
-            <div class="rv-admin-table-wrap">
-              <table class="rv-admin-table" id="rvAdminPlayers">
-                <thead>
-                  <tr><th>Player</th><th class="num">Games</th><th class="num">Total score</th></tr>
-                </thead>
-                <tbody></tbody>
-              </table>
-            </div>
-          </section>
+            <section class="rv-admin-panel">
+              <header class="rv-admin-panel-head">
+                <div>
+                  <h4 class="rv-admin-panel-title"><i class="bi bi-people"></i> Top players</h4>
+                  <p class="rv-admin-panel-sub">Highest cumulative scores across games.</p>
+                </div>
+              </header>
+              <div class="rv-admin-table-wrap">
+                <table class="rv-admin-table" id="rvAdminPlayers">
+                  <thead>
+                    <tr><th>Player</th><th class="num">Games</th><th class="num">Total score</th></tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </section>
+          </div>
 
-          <section class="rv-admin-section">
-            <h4 class="rv-admin-section-title">Bookings</h4>
+          <section class="rv-admin-panel">
+            <header class="rv-admin-panel-head">
+              <div>
+                <h4 class="rv-admin-panel-title"><i class="bi bi-calendar-check"></i> Bookings</h4>
+                <p class="rv-admin-panel-sub">People who reserved a day on your schedule.</p>
+              </div>
+            </header>
             <div class="rv-admin-table-wrap">
               <table class="rv-admin-table" id="rvAdminBookings">
                 <thead>
@@ -1442,40 +1478,73 @@
 
         <!-- PROFILE TAB -->
         <div class="rv-admin-pane" data-pane="profile" hidden>
-          <form class="rv-admin-form rv-admin-grid-form" id="rvAdminProfileForm" novalidate>
-            <label class="rv-admin-label">Display name
-              <input type="text" class="rv-admin-input" id="rvProfName" maxlength="80" required />
-            </label>
-            <label class="rv-admin-label">Title / role
-              <input type="text" class="rv-admin-input" id="rvProfTitle" maxlength="120" placeholder="Website Developer" />
-            </label>
-            <label class="rv-admin-label rv-admin-label-full">Bio
-              <textarea class="rv-admin-input rv-admin-textarea" id="rvProfBio" rows="3" maxlength="2000" placeholder="Short bio shown on your portfolio"></textarea>
-            </label>
-            <label class="rv-admin-label">Profile picture URL
-              <input type="url" class="rv-admin-input" id="rvProfAvatar" maxlength="500" placeholder="https://…" />
-            </label>
-            <label class="rv-admin-label">Resume URL
-              <input type="url" class="rv-admin-input" id="rvProfResume" maxlength="500" placeholder="https://…/resume.pdf" />
-            </label>
-            <label class="rv-admin-label">Public email
-              <input type="email" class="rv-admin-input" id="rvProfEmail" maxlength="120" />
-            </label>
-            <label class="rv-admin-label">Location
-              <input type="text" class="rv-admin-input" id="rvProfLocation" maxlength="80" placeholder="Philippines" />
-            </label>
-            <label class="rv-admin-label">GitHub URL
-              <input type="url" class="rv-admin-input" id="rvProfGithub" maxlength="300" />
-            </label>
-            <label class="rv-admin-label">Facebook URL
-              <input type="url" class="rv-admin-input" id="rvProfFacebook" maxlength="300" />
-            </label>
-            <label class="rv-admin-label">LinkedIn URL
-              <input type="url" class="rv-admin-input" id="rvProfLinkedin" maxlength="300" />
-            </label>
-            <p class="rv-admin-error rv-admin-label-full" id="rvProfError" hidden></p>
-            <p class="rv-admin-success rv-admin-label-full" id="rvProfSuccess" hidden>Saved.</p>
-            <div class="rv-admin-form-actions rv-admin-label-full">
+          <form class="rv-admin-form" id="rvAdminProfileForm" novalidate>
+            <section class="rv-admin-panel">
+              <header class="rv-admin-panel-head">
+                <div>
+                  <h4 class="rv-admin-panel-title"><i class="bi bi-person-vcard"></i> Identity</h4>
+                  <p class="rv-admin-panel-sub">Shown across the public site (hero, brand, contact).</p>
+                </div>
+              </header>
+              <div class="rv-admin-grid-form">
+                <label class="rv-admin-label">Display name
+                  <input type="text" class="rv-admin-input" id="rvProfName" maxlength="80" required />
+                </label>
+                <label class="rv-admin-label">Title / role
+                  <input type="text" class="rv-admin-input" id="rvProfTitle" maxlength="120" placeholder="Website Developer" />
+                </label>
+                <label class="rv-admin-label rv-admin-label-full">Bio
+                  <textarea class="rv-admin-input rv-admin-textarea" id="rvProfBio" rows="3" maxlength="2000" placeholder="Short bio shown on your portfolio"></textarea>
+                </label>
+                <label class="rv-admin-label">Public email
+                  <input type="email" class="rv-admin-input" id="rvProfEmail" maxlength="120" />
+                </label>
+                <label class="rv-admin-label">Location
+                  <input type="text" class="rv-admin-input" id="rvProfLocation" maxlength="80" placeholder="Philippines" />
+                </label>
+              </div>
+            </section>
+
+            <section class="rv-admin-panel">
+              <header class="rv-admin-panel-head">
+                <div>
+                  <h4 class="rv-admin-panel-title"><i class="bi bi-image"></i> Media</h4>
+                  <p class="rv-admin-panel-sub">Profile picture is used in the chat avatar; resume shows a button on the hero if filled.</p>
+                </div>
+              </header>
+              <div class="rv-admin-grid-form">
+                <label class="rv-admin-label">Profile picture URL
+                  <input type="url" class="rv-admin-input" id="rvProfAvatar" maxlength="500" placeholder="https://…" />
+                </label>
+                <label class="rv-admin-label">Resume URL
+                  <input type="url" class="rv-admin-input" id="rvProfResume" maxlength="500" placeholder="https://…/resume.pdf" />
+                </label>
+              </div>
+            </section>
+
+            <section class="rv-admin-panel">
+              <header class="rv-admin-panel-head">
+                <div>
+                  <h4 class="rv-admin-panel-title"><i class="bi bi-share"></i> Social links</h4>
+                  <p class="rv-admin-panel-sub">Empty fields hide the corresponding button on the public site.</p>
+                </div>
+              </header>
+              <div class="rv-admin-grid-form">
+                <label class="rv-admin-label">GitHub URL
+                  <input type="url" class="rv-admin-input" id="rvProfGithub" maxlength="300" placeholder="https://github.com/…" />
+                </label>
+                <label class="rv-admin-label">Facebook URL
+                  <input type="url" class="rv-admin-input" id="rvProfFacebook" maxlength="300" placeholder="https://facebook.com/…" />
+                </label>
+                <label class="rv-admin-label">LinkedIn URL
+                  <input type="url" class="rv-admin-input" id="rvProfLinkedin" maxlength="300" placeholder="https://linkedin.com/in/…" />
+                </label>
+              </div>
+            </section>
+
+            <p class="rv-admin-error" id="rvProfError" hidden></p>
+            <p class="rv-admin-success" id="rvProfSuccess" hidden>Profile saved.</p>
+            <div class="rv-admin-form-actions">
               <button type="submit" class="rv-admin-submit" id="rvProfSave">
                 <i class="bi bi-check2"></i> <span>Save profile</span>
               </button>
@@ -1485,19 +1554,31 @@
 
         <!-- PROJECTS TAB -->
         <div class="rv-admin-pane" data-pane="projects" hidden>
-          <div class="rv-admin-section-head">
-            <p class="rv-admin-sub m-0">Add, edit, hide, feature, or delete the projects shown in your portfolio's Work section.</p>
-            <button type="button" class="rv-admin-submit rv-admin-submit-sm" id="rvProjAddBtn">
-              <i class="bi bi-plus-lg"></i> <span>Add project</span>
-            </button>
-          </div>
-          <div class="rv-admin-projects" id="rvAdminProjectsList"></div>
+          <section class="rv-admin-panel">
+            <header class="rv-admin-panel-head">
+              <div>
+                <h4 class="rv-admin-panel-title"><i class="bi bi-collection"></i> Portfolio projects</h4>
+                <p class="rv-admin-panel-sub">Add, edit, hide, feature, or delete the projects shown in your Work section.</p>
+              </div>
+              <button type="button" class="rv-admin-submit rv-admin-submit-sm" id="rvProjAddBtn">
+                <i class="bi bi-plus-lg"></i> <span>Add project</span>
+              </button>
+            </header>
+            <div class="rv-admin-projects" id="rvAdminProjectsList"></div>
+          </section>
         </div>
 
         <!-- MESSAGES TAB -->
         <div class="rv-admin-pane" data-pane="messages" hidden>
-          <p class="rv-admin-sub" id="rvAdminMsgSub">Loading…</p>
-          <div class="rv-admin-messages" id="rvAdminMessagesList"></div>
+          <section class="rv-admin-panel">
+            <header class="rv-admin-panel-head">
+              <div>
+                <h4 class="rv-admin-panel-title"><i class="bi bi-inbox"></i> Inbox</h4>
+                <p class="rv-admin-panel-sub" id="rvAdminMsgSub">Loading…</p>
+              </div>
+            </header>
+            <div class="rv-admin-messages" id="rvAdminMessagesList"></div>
+          </section>
         </div>
       </div>
     </div>
