@@ -4903,3 +4903,24 @@
     });
   }
 })();
+
+/* ---------- Now Playing: album picker ---------- */
+(function () {
+  const picker = document.querySelector(".rv-album-picker");
+  const frame = document.getElementById("rvSpotifyEmbed");
+  if (!picker || !frame) return;
+  picker.addEventListener("click", (e) => {
+    const btn = e.target.closest(".rv-album-btn");
+    if (!btn) return;
+    const type = btn.dataset.embedType;
+    const id = btn.dataset.embedId;
+    if (!type || !id) return;
+    picker.querySelectorAll(".rv-album-btn").forEach((b) => {
+      b.classList.remove("is-active");
+      b.setAttribute("aria-selected", "false");
+    });
+    btn.classList.add("is-active");
+    btn.setAttribute("aria-selected", "true");
+    frame.src = `https://open.spotify.com/embed/${type}/${id}?utm_source=generator&theme=0`;
+  });
+})();

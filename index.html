@@ -255,28 +255,134 @@
         </div>
       </section>
 
-      <!-- NOW PLAYING (Spotify embed) -->
+      <!-- NOW PLAYING (Spotify embed with album picker) -->
       <section id="nowplaying" class="rv-section border-top">
         <div class="container">
           <div class="rv-section-head">
             <span class="rv-kicker">02 · Now playing</span>
-            <h2 class="rv-h2">What I code to.</h2>
+            <h2 class="rv-h2">What I listen to.</h2>
             <p class="text-body-secondary mb-0">
-              The playlist that keeps me focused while I build. Hit play.
+              My favorite OPM albums. Tap any cover to play it — every song from that album shows up.
             </p>
           </div>
+
+          <!-- Album picker: horizontal scroll of covers -->
+          <div class="rv-album-picker" role="tablist" aria-label="Choose an album">
+            <button
+              type="button"
+              class="rv-album-btn rv-album-opm is-active"
+              data-embed-type="playlist"
+              data-embed-id="5aHieMHZSl3gs5oEDJmA1U"
+              role="tab"
+              aria-selected="true"
+            >
+              <span class="rv-album-cover" aria-hidden="true">
+                <i class="bi bi-music-note-list"></i>
+              </span>
+              <span class="rv-album-meta">
+                <span class="rv-album-title">All Best OPM</span>
+                <span class="rv-album-artist">124 songs · Filipino classics</span>
+              </span>
+            </button>
+            <button
+              type="button"
+              class="rv-album-btn rv-album-benben"
+              data-embed-type="album"
+              data-embed-id="7xCcuTA3abKwxj8HwgxP7R"
+              role="tab"
+              aria-selected="false"
+            >
+              <span class="rv-album-cover" aria-hidden="true">BB</span>
+              <span class="rv-album-meta">
+                <span class="rv-album-title">Limasawa Street</span>
+                <span class="rv-album-artist">Ben&amp;Ben</span>
+              </span>
+            </button>
+            <button
+              type="button"
+              class="rv-album-btn rv-album-ss"
+              data-embed-type="album"
+              data-embed-id="6MC4GloSqK2sSTLeYImDV3"
+              role="tab"
+              aria-selected="false"
+            >
+              <span class="rv-album-cover" aria-hidden="true">SS</span>
+              <span class="rv-album-meta">
+                <span class="rv-album-title">Fuchsiang Pag-Ibig</span>
+                <span class="rv-album-artist">Silent Sanctuary</span>
+              </span>
+            </button>
+            <button
+              type="button"
+              class="rv-album-btn rv-album-ss2"
+              data-embed-type="album"
+              data-embed-id="3ZlePmbDly7zZxzi8MdWib"
+              role="tab"
+              aria-selected="false"
+            >
+              <span class="rv-album-cover" aria-hidden="true">SS</span>
+              <span class="rv-album-meta">
+                <span class="rv-album-title">Monodramatic</span>
+                <span class="rv-album-artist">Silent Sanctuary</span>
+              </span>
+            </button>
+            <button
+              type="button"
+              class="rv-album-btn rv-album-khel"
+              data-embed-type="album"
+              data-embed-id="5yGhuPl0wpNaZQDOaFGda2"
+              role="tab"
+              aria-selected="false"
+            >
+              <span class="rv-album-cover" aria-hidden="true">KP</span>
+              <span class="rv-album-meta">
+                <span class="rv-album-title">Bandroom Sessions E1</span>
+                <span class="rv-album-artist">Khel Pangilinan</span>
+              </span>
+            </button>
+            <button
+              type="button"
+              class="rv-album-btn rv-album-khel2"
+              data-embed-type="album"
+              data-embed-id="7gnhPYyD40oxC9Ob5ocgI0"
+              role="tab"
+              aria-selected="false"
+            >
+              <span class="rv-album-cover" aria-hidden="true">KP</span>
+              <span class="rv-album-meta">
+                <span class="rv-album-title">True Love</span>
+                <span class="rv-album-artist">Khel Pangilinan</span>
+              </span>
+            </button>
+            <button
+              type="button"
+              class="rv-album-btn rv-album-fitter"
+              data-embed-type="track"
+              data-embed-id="1udOOSbJnytCdgvbgYOF5s"
+              role="tab"
+              aria-selected="false"
+            >
+              <span class="rv-album-cover" aria-hidden="true">FK</span>
+              <span class="rv-album-meta">
+                <span class="rv-album-title">Kalapastangan</span>
+                <span class="rv-album-artist">Fitterkarma</span>
+              </span>
+            </button>
+          </div>
+
+          <!-- Live embed -->
           <div class="rv-spotify-wrap">
             <iframe
               id="rvSpotifyEmbed"
               style="border-radius:12px"
-              src="https://open.spotify.com/embed/playlist/37i9dQZF1DX0XUsuxWHRQd?utm_source=generator&theme=0"
+              src="https://open.spotify.com/embed/playlist/5aHieMHZSl3gs5oEDJmA1U?utm_source=generator&theme=0"
               width="100%"
-              height="352"
+              height="380"
               frameborder="0"
               allowfullscreen=""
               allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
               loading="lazy"
-              title="Romar's coding playlist"
+              title="Romar's OPM albums"
             ></iframe>
           </div>
         </div>
