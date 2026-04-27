@@ -1410,6 +1410,66 @@ body.rv-admin-open { overflow: hidden; }
   font-size: 0.85rem; color: var(--rv-text-dim);
   box-shadow: var(--rv-shadow-sm);
 }
+.rv-hero-id {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.rv-hero-avatar {
+  position: relative;
+  display: inline-flex;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--rv-surface);
+  box-shadow:
+    0 0 0 3px #fff,
+    0 0 0 5px var(--rv-success),
+    0 18px 40px -18px rgba(20, 30, 60, 0.35);
+  flex: 0 0 auto;
+  transition: transform 0.4s cubic-bezier(.22,.61,.36,1), box-shadow 0.4s;
+}
+.rv-hero-avatar::after {
+  content: "";
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--rv-success);
+  box-shadow: 0 0 0 2.5px #fff, 0 0 0 3.5px var(--rv-success-soft);
+}
+.rv-hero-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 18%;
+  display: block;
+}
+.rv-hero-avatar:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow:
+    0 0 0 3px #fff,
+    0 0 0 5px var(--rv-success),
+    0 26px 50px -18px rgba(20, 30, 60, 0.45);
+}
+@media (prefers-color-scheme: dark) {
+  .rv-hero-avatar {
+    box-shadow:
+      0 0 0 3px var(--rv-bg, #0f1117),
+      0 0 0 5px var(--rv-success),
+      0 18px 40px -18px rgba(0, 0, 0, 0.6);
+  }
+  .rv-hero-avatar::after {
+    box-shadow: 0 0 0 2.5px var(--rv-bg, #0f1117), 0 0 0 3.5px var(--rv-success-soft);
+  }
+}
+@media (max-width: 480px) {
+  .rv-hero-avatar { width: 64px; height: 64px; }
+}
 .rv-eyebrow-dot {
   width: 8px; height: 8px; border-radius: 50%;
   background: var(--rv-success);
