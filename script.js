@@ -4984,10 +4984,13 @@
   window.onYouTubeIframeAPIReady = setupPlayer;
   if (window.YT && window.YT.Player) setupPlayer();
 
+  const stateEl = toggle.querySelector(".rv-vinyl-state");
   const setIcon = () => {
-    toggle.innerHTML = playing
-      ? '<i class="bi bi-volume-up-fill"></i>'
-      : '<i class="bi bi-volume-mute-fill"></i>';
+    if (stateEl) {
+      stateEl.innerHTML = playing
+        ? '<i class="bi bi-pause-fill"></i>'
+        : '<i class="bi bi-volume-mute-fill"></i>';
+    }
     toggle.classList.toggle("is-playing", playing);
     toggle.setAttribute("aria-pressed", playing ? "true" : "false");
   };
