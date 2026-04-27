@@ -5004,6 +5004,8 @@
   setIcon();
 
   const tryUnmute = () => {
+    // Bail if user/picker has paused us — prevents retry from clobbering stop.
+    if (!playing) return false;
     let ok = false;
     if (player && player.unMute) {
       try {
@@ -5029,19 +5031,36 @@
     [150, 400, 900, 1800].forEach((ms) => setTimeout(tryUnmute, ms));
   };
   const stopAloud = () => {
+    playing = false;
+    pendingAloud = false;
     if (player && player.mute) {
       try { player.mute(); player.pauseVideo(); } catch (_) {}
     } else {
       send("mute"); send("pauseVideo");
     }
-    playing = false;
+    // Aggressive double-tap to defeat any racing playVideo from queued retries.
+    setTimeout(() => {
+      if (playing) return;
+      if (player && player.mute) {
+        try { player.mute(); player.pauseVideo(); } catch (_) {}
+      } else {
+        send("mute"); send("pauseVideo");
+      }
+    }, 250);
     setIcon();
   };
+
+  // True once the user has interacted with the Now Playing picker — stops
+  // scroll-to-resume from restarting the BGM while the YT embed is active.
+  let npActive = false;
 
   // Auto-unmute on first interaction (scroll, tap, key, click)
   const firstInteract = (e) => {
     if (unlocked) return;
+    if (npActive) return;
     if (e && e.target && e.target.closest && e.target.closest("#rvBgmToggle")) return;
+    if (e && e.target && e.target.closest && e.target.closest(".rv-album-picker")) return;
+    if (e && e.target && e.target.closest && e.target.closest(".rv-spotify-wrap, .rv-yt-frame")) return;
     startAloud();
   };
   const events = ["pointerdown", "touchstart", "keydown", "scroll", "wheel", "click"];
@@ -5049,14 +5068,17 @@
     window.addEventListener(ev, firstInteract, { passive: true, capture: true })
   );
 
-  // Pause when Now Playing is used
+  // Pause when Now Playing is used (user picked an album)
   const picker = document.querySelector(".rv-album-picker");
   if (picker) {
     picker.addEventListener("click", (e) => {
       if (!e.target.closest(".rv-album-btn")) return;
+      npActive = true;
       stopAloud();
     });
   }
+  // Expose so user's vinyl-toggle press can re-claim audio (clears npActive).
+  toggle.addEventListener("click", () => { npActive = false; }, true);
 
   /* ---------- Draggable ---------- */
   const STORAGE_KEY = "rv_bgm_toggle_pos";
