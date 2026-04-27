@@ -3662,7 +3662,10 @@
     panel.classList.add("is-open");
     panel.setAttribute("aria-hidden", "false");
     bubble.classList.add("is-hidden");
-    setTimeout(() => input.focus(), 120);
+    // Only auto-focus on desktop/hover devices — touch devices pop up keyboard.
+    if (window.matchMedia && window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+      setTimeout(() => input.focus(), 120);
+    }
   }
   function close() {
     panel.classList.remove("is-open");
@@ -3768,7 +3771,11 @@
       history.pop();
     } finally {
       setSending(false);
-      input.focus();
+      // Don't auto-focus on touch devices — pops up the keyboard unexpectedly
+      // after bot replies. Desktop users can re-focus with tab/click.
+      if (window.matchMedia && window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+        input.focus();
+      }
     }
   }
 

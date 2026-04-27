@@ -3132,20 +3132,29 @@ body.rv-game-active .rv-game-pane .row { --bs-gutter-x: 12px; }
 }
 .rv-album-cover {
   flex: 0 0 auto;
-  width: 48px; height: 48px;
-  border-radius: 8px;
-  display: flex; align-items: center; justify-content: center;
-  font-weight: 800; font-size: 0.95rem; color: #fff;
-  letter-spacing: 0.5px;
-  background: linear-gradient(135deg, #1ed760 0%, #0e9f47 100%);
+  width: 52px; height: 52px;
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+  background: #111;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08);
 }
-.rv-album-opm    .rv-album-cover { background: linear-gradient(135deg, #1ed760 0%, #0e9f47 100%); font-size: 1.2rem; }
-.rv-album-benben .rv-album-cover { background: linear-gradient(135deg, #ffb347 0%, #e07b00 100%); }
-.rv-album-ss     .rv-album-cover { background: linear-gradient(135deg, #e64980 0%, #8b2252 100%); }
-.rv-album-ss2    .rv-album-cover { background: linear-gradient(135deg, #6366f1 0%, #3730a3 100%); }
-.rv-album-khel   .rv-album-cover { background: linear-gradient(135deg, #14b8a6 0%, #0f766e 100%); }
-.rv-album-khel2  .rv-album-cover { background: linear-gradient(135deg, #f472b6 0%, #be185d 100%); }
-.rv-album-fitter .rv-album-cover { background: linear-gradient(135deg, #ef4444 0%, #991b1b 100%); }
+.rv-album-cover img {
+  position: absolute;
+  inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+.rv-album-btn.is-active .rv-album-cover::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 10px;
+  box-shadow: inset 0 0 0 2px #1ed760;
+  pointer-events: none;
+}
 .rv-album-meta {
   display: flex; flex-direction: column; text-align: left; line-height: 1.25;
 }
