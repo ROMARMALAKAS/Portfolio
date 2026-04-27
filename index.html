@@ -304,7 +304,23 @@
             </a>
           </div>
 
-          <div class="row g-3" id="rvProjectsList"></div>
+          <div class="row g-3" id="rvProjectsList">
+            <!-- Skeleton placeholders shown until projects load -->
+            <div class="col-md-6 rv-skeleton-card" aria-hidden="true">
+              <div class="rv-skel rv-skel-visual"></div>
+              <div class="rv-skel rv-skel-tag"></div>
+              <div class="rv-skel rv-skel-title"></div>
+              <div class="rv-skel rv-skel-line"></div>
+              <div class="rv-skel rv-skel-line rv-skel-line-short"></div>
+            </div>
+            <div class="col-md-6 rv-skeleton-card" aria-hidden="true">
+              <div class="rv-skel rv-skel-visual"></div>
+              <div class="rv-skel rv-skel-tag"></div>
+              <div class="rv-skel rv-skel-title"></div>
+              <div class="rv-skel rv-skel-line"></div>
+              <div class="rv-skel rv-skel-line rv-skel-line-short"></div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -1274,9 +1290,10 @@
 
     <footer class="rv-footer border-top">
       <div class="container text-center">
-        <span class="text-body-secondary small">
-          © <span id="year"></span> Romar Villafuerte. Built with care.
-        </span>
+        <div class="rv-footer-meta justify-content-center">
+          <span>© <span id="year"></span> Romar Villafuerte. Built with care.</span>
+          <span class="rv-updated">Last updated <span id="rvLastUpdated">April 2026</span></span>
+        </div>
       </div>
     </footer>
 

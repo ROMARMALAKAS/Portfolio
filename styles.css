@@ -3021,3 +3021,66 @@ body.rv-game-active .rv-game-pane .row { --bs-gutter-x: 12px; }
 @media (min-width: 721px) {
   body.rv-game-active .rv-game-wrap canvas { max-height: 70vh; }
 }
+
+/* =====================================================
+   Skeleton loaders (shown until API content arrives)
+   ===================================================== */
+.rv-skeleton-card {
+  background: var(--rv-bg, #fff);
+  border: 1px solid var(--rv-border, rgba(8,12,24,0.08));
+  border-radius: 16px;
+  padding: 16px;
+  margin: 0 calc(var(--bs-gutter-x, 1.5rem) * .5);
+  margin-bottom: 1rem;
+}
+.rv-skel {
+  background: linear-gradient(90deg, rgba(8,12,24,0.06) 0%, rgba(8,12,24,0.12) 50%, rgba(8,12,24,0.06) 100%);
+  background-size: 200% 100%;
+  border-radius: 8px;
+  animation: rvSkelShimmer 1.2s linear infinite;
+  margin-bottom: 12px;
+}
+[data-bs-theme="dark"] .rv-skel {
+  background: linear-gradient(90deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.10) 50%, rgba(255,255,255,0.04) 100%);
+  background-size: 200% 100%;
+}
+.rv-skel-visual { height: 180px; border-radius: 14px; }
+.rv-skel-tag    { height: 18px; width: 80px; }
+.rv-skel-title  { height: 22px; width: 65%; }
+.rv-skel-line   { height: 12px; width: 100%; }
+.rv-skel-line-short { width: 70%; margin-bottom: 0; }
+@keyframes rvSkelShimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* =====================================================
+   Hero — mobile tightening (so CTA buttons stay above the fold)
+   ===================================================== */
+@media (max-width: 767.98px) {
+  .rv-hero { padding-top: 1.5rem; padding-bottom: 1.5rem; }
+  .rv-hero .row { gap: 1rem; }
+  .rv-hero .rv-display { font-size: clamp(1.85rem, 7vw, 2.35rem); line-height: 1.12; }
+  .rv-hero .lead { font-size: 0.98rem; margin-bottom: 1rem !important; }
+  .rv-hero .rv-eyebrow { font-size: 0.78rem; }
+  .rv-hero .btn-lg { padding: 0.55rem 1rem; font-size: 0.96rem; }
+  .rv-hero .rv-hero-card { padding: 14px; margin-top: 0.5rem; }
+  .rv-hero .rv-hero-card .rv-card-row { padding: 8px 0; }
+}
+
+/* =====================================================
+   Footer — last-updated stamp
+   ===================================================== */
+.rv-footer-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  align-items: center;
+  font-size: 0.85rem;
+  color: var(--rv-muted, #6b7280);
+}
+.rv-footer-meta .rv-updated::before {
+  content: "·";
+  margin-right: 10px;
+  opacity: 0.5;
+}

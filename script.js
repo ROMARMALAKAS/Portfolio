@@ -2,8 +2,16 @@
    Romar Villafuerte Portfolio — interactive scripts
    ===================================================== */
 
-// Year in footer
-document.getElementById("year").textContent = new Date().getFullYear();
+// Year + last-updated stamp in footer
+(function () {
+  const now = new Date();
+  const yearEl = document.getElementById("year");
+  if (yearEl) yearEl.textContent = now.getFullYear();
+  const upd = document.getElementById("rvLastUpdated");
+  if (upd) {
+    upd.textContent = now.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+  }
+})();
 
 /* ---------- Hero typewriter ---------- */
 (function () {
