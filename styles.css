@@ -3178,7 +3178,25 @@ body.rv-game-active .rv-game-pane .row { --bs-gutter-x: 12px; }
   width: 100%;
   min-height: 352px;
 }
+/* Responsive 16:9 wrapper for YouTube iframe */
+.rv-yt-frame {
+  position: relative;
+  width: 100%;
+  padding-top: 56.25%; /* 16:9 */
+  border-radius: 12px;
+  overflow: hidden;
+  background: #000;
+}
+.rv-yt-frame iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  min-height: 0;
+}
 @media (max-width: 575.98px) {
   .rv-spotify-wrap { padding: 10px; }
   .rv-spotify-wrap iframe { min-height: 320px; }
+  .rv-yt-frame iframe { min-height: 0; }
 }

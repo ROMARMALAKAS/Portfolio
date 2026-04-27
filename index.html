@@ -262,7 +262,7 @@
             <span class="rv-kicker">02 · Now playing</span>
             <h2 class="rv-h2">What I listen to.</h2>
             <p class="text-body-secondary mb-0">
-              My favorite OPM albums. Tap any cover to play it — every song from that album shows up.
+              My favorite OPM — tap any cover to play the full song / album right here on YouTube.
             </p>
           </div>
 
@@ -271,8 +271,7 @@
             <button
               type="button"
               class="rv-album-btn rv-album-opm is-active"
-              data-embed-type="playlist"
-              data-embed-id="5aHieMHZSl3gs5oEDJmA1U"
+              data-yt-id="ypA7vViok08"
               role="tab"
               aria-selected="true"
             >
@@ -281,14 +280,13 @@
               </span>
               <span class="rv-album-meta">
                 <span class="rv-album-title">All Best OPM</span>
-                <span class="rv-album-artist">124 songs · Filipino classics</span>
+                <span class="rv-album-artist">2-hour non-stop mix</span>
               </span>
             </button>
             <button
               type="button"
               class="rv-album-btn rv-album-benben"
-              data-embed-type="album"
-              data-embed-id="7xCcuTA3abKwxj8HwgxP7R"
+              data-yt-id="Kc3Or2EcQJg"
               role="tab"
               aria-selected="false"
             >
@@ -301,64 +299,59 @@
             <button
               type="button"
               class="rv-album-btn rv-album-ss"
-              data-embed-type="album"
-              data-embed-id="6MC4GloSqK2sSTLeYImDV3"
+              data-yt-id="de1EE3bcxc8"
               role="tab"
               aria-selected="false"
             >
               <span class="rv-album-cover" aria-hidden="true">SS</span>
               <span class="rv-album-meta">
-                <span class="rv-album-title">Fuchsiang Pag-Ibig</span>
+                <span class="rv-album-title">Ultimate Compilation</span>
                 <span class="rv-album-artist">Silent Sanctuary</span>
               </span>
             </button>
             <button
               type="button"
               class="rv-album-btn rv-album-ss2"
-              data-embed-type="album"
-              data-embed-id="3ZlePmbDly7zZxzi8MdWib"
+              data-yt-id="o4G24ZvTMPI"
               role="tab"
               aria-selected="false"
             >
               <span class="rv-album-cover" aria-hidden="true">SS</span>
               <span class="rv-album-meta">
-                <span class="rv-album-title">Monodramatic</span>
+                <span class="rv-album-title">Sa'yo Lamang</span>
                 <span class="rv-album-artist">Silent Sanctuary</span>
               </span>
             </button>
             <button
               type="button"
               class="rv-album-btn rv-album-khel"
-              data-embed-type="album"
-              data-embed-id="5yGhuPl0wpNaZQDOaFGda2"
+              data-yt-id="GCiV83kNV50"
               role="tab"
               aria-selected="false"
             >
               <span class="rv-album-cover" aria-hidden="true">KP</span>
               <span class="rv-album-meta">
-                <span class="rv-album-title">Bandroom Sessions E1</span>
+                <span class="rv-album-title">Dahil Sa'yo</span>
                 <span class="rv-album-artist">Khel Pangilinan</span>
               </span>
             </button>
             <button
               type="button"
               class="rv-album-btn rv-album-khel2"
-              data-embed-type="album"
-              data-embed-id="7gnhPYyD40oxC9Ob5ocgI0"
+              data-yt-id="s3WB5C3ph0s"
               role="tab"
               aria-selected="false"
             >
               <span class="rv-album-cover" aria-hidden="true">KP</span>
               <span class="rv-album-meta">
-                <span class="rv-album-title">True Love</span>
-                <span class="rv-album-artist">Khel Pangilinan</span>
+                <span class="rv-album-title">On Bended Knee</span>
+                <span class="rv-album-artist">Khel Pangilinan cover</span>
               </span>
             </button>
             <button
               type="button"
               class="rv-album-btn rv-album-fitter"
-              data-embed-type="track"
-              data-embed-id="1udOOSbJnytCdgvbgYOF5s"
+              data-yt-id="YRqz58yOCLc"
               role="tab"
               aria-selected="false"
             >
@@ -370,20 +363,19 @@
             </button>
           </div>
 
-          <!-- Live embed -->
+          <!-- Live embed (YouTube — full songs play for everyone) -->
           <div class="rv-spotify-wrap">
-            <iframe
-              id="rvSpotifyEmbed"
-              style="border-radius:12px"
-              src="https://open.spotify.com/embed/playlist/5aHieMHZSl3gs5oEDJmA1U?utm_source=generator&theme=0"
-              width="100%"
-              height="380"
-              frameborder="0"
-              allowfullscreen=""
-              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-              loading="lazy"
-              title="Romar's OPM albums"
-            ></iframe>
+            <div class="rv-yt-frame">
+              <iframe
+                id="rvSpotifyEmbed"
+                src="https://www.youtube.com/embed/ypA7vViok08?rel=0&modestbranding=1"
+                title="Romar's OPM albums"
+                frameborder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen
+                loading="lazy"
+              ></iframe>
+            </div>
           </div>
         </div>
       </section>
