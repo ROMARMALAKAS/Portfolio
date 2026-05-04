@@ -18,16 +18,20 @@
     <meta property="og:title" content="Romar Villafuerte — Website Developer" />
     <meta property="og:description" content="I build clean, fast websites and small web apps. HTML, CSS, JavaScript, React, FastAPI. Available for freelance & full-time." />
     <meta property="og:url" content="https://romar-villafuerte.vercel.app/" />
-    <meta property="og:image" content="https://romar-villafuerte.vercel.app/assets/og-image.png" />
+    <meta property="og:image" content="https://romar-villafuerte.vercel.app/assets/og-image.png?v=2" />
+    <meta property="og:image:secure_url" content="https://romar-villafuerte.vercel.app/assets/og-image.png?v=2" />
+    <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="Romar Villafuerte — Website Developer" />
+    <meta property="og:image:alt" content="Romar Villafuerte — Website Developer · Philippines" />
+    <meta property="og:locale" content="en_PH" />
 
     <!-- Twitter / X -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Romar Villafuerte — Website Developer" />
     <meta name="twitter:description" content="I build clean, fast websites and small web apps. HTML, CSS, JavaScript, React, FastAPI." />
-    <meta name="twitter:image" content="https://romar-villafuerte.vercel.app/assets/og-image.png" />
+    <meta name="twitter:image" content="https://romar-villafuerte.vercel.app/assets/og-image.png?v=2" />
+    <meta name="twitter:image:alt" content="Romar Villafuerte — Website Developer · Philippines" />
 
     <title>Romar Villafuerte — Website Developer</title>
 
@@ -61,6 +65,37 @@
     />
   </head>
   <body>
+    <!-- SPLASH / first-paint reveal -->
+    <div class="rv-splash" id="rvSplash" aria-hidden="true">
+      <div class="rv-splash-inner">
+        <div class="rv-splash-avatar">
+          <img src="assets/romar-hero.jpg?v=2" alt="" width="120" height="120" />
+          <span class="rv-splash-ring"></span>
+        </div>
+        <h1 class="rv-splash-name">
+          <span class="rv-splash-letter" style="--i:0">R</span>
+          <span class="rv-splash-letter" style="--i:1">o</span>
+          <span class="rv-splash-letter" style="--i:2">m</span>
+          <span class="rv-splash-letter" style="--i:3">a</span>
+          <span class="rv-splash-letter" style="--i:4">r</span>
+          <span class="rv-splash-letter rv-splash-space" style="--i:5">&nbsp;</span>
+          <span class="rv-splash-letter" style="--i:6">V</span>
+          <span class="rv-splash-letter" style="--i:7">i</span>
+          <span class="rv-splash-letter" style="--i:8">l</span>
+          <span class="rv-splash-letter" style="--i:9">l</span>
+          <span class="rv-splash-letter" style="--i:10">a</span>
+          <span class="rv-splash-letter" style="--i:11">f</span>
+          <span class="rv-splash-letter" style="--i:12">u</span>
+          <span class="rv-splash-letter" style="--i:13">e</span>
+          <span class="rv-splash-letter" style="--i:14">r</span>
+          <span class="rv-splash-letter" style="--i:15">t</span>
+          <span class="rv-splash-letter" style="--i:16">e</span>
+        </h1>
+        <p class="rv-splash-tag">Website Developer · Philippines</p>
+        <div class="rv-splash-bar" aria-hidden="true"><span></span></div>
+      </div>
+    </div>
+
     <!-- NAV -->
     <nav class="navbar navbar-expand-lg rv-navbar sticky-top">
       <div class="container">
@@ -157,6 +192,9 @@
                 <a id="rvHeroResume" href="#" class="btn btn-outline-secondary btn-lg px-4" target="_blank" rel="noopener" hidden>
                   <i class="bi bi-file-earmark-text"></i> Resume
                 </a>
+                <button id="rvHeroResumePdf" type="button" class="btn btn-outline-secondary btn-lg px-4">
+                  <i class="bi bi-download"></i> Download Resume
+                </button>
               </div>
             </div>
             <div class="col-lg-5">
@@ -2005,6 +2043,11 @@
     <!-- Tone.js for real piano samples -->
     <script
       src="https://cdn.jsdelivr.net/npm/tone@14.8.49/build/Tone.js"
+    ></script>
+    <!-- jsPDF for client-side resume PDF generator -->
+    <script
+      src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"
+      defer
     ></script>
     <script src="script.js" defer></script>
 

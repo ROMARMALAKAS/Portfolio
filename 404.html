@@ -3,8 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Page not found · Romar Villafuerte</title>
+    <title>Naliligaw ka? · Romar Villafuerte</title>
     <meta name="robots" content="noindex" />
+    <meta name="theme-color" content="#0b0f1a" />
     <link
       rel="icon"
       type="image/svg+xml"
@@ -18,75 +19,458 @@
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
     />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
     <style>
       :root {
-        --rv-primary: #2563eb;
-        --rv-text: #0b0f1a;
-        --rv-muted: #6b7280;
-        --rv-bg: #fff;
-        --rv-bg-soft: #f7f9ff;
+        --bg: #0a1020;
+        --bg-2: #050913;
+        --card: rgba(255, 255, 255, 0.04);
+        --card-border: rgba(255, 255, 255, 0.08);
+        --text: #f1f5f9;
+        --muted: #94a3b8;
+        --accent: #60a5fa;
+        --accent-2: #22c55e;
+        --danger: #f43f5e;
       }
-      @media (prefers-color-scheme: dark) {
-        :root {
-          --rv-text: #f1f5f9;
-          --rv-muted: #94a3b8;
-          --rv-bg: #0b0f1a;
-          --rv-bg-soft: #0f172a;
-        }
-        body { background: var(--rv-bg); color: var(--rv-text); }
-      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; }
       body {
         font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-        background: var(--rv-bg);
-        color: var(--rv-text);
+        background:
+          radial-gradient(900px 500px at 20% 20%, rgba(37, 99, 235, 0.18), transparent 60%),
+          radial-gradient(700px 400px at 80% 85%, rgba(34, 197, 94, 0.14), transparent 65%),
+          linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
+        background-attachment: fixed;
+        color: var(--text);
         min-height: 100vh;
+        padding: 24px;
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 24px;
       }
-      .rv-404 {
-        max-width: 560px;
+      .wrap {
+        width: 100%;
+        max-width: 720px;
         text-align: center;
       }
-      .rv-404-glyph {
-        font-size: clamp(5rem, 18vw, 9rem);
+      .badge-naliligaw {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 14px;
+        border-radius: 999px;
+        background: rgba(96, 165, 250, 0.12);
+        color: var(--accent);
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 18px;
+        border: 1px solid rgba(96, 165, 250, 0.3);
+      }
+      .badge-naliligaw .dot {
+        width: 6px; height: 6px; border-radius: 50%;
+        background: var(--accent);
+        animation: blink 1.4s ease-in-out infinite;
+      }
+      @keyframes blink { 50% { opacity: 0.3; } }
+
+      .glyph {
+        font-size: clamp(6rem, 22vw, 11rem);
         font-weight: 800;
-        line-height: 1;
-        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        line-height: 0.9;
+        margin: 0 0 8px;
+        letter-spacing: -0.04em;
+        background: linear-gradient(135deg, #2563eb 0%, #22c55e 100%);
         -webkit-background-clip: text;
         background-clip: text;
         color: transparent;
-        margin-bottom: 0.5rem;
+        text-shadow: 0 8px 40px rgba(37, 99, 235, 0.25);
       }
-      .rv-404 h1 {
-        font-size: clamp(1.4rem, 4vw, 1.9rem);
-        font-weight: 700;
-        margin-bottom: 0.75rem;
+
+      h1 {
+        font-size: clamp(1.4rem, 4.2vw, 2rem);
+        font-weight: 800;
+        margin: 4px 0 12px;
+        letter-spacing: -0.02em;
       }
-      .rv-404 p {
-        color: var(--rv-muted);
-        margin-bottom: 1.5rem;
+      .lede {
+        color: var(--muted);
+        margin: 0 auto 22px;
+        max-width: 520px;
+        font-size: clamp(0.95rem, 2.4vw, 1.05rem);
+        line-height: 1.55;
+      }
+      .lede strong { color: var(--text); }
+
+      .actions {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-bottom: 28px;
+      }
+      .btn-primary,
+      .btn-ghost {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0.7rem 1.3rem;
+        font-weight: 600;
+        font-size: 0.95rem;
+        border-radius: 999px;
+        text-decoration: none;
+        transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
       }
       .btn-primary {
         background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        color: #fff;
         border: none;
-        padding: 0.65rem 1.4rem;
-        font-weight: 600;
+        box-shadow: 0 12px 30px -12px rgba(37, 99, 235, 0.6);
       }
+      .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 16px 36px -12px rgba(37, 99, 235, 0.7); }
+      .btn-ghost {
+        background: rgba(255,255,255,0.04);
+        color: var(--text);
+        border: 1px solid rgba(255,255,255,0.12);
+      }
+      .btn-ghost:hover { background: rgba(255,255,255,0.08); transform: translateY(-1px); }
+
+      /* Game card */
+      .game {
+        background: var(--card);
+        border: 1px solid var(--card-border);
+        border-radius: 18px;
+        padding: 18px 18px 14px;
+        text-align: left;
+        box-shadow: 0 24px 60px -28px rgba(8, 16, 36, 0.7);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+      }
+      .game-head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px;
+        justify-content: space-between;
+        margin-bottom: 14px;
+      }
+      .game-title {
+        font-weight: 700;
+        font-size: 1rem;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .game-title i { color: var(--accent-2); }
+      .game-stats {
+        display: flex;
+        gap: 14px;
+        font-size: 0.85rem;
+        color: var(--muted);
+      }
+      .game-stats strong {
+        color: var(--text);
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+      }
+      .field {
+        position: relative;
+        height: 280px;
+        max-height: 50vh;
+        background:
+          radial-gradient(closest-corner at 50% 50%, rgba(37, 99, 235, 0.10), rgba(0,0,0,0)),
+          linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.15));
+        border-radius: 14px;
+        border: 1px solid rgba(255,255,255,0.06);
+        overflow: hidden;
+        cursor: crosshair;
+        touch-action: manipulation;
+      }
+      .target {
+        position: absolute;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: radial-gradient(circle at 35% 30%, #34d399, #16a34a 70%);
+        box-shadow:
+          0 0 0 4px rgba(34, 197, 94, 0.18),
+          0 8px 18px -4px rgba(34, 197, 94, 0.5);
+        cursor: pointer;
+        transform: translate(-50%, -50%) scale(0);
+        animation: pop 0.18s ease-out forwards, float 1.2s ease-in-out infinite alternate 0.18s;
+        display: grid;
+        place-items: center;
+        font-size: 1.5rem;
+        line-height: 1;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+      .target.bomb {
+        background: radial-gradient(circle at 35% 30%, #fb7185, #be123c 70%);
+        box-shadow:
+          0 0 0 4px rgba(244, 63, 94, 0.2),
+          0 8px 18px -4px rgba(244, 63, 94, 0.5);
+      }
+      .target.popped {
+        animation: poof 0.25s ease-out forwards;
+      }
+      @keyframes pop {
+        from { transform: translate(-50%, -50%) scale(0); }
+        to { transform: translate(-50%, -50%) scale(1); }
+      }
+      @keyframes float {
+        from { transform: translate(-50%, calc(-50% - 4px)) scale(1); }
+        to   { transform: translate(-50%, calc(-50% + 4px)) scale(1); }
+      }
+      @keyframes poof {
+        0%   { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        100% { transform: translate(-50%, -50%) scale(1.6); opacity: 0; }
+      }
+      .floater {
+        position: absolute;
+        font-weight: 800;
+        font-size: 1.2rem;
+        pointer-events: none;
+        animation: floatUp 0.8s ease-out forwards;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+      }
+      @keyframes floatUp {
+        from { transform: translate(-50%, -50%); opacity: 1; }
+        to   { transform: translate(-50%, calc(-50% - 40px)); opacity: 0; }
+      }
+      .start-overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 10px;
+        background: rgba(5, 9, 19, 0.55);
+        backdrop-filter: blur(2px);
+        -webkit-backdrop-filter: blur(2px);
+        text-align: center;
+        padding: 16px;
+      }
+      .start-overlay h3 {
+        font-size: 1.2rem;
+        font-weight: 700;
+        margin: 0;
+      }
+      .start-overlay p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+      .start-overlay button {
+        margin-top: 6px;
+        padding: 0.55rem 1.2rem;
+        background: linear-gradient(135deg, #22c55e, #16a34a);
+        color: #fff;
+        font-weight: 700;
+        border: none;
+        border-radius: 999px;
+        cursor: pointer;
+        font-size: 0.95rem;
+      }
+      .start-overlay button:hover { filter: brightness(1.05); }
+      .legend {
+        margin-top: 12px;
+        font-size: 0.78rem;
+        color: var(--muted);
+        text-align: center;
+      }
+      .legend .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; vertical-align: middle; margin: 0 4px 2px; }
+      .legend .green { background: #16a34a; }
+      .legend .red   { background: #be123c; }
+
+      footer {
+        margin-top: 24px;
+        font-size: 0.78rem;
+        color: var(--muted);
+      }
+      footer a { color: var(--accent); text-decoration: none; }
     </style>
   </head>
   <body>
-    <main class="rv-404">
-      <div class="rv-404-glyph">404</div>
-      <h1>Page not found</h1>
-      <p>
-        That link is either broken, moved, or never existed. Don't worry — there's
-        plenty more on the homepage.
+    <main class="wrap">
+      <div class="badge-naliligaw">
+        <span class="dot"></span> Naliligaw ka, friend?
+      </div>
+      <div class="glyph">404</div>
+      <h1>Wala dito ang hinahanap mo.</h1>
+      <p class="lede">
+        Yung link na yan, <strong>broken</strong>, <strong>na-move na</strong>, or
+        <strong>hindi talaga existed</strong>. Pero habang nandito ka, kalaro tayo —
+        <strong>tap mo lahat ng green Romar</strong>, iwasan mo ang bombs.
       </p>
-      <a href="/" class="btn btn-primary btn-lg">
-        <i class="bi bi-arrow-left-short"></i> Back to homepage
-      </a>
+
+      <div class="actions">
+        <a href="/" class="btn-primary">
+          <i class="bi bi-arrow-left-short"></i> Balik sa homepage
+        </a>
+        <a href="/#play" class="btn-ghost">
+          <i class="bi bi-controller"></i> Mini-game arcade
+        </a>
+      </div>
+
+      <section class="game">
+        <header class="game-head">
+          <h2 class="game-title">
+            <i class="bi bi-bullseye"></i> Catch Romar
+          </h2>
+          <div class="game-stats">
+            <span>Score · <strong id="score">0</strong></span>
+            <span>Time · <strong id="time">20</strong>s</span>
+            <span>Best · <strong id="best">0</strong></span>
+          </div>
+        </header>
+        <div class="field" id="field" aria-label="Tap the green Romar circles, avoid the red bombs">
+          <div class="start-overlay" id="startOverlay">
+            <h3>Ready?</h3>
+            <p>Tapikin mo lahat ng <span class="dot green"></span> green sa loob ng 20 secs.<br />Iwas sa <span class="dot red"></span> red bombs (-5).</p>
+            <button id="startBtn" type="button">▶ Start</button>
+          </div>
+        </div>
+        <p class="legend">
+          <span class="dot green"></span> Romar = +1 &nbsp;·&nbsp;
+          <span class="dot red"></span> Bomb = −5 &nbsp;·&nbsp;
+          mabilis tap = combo bonus
+        </p>
+      </section>
+
+      <footer>
+        Made with ♥ in the Philippines · <a href="/">romar-villafuerte.vercel.app</a>
+      </footer>
     </main>
+
+    <script>
+      (function () {
+        const field = document.getElementById("field");
+        const scoreEl = document.getElementById("score");
+        const timeEl = document.getElementById("time");
+        const bestEl = document.getElementById("best");
+        const overlay = document.getElementById("startOverlay");
+        const startBtn = document.getElementById("startBtn");
+
+        const STORAGE_KEY = "rv_404_best";
+        const GAME_TIME = 20; // seconds
+
+        let running = false;
+        let score = 0;
+        let timeLeft = GAME_TIME;
+        let spawnTimer = null;
+        let tickTimer = null;
+        let lastHitAt = 0;
+        let combo = 0;
+
+        try {
+          const b = parseInt(localStorage.getItem(STORAGE_KEY) || "0", 10);
+          if (!isNaN(b)) bestEl.textContent = b;
+        } catch (_) {}
+
+        function spawn() {
+          if (!running) return;
+          const isBomb = Math.random() < 0.18;
+          const t = document.createElement("div");
+          t.className = "target" + (isBomb ? " bomb" : "");
+          t.textContent = isBomb ? "💣" : "🟢";
+          const r = field.getBoundingClientRect();
+          const pad = 36;
+          const x = pad + Math.random() * (r.width - pad * 2);
+          const y = pad + Math.random() * (r.height - pad * 2);
+          t.style.left = x + "px";
+          t.style.top = y + "px";
+          field.appendChild(t);
+          let removed = false;
+          const remove = () => {
+            if (removed) return;
+            removed = true;
+            t.classList.add("popped");
+            setTimeout(() => t.remove(), 250);
+          };
+          t.addEventListener("pointerdown", (e) => {
+            e.preventDefault();
+            if (!running || removed) return;
+            const now = performance.now();
+            const fast = now - lastHitAt < 600;
+            lastHitAt = now;
+            let delta;
+            if (isBomb) {
+              delta = -5;
+              combo = 0;
+            } else {
+              combo = fast ? combo + 1 : 1;
+              delta = 1 + Math.min(4, Math.floor(combo / 3));
+            }
+            score = Math.max(0, score + delta);
+            scoreEl.textContent = score;
+            const f = document.createElement("div");
+            f.className = "floater";
+            f.style.left = x + "px";
+            f.style.top = y + "px";
+            f.style.color = delta > 0 ? "#22c55e" : "#f43f5e";
+            f.textContent = (delta > 0 ? "+" : "") + delta + (combo > 2 && delta > 0 ? " ×" + combo : "");
+            field.appendChild(f);
+            setTimeout(() => f.remove(), 800);
+            remove();
+          }, { passive: false });
+          // Auto-despawn
+          setTimeout(remove, 1100 + Math.random() * 400);
+        }
+
+        function tick() {
+          timeLeft -= 1;
+          timeEl.textContent = timeLeft;
+          if (timeLeft <= 0) end();
+        }
+
+        function start() {
+          score = 0;
+          combo = 0;
+          timeLeft = GAME_TIME;
+          scoreEl.textContent = "0";
+          timeEl.textContent = GAME_TIME;
+          overlay.style.display = "none";
+          running = true;
+          spawnTimer = setInterval(spawn, 480);
+          tickTimer = setInterval(tick, 1000);
+          spawn();
+        }
+
+        function end() {
+          running = false;
+          clearInterval(spawnTimer);
+          clearInterval(tickTimer);
+          // Clean up live targets
+          field.querySelectorAll(".target").forEach((el) => el.remove());
+
+          let best = 0;
+          try { best = parseInt(localStorage.getItem(STORAGE_KEY) || "0", 10) || 0; } catch (_) {}
+          const isNewBest = score > best;
+          if (isNewBest) {
+            best = score;
+            try { localStorage.setItem(STORAGE_KEY, String(best)); } catch (_) {}
+            bestEl.textContent = best;
+          }
+
+          overlay.innerHTML =
+            '<h3>' + (isNewBest ? "🏆 New best!" : "Game over") + '</h3>' +
+            '<p>Score: <strong>' + score + '</strong>' +
+            (isNewBest ? '' : ' · Best: <strong>' + best + '</strong>') + '</p>' +
+            '<button id="startBtn" type="button">▶ Try again</button>' +
+            '<p style="margin-top:6px"><a href="/" style="color:#60a5fa;text-decoration:none;font-size:0.85rem">← Bumalik sa homepage</a></p>';
+          overlay.style.display = "flex";
+          overlay.querySelector("#startBtn").addEventListener("click", start);
+        }
+
+        startBtn.addEventListener("click", start);
+      })();
+    </script>
   </body>
 </html>

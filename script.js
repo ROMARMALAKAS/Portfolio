@@ -2,6 +2,59 @@
    Romar Villafuerte Portfolio — interactive scripts
    ===================================================== */
 
+/* ---------- Splash screen dismiss ---------- */
+(function () {
+  const splash = document.getElementById("rvSplash");
+  if (!splash) return;
+
+  // Show splash only on a user's first visit per session — repeat visits skip
+  // straight to the page so it never feels like loading lag.
+  let seen = false;
+  try { seen = sessionStorage.getItem("rvSplashSeen") === "1"; } catch (_) {}
+
+  const reduced = window.matchMedia &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // Hide immediately for repeat visitors / reduced-motion users
+  if (seen || reduced) {
+    splash.classList.add("is-hidden");
+    document.body.classList.remove("rv-splash-active");
+    return;
+  }
+
+  document.body.classList.add("rv-splash-active");
+
+  let dismissed = false;
+  function dismiss() {
+    if (dismissed) return;
+    dismissed = true;
+    splash.classList.add("is-hiding");
+    document.body.classList.remove("rv-splash-active");
+    try { sessionStorage.setItem("rvSplashSeen", "1"); } catch (_) {}
+    setTimeout(() => splash.classList.add("is-hidden"), 600);
+  }
+
+  // Fall off naturally after the reveal animation finishes.
+  const AUTO_MS = 2400;
+  const tAuto = setTimeout(dismiss, AUTO_MS);
+
+  // Click / tap / Esc / scroll all skip the splash.
+  splash.addEventListener("click", () => { clearTimeout(tAuto); dismiss(); });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" || e.key === "Enter" || e.key === " ") {
+      clearTimeout(tAuto);
+      dismiss();
+    }
+  });
+  window.addEventListener("scroll", () => { clearTimeout(tAuto); dismiss(); }, { once: true, passive: true });
+
+  // Safety: once the page is fully loaded, ensure the splash is dismissed
+  // (in case JS animations are slower than expected).
+  window.addEventListener("load", () => {
+    setTimeout(() => { clearTimeout(tAuto); dismiss(); }, 1800);
+  });
+})();
+
 // Year + last-updated stamp in footer
 (function () {
   const now = new Date();
@@ -5221,4 +5274,286 @@
     });
     mo.observe(node, { childList: true, subtree: true });
   });
+})();
+
+/* ---------- Resume PDF auto-generator ---------- */
+(function () {
+  const API = "https://leaderboard-api-zgbqyajg.fly.dev";
+  const btn = document.getElementById("rvHeroResumePdf");
+  if (!btn) return;
+
+  // Static skill data to keep the PDF fully usable offline / without admin edits.
+  const SKILLS = {
+    Languages: ["HTML", "CSS", "JavaScript", "PHP", "Python", "SQL"],
+    Frameworks: ["React", "Bootstrap", "FastAPI", "Node.js"],
+    Tools: ["Git", "VS Code", "Figma", "MySQL", "SQLite", "Vercel"],
+  };
+  const EDUCATION = [
+    {
+      school: "Dalubhasaang Politekniko ng Lungsod ng Baliwag",
+      detail: "Bachelor of Science in Information Technology.",
+      period: "2023 – Present",
+    },
+  ];
+
+  function setBusy(busy) {
+    btn.disabled = busy;
+    btn.style.opacity = busy ? "0.6" : "";
+    btn.innerHTML = busy
+      ? '<i class="bi bi-hourglass-split"></i> Generating…'
+      : '<i class="bi bi-download"></i> Download Resume';
+  }
+
+  async function loadProfileSafe() {
+    try {
+      const r = await fetch(API + "/profile", { cache: "no-store" });
+      if (!r.ok) return null;
+      const j = await r.json();
+      return j.profile || null;
+    } catch (_) { return null; }
+  }
+
+  async function loadProjectsSafe() {
+    try {
+      const r = await fetch(API + "/projects?include_hidden=1", { cache: "no-store" });
+      if (!r.ok) return [];
+      const j = await r.json();
+      return Array.isArray(j.projects) ? j.projects : [];
+    } catch (_) { return []; }
+  }
+
+  function ensureJsPDF() {
+    if (window.jspdf && window.jspdf.jsPDF) return Promise.resolve();
+    return new Promise((resolve, reject) => {
+      const s = document.createElement("script");
+      s.src = "https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js";
+      s.onload = () => resolve();
+      s.onerror = () => reject(new Error("Couldn't load jsPDF"));
+      document.head.appendChild(s);
+    });
+  }
+
+  function fitText(doc, text, maxWidth) {
+    return doc.splitTextToSize(text || "", maxWidth);
+  }
+
+  async function generate() {
+    setBusy(true);
+    try {
+      await ensureJsPDF();
+      const [profile, projects] = await Promise.all([loadProfileSafe(), loadProjectsSafe()]);
+      const p = profile || {};
+      const name = (p.name || "Romar Villafuerte").trim();
+      const title = (p.title || "Website Developer").trim();
+      const location = (p.location || "Philippines").trim();
+      const email = (p.email_public || "romarmalakass@gmail.com").trim();
+      const github = (p.github_url || "https://github.com/ROMARMALAKAS").trim();
+      const linkedin = (p.linkedin_url || "").trim();
+      const facebook = (p.facebook_url || "").trim();
+      const bio = (p.bio || "I build clean, fast websites and small web apps. Currently focused on practical school-style projects you can actually use.").trim();
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ unit: "pt", format: "a4" });
+      const W = doc.internal.pageSize.getWidth();
+      const H = doc.internal.pageSize.getHeight();
+      const M = 48; // page margin
+      const COL_GAP = 24;
+      const LEFT_W = 180;
+      const RIGHT_X = M + LEFT_W + COL_GAP;
+      const RIGHT_W = W - RIGHT_X - M;
+
+      // Colors
+      const TEXT = [17, 24, 39];
+      const MUTED = [107, 114, 128];
+      const ACCENT = [37, 99, 235];
+      const SOFT_BG = [241, 245, 249];
+
+      // ---- Left sidebar background ----
+      doc.setFillColor(SOFT_BG[0], SOFT_BG[1], SOFT_BG[2]);
+      doc.rect(0, 0, M + LEFT_W + 8, H, "F");
+
+      // ---- Header ----
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(24);
+      doc.setTextColor(TEXT[0], TEXT[1], TEXT[2]);
+      doc.text(name, M, 80);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(13);
+      doc.setTextColor(ACCENT[0], ACCENT[1], ACCENT[2]);
+      doc.text(`${title} · ${location}`, M, 100);
+
+      // ---- Sidebar: contact ----
+      let y = 140;
+      const drawSidebarHeading = (h) => {
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(11);
+        doc.setTextColor(TEXT[0], TEXT[1], TEXT[2]);
+        doc.text(h.toUpperCase(), M, y);
+        y += 6;
+        doc.setDrawColor(ACCENT[0], ACCENT[1], ACCENT[2]);
+        doc.setLineWidth(1);
+        doc.line(M, y, M + 30, y);
+        y += 14;
+      };
+      const drawSidebarLine = (label, value) => {
+        if (!value) return;
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(8.5);
+        doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+        doc.text(label.toUpperCase(), M, y);
+        y += 11;
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        doc.setTextColor(TEXT[0], TEXT[1], TEXT[2]);
+        const lines = fitText(doc, value, LEFT_W);
+        doc.text(lines, M, y);
+        y += lines.length * 13 + 6;
+      };
+
+      drawSidebarHeading("Contact");
+      drawSidebarLine("Email", email);
+      drawSidebarLine("Location", location);
+      drawSidebarLine("GitHub", github.replace(/^https?:\/\//, ""));
+      if (linkedin) drawSidebarLine("LinkedIn", linkedin.replace(/^https?:\/\//, ""));
+      if (facebook) drawSidebarLine("Facebook", facebook.replace(/^https?:\/\//, ""));
+      drawSidebarLine("Portfolio", "romar-villafuerte.vercel.app");
+      y += 6;
+
+      drawSidebarHeading("Skills");
+      Object.entries(SKILLS).forEach(([cat, items]) => {
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9.5);
+        doc.setTextColor(TEXT[0], TEXT[1], TEXT[2]);
+        doc.text(cat, M, y);
+        y += 12;
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9.5);
+        doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+        const wrapped = fitText(doc, items.join(" · "), LEFT_W);
+        doc.text(wrapped, M, y);
+        y += wrapped.length * 12 + 8;
+      });
+
+      drawSidebarHeading("Education");
+      EDUCATION.forEach((e) => {
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9.5);
+        doc.setTextColor(TEXT[0], TEXT[1], TEXT[2]);
+        const sLines = fitText(doc, e.school, LEFT_W);
+        doc.text(sLines, M, y);
+        y += sLines.length * 11 + 2;
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+        const dLines = fitText(doc, e.detail, LEFT_W);
+        doc.text(dLines, M, y);
+        y += dLines.length * 11 + 2;
+
+        doc.text(e.period, M, y);
+        y += 14;
+      });
+
+      // ---- Right column: Summary ----
+      let ry = 140;
+      const drawMainHeading = (h) => {
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(13);
+        doc.setTextColor(TEXT[0], TEXT[1], TEXT[2]);
+        doc.text(h, RIGHT_X, ry);
+        ry += 6;
+        doc.setDrawColor(ACCENT[0], ACCENT[1], ACCENT[2]);
+        doc.setLineWidth(1.2);
+        doc.line(RIGHT_X, ry, RIGHT_X + 36, ry);
+        ry += 18;
+      };
+      const drawBody = (text, opts = {}) => {
+        const size = opts.size || 10.5;
+        const color = opts.color || TEXT;
+        doc.setFont("helvetica", opts.bold ? "bold" : "normal");
+        doc.setFontSize(size);
+        doc.setTextColor(color[0], color[1], color[2]);
+        const lines = fitText(doc, text, RIGHT_W);
+        doc.text(lines, RIGHT_X, ry);
+        ry += lines.length * (size * 1.25) + (opts.gap || 8);
+      };
+
+      drawMainHeading("Summary");
+      drawBody(bio, { color: MUTED, gap: 14 });
+
+      // ---- Right column: Selected Projects ----
+      drawMainHeading("Selected Projects");
+      const featured = projects.filter((x) => x.featured).slice(0, 4);
+      const list = featured.length ? featured : projects.slice(0, 4);
+      list.forEach((proj, i) => {
+        // Page break if we're near the bottom.
+        if (ry > H - 110) {
+          doc.addPage();
+          ry = 64;
+        }
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(11);
+        doc.setTextColor(TEXT[0], TEXT[1], TEXT[2]);
+        doc.text(proj.title || "Project", RIGHT_X, ry);
+        ry += 14;
+
+        if (Array.isArray(proj.tech) && proj.tech.length) {
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(9);
+          doc.setTextColor(ACCENT[0], ACCENT[1], ACCENT[2]);
+          const tags = proj.tech.slice(0, 6).join(" · ");
+          doc.text(tags, RIGHT_X, ry);
+          ry += 12;
+        }
+        if (proj.description) {
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(10);
+          doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+          const dLines = fitText(doc, proj.description, RIGHT_W);
+          doc.text(dLines, RIGHT_X, ry);
+          ry += dLines.length * 12 + 4;
+        }
+        const meta = [];
+        if (proj.demo_url) meta.push("Demo: " + proj.demo_url.replace(/^https?:\/\//, ""));
+        if (proj.github_url) meta.push("Code: " + proj.github_url.replace(/^https?:\/\//, ""));
+        if (meta.length) {
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(9);
+          doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+          const mLines = fitText(doc, meta.join("   "), RIGHT_W);
+          doc.text(mLines, RIGHT_X, ry);
+          ry += mLines.length * 11 + 6;
+        }
+        if (i < list.length - 1) {
+          doc.setDrawColor(220, 224, 232);
+          doc.setLineWidth(0.5);
+          doc.line(RIGHT_X, ry, RIGHT_X + RIGHT_W, ry);
+          ry += 10;
+        }
+      });
+
+      // ---- Footer ----
+      const fy = H - 28;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+      doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+      doc.text(
+        "Generated from romar-villafuerte.vercel.app · " + new Date().toLocaleDateString(),
+        M,
+        fy
+      );
+
+      const safeName = name.replace(/[^A-Za-z0-9]+/g, "_") || "Resume";
+      doc.save(`${safeName}_Resume.pdf`);
+    } catch (err) {
+      alert("Hmm, hindi ko ma-generate ang resume. Try ulit?\n\n" + (err && err.message ? err.message : err));
+      // eslint-disable-next-line no-console
+      console.error(err);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  btn.addEventListener("click", generate);
 })();
