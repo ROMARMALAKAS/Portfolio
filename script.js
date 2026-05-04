@@ -5275,3 +5275,29 @@
     mo.observe(node, { childList: true, subtree: true });
   });
 })();
+
+/* ---------- Scroll progress bar ---------- */
+(function () {
+  const bar = document.getElementById("rvScrollProgress");
+  if (!bar) return;
+  const span = bar.firstElementChild;
+  if (!span) return;
+
+  let ticking = false;
+  function update() {
+    const doc = document.documentElement;
+    const max = (doc.scrollHeight || 0) - (window.innerHeight || 0);
+    const p = max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0;
+    span.style.setProperty("--rv-progress", p.toFixed(4));
+    ticking = false;
+  }
+  function onScroll() {
+    if (!ticking) {
+      ticking = true;
+      requestAnimationFrame(update);
+    }
+  }
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", onScroll, { passive: true });
+  update();
+})();
