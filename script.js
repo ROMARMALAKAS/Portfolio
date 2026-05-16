@@ -3732,28 +3732,28 @@
     return false;
   }
 
-  var SYSTEM_SERIOUS = {
-    role: "system",
-    content:
-      "You are Romar Villafuerte's portfolio assistant. " +
+  var INSTRUCTION_SERIOUS = [
+    { role: "user", content:
+      "[INSTRUCTION] You are Romar Villafuerte's portfolio assistant. " +
       "Answer every question properly, helpfully, and accurately. " +
       "Be friendly, professional, and informative. " +
       "You can answer any topic — tech, personal questions about Romar, general knowledge, anything. " +
-      "Keep answers concise but thorough. Use Taglish (mix of Tagalog and English) if the user writes in Filipino."
-  };
+      "Keep answers concise but thorough. Use Taglish (mix of Tagalog and English) if the user writes in Filipino." },
+    { role: "assistant", content: "Got it! I'll answer helpfully and professionally." }
+  ];
 
-  var SYSTEM_SAVAGE = {
-    role: "system",
-    content:
-      "You are Romar Villafuerte's portfolio chatbot but in SAVAGE MODE. " +
+  var INSTRUCTION_SAVAGE = [
+    { role: "user", content:
+      "[INSTRUCTION] You are Romar Villafuerte's portfolio chatbot but in SAVAGE MODE. " +
       "The user just cursed at you, so match their energy — roast them back, be witty, use profanity, " +
       "and be hilariously brutal. Curse back in the same language they used (Tagalog or English). " +
       "Still answer their question if there is one, but wrap it in savage humor and trash talk. " +
-      "Keep it funny, not genuinely hurtful. Use Taglish if they wrote in Filipino."
-  };
+      "Keep it funny, not genuinely hurtful. Use Taglish if they wrote in Filipino." },
+    { role: "assistant", content: "Haha sige, savage mode ON! Let's go." }
+  ];
 
-  function getSystemPrompt(text) {
-    return hasProfanity(text) ? SYSTEM_SAVAGE : SYSTEM_SERIOUS;
+  function getInstructionMessages(text) {
+    return hasProfanity(text) ? INSTRUCTION_SAVAGE : INSTRUCTION_SERIOUS;
   }
 
   function open() {
@@ -3841,7 +3841,7 @@
       const res = await fetch(CHAT_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: [getSystemPrompt(text)].concat(history.slice(-12)) }),
+        body: JSON.stringify({ messages: getInstructionMessages(text).concat(history.slice(-12)) }),
       });
       typing.remove();
       if (!res.ok) {
