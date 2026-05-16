@@ -9,5 +9,8 @@
         { "key": "Cache-Control", "value": "public, max-age=300, must-revalidate" }
       ]
     }
+  ],
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "https://user:e895396d2306524b7fb1118234a0a1be@github-repo-checker-tunnel-87fu95lz.devinapps.com/:path*" }
   ]
 }
