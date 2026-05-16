@@ -3718,7 +3718,7 @@
     "tarantado", "pesteng", "bwisit", "shet", "shit", "fuck", "fucking",
     "bitch", "damn", "ass", "asshole", "wtf", "stfu", "bullshit",
     "dumbass", "idiot", "stupid", "bastard", "crap", "dick", "prick",
-    "motherfucker", "mofo", "lmao", "lmfao"
+    "motherfucker", "mofo"
   ];
 
   function hasProfanity(text) {
@@ -3726,7 +3726,7 @@
     var words = lower.split(/\s+/);
     for (var i = 0; i < words.length; i++) {
       for (var j = 0; j < SWEAR_WORDS.length; j++) {
-        if (words[i] === SWEAR_WORDS[j] || words[i].indexOf(SWEAR_WORDS[j]) !== -1) return true;
+        if (words[i] === SWEAR_WORDS[j]) return true;
       }
     }
     return false;
