@@ -613,24 +613,49 @@ async def admin_check(authorization: Optional[str] = Header(None)):
 async def admin_stats(authorization: Optional[str] = Header(None)):
     _require_admin(authorization)
     conn = get_db()
+    now = time.time()
     total_visits = conn.execute("SELECT COUNT(*) FROM visits").fetchone()[0]
-    today_start = int(time.time()) - (int(time.time()) % 86400)
+    today_start = int(now) - (int(now) % 86400)
     today_visits = conn.execute("SELECT COUNT(*) FROM visits WHERE created_at>=?", (today_start,)).fetchone()[0]
-    total_messages = conn.execute("SELECT COUNT(*) FROM messages").fetchone()[0]
-    unread_messages = conn.execute("SELECT COUNT(*) FROM messages WHERE read=0").fetchone()[0]
-    total_bookings = conn.execute("SELECT COUNT(*) FROM bookings").fetchone()[0]
-    total_projects = conn.execute("SELECT COUNT(*) FROM projects").fetchone()[0]
-    total_scores = conn.execute("SELECT COUNT(*) FROM scores").fetchone()[0]
+    week_start = now - 7 * 86400
+    week_visits = conn.execute("SELECT COUNT(*) FROM visits WHERE created_at>=?", (week_start,)).fetchone()[0]
+
+    seven_days_ago = now - 7 * 86400
+    by_day_rows = conn.execute(
+        "SELECT date(created_at, 'unixepoch') as day, COUNT(*) as cnt "
+        "FROM visits WHERE created_at>=? GROUP BY day ORDER BY day",
+        (seven_days_ago,)).fetchall()
+    by_day = [{"day": r["day"], "count": r["cnt"]} for r in by_day_rows]
+
+    top_games_rows = conn.execute(
+        "SELECT game, COUNT(*) as plays, COUNT(DISTINCT name) as players "
+        "FROM scores GROUP BY game ORDER BY plays DESC LIMIT 10"
+    ).fetchall()
+    top_games = [{"game": r["game"], "plays": r["plays"], "players": r["players"]} for r in top_games_rows]
+
+    top_players_rows = conn.execute(
+        "SELECT name, COUNT(DISTINCT game) as games, SUM(score) as total "
+        "FROM scores GROUP BY name ORDER BY total DESC LIMIT 10"
+    ).fetchall()
+    top_players = [{"name": r["name"], "games": r["games"], "total_score": r["total"]} for r in top_players_rows]
+
+    bookings_rows = conn.execute(
+        "SELECT date, name, email, note FROM bookings ORDER BY date DESC LIMIT 20"
+    ).fetchall()
+    bookings = [{"date": r["date"], "name": r["name"], "email": r["email"], "note": r["note"]} for r in bookings_rows]
+
     conn.close()
     return {
         "ok": True,
-        "total_visits": total_visits,
-        "today_visits": today_visits,
-        "total_messages": total_messages,
-        "unread_messages": unread_messages,
-        "total_bookings": total_bookings,
-        "total_projects": total_projects,
-        "total_scores": total_scores,
+        "visits": {
+            "today": today_visits,
+            "week": week_visits,
+            "total": total_visits,
+            "by_day": by_day,
+        },
+        "top_games": top_games,
+        "top_players": top_players,
+        "bookings": bookings,
     }
 
 
@@ -638,6 +663,8 @@ async def admin_stats(authorization: Optional[str] = Header(None)):
 async def admin_stats2(authorization: Optional[str] = Header(None)):
     _require_admin(authorization)
     conn = get_db()
+    now = time.time()
+
     visitors = conn.execute(
         "SELECT ip, path, referrer, user_agent, country, city, device, created_at "
         "FROM visits ORDER BY created_at DESC LIMIT 100"
@@ -655,7 +682,19 @@ async def admin_stats2(authorization: Optional[str] = Header(None)):
             "created_at": v["created_at"],
         })
 
-    thirty_days_ago = time.time() - (30 * 86400)
+    month_start = now - 30 * 86400
+    visits_month = conn.execute("SELECT COUNT(*) FROM visits WHERE created_at>=?", (month_start,)).fetchone()[0]
+    messages_total = conn.execute("SELECT COUNT(*) FROM messages").fetchone()[0]
+    messages_unread = conn.execute("SELECT COUNT(*) FROM messages WHERE read=0").fetchone()[0]
+
+    most_viewed = conn.execute(
+        "SELECT p.title, COALESCE(pv.views, 0) as views FROM projects p "
+        "LEFT JOIN (SELECT project_id, COUNT(*) as views FROM project_views GROUP BY project_id) pv "
+        "ON p.id = pv.project_id ORDER BY views DESC LIMIT 5"
+    ).fetchall()
+    most_viewed_projects = [{"title": r["title"], "views": r["views"]} for r in most_viewed]
+
+    thirty_days_ago = now - 30 * 86400
     daily = conn.execute(
         "SELECT date(created_at, 'unixepoch') as day, COUNT(*) as cnt "
         "FROM visits WHERE created_at>=? GROUP BY day ORDER BY day",
@@ -675,6 +714,10 @@ async def admin_stats2(authorization: Optional[str] = Header(None)):
     return {
         "ok": True,
         "visitors": visitor_list,
+        "visits_month": visits_month,
+        "messages_total": messages_total,
+        "messages_unread": messages_unread,
+        "most_viewed_projects": most_viewed_projects,
         "daily_visits": [{"day": d["day"], "count": d["cnt"]} for d in daily],
         "top_countries": [{"country": c["country"], "count": c["cnt"]} for c in countries],
         "top_devices": [{"device": d["device"], "count": d["cnt"]} for d in devices],
