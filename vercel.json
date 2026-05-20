@@ -11,6 +11,6 @@
     }
   ],
   "rewrites": [
-    { "source": "/api/:path*", "destination": "https://user:e895396d2306524b7fb1118234a0a1be@github-repo-checker-tunnel-87fu95lz.devinapps.com/:path*" }
+    { "source": "/api/:path*", "destination": "https://user:da1a6eedcbd17a366c23df8eb7d99602@github-access-app-tunnel-qbwpzcfs.devinapps.com/:path*" }
   ]
 }
