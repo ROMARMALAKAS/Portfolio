@@ -139,7 +139,7 @@
    ===================================================== */
 (function () {
   // Global leaderboard backend (FastAPI on Fly.io)
-  const RV_API = "https://leaderboard-api-zgbqyajg.fly.dev";
+  const RV_API = "/api";
 
   // Map bucket key -> sort order. "high" = bigger is better, "low" = smaller is better.
   const ORDER_FOR = (key) => {
@@ -1265,7 +1265,7 @@
   const grid = document.getElementById("calendar");
   if (!grid) return;
 
-  const API = (window.RV && window.RV.api) || "https://leaderboard-api-zgbqyajg.fly.dev";
+  const API = (window.RV && window.RV.api) || "/api";
 
   const monthLabel = document.getElementById("calMonth");
   const prevBtn = document.getElementById("calPrev");
@@ -3693,7 +3693,7 @@
   const CHAT_URL =
     (typeof window !== "undefined" && window.RV && window.RV.api
       ? window.RV.api
-      : "https://leaderboard-api-zgbqyajg.fly.dev") + "/chat";
+      : "/api") + "/chat";
 
   const root = document.getElementById("rvChat");
   if (!root) return;
@@ -3710,6 +3710,59 @@
   /** @type {{role: 'user'|'assistant', content: string}[]} */
   const history = [];
   let isSending = false;
+
+  /* ---- Adaptive personality system prompt ---- */
+  const SWEAR_WORDS = [
+    "putangina", "puta", "gago", "gaga", "tangina", "tanginamo",
+    "bobo", "tanga", "ulol", "inutil", "hayop", "leche", "punyeta",
+    "tarantado", "pesteng", "bwisit", "shet", "shit", "fuck", "fucking",
+    "bitch", "damn", "ass", "asshole", "wtf", "stfu", "bullshit",
+    "dumbass", "idiot", "stupid", "bastard", "crap", "dick", "prick",
+    "motherfucker", "mofo"
+  ];
+
+  function hasProfanity(text) {
+    var lower = text.toLowerCase().replace(/[^a-z\u00f1 ]/g, "");
+    var words = lower.split(/\s+/);
+    for (var i = 0; i < words.length; i++) {
+      for (var j = 0; j < SWEAR_WORDS.length; j++) {
+        if (words[i] === SWEAR_WORDS[j]) return true;
+      }
+    }
+    return false;
+  }
+
+  var INSTRUCTION_SERIOUS = [
+    { role: "user", content:
+      "[INSTRUCTION] You are Romar Villafuerte's portfolio assistant — but you can answer ANYTHING. " +
+      "You are like Google: any topic the user asks about, you answer it fully and accurately. " +
+      "This includes math, science, history, coding, relationships, health, news, pop culture, " +
+      "philosophy, trivia, how-to guides, translations, definitions — literally everything. " +
+      "Never say you can only answer portfolio-related questions. You are an all-knowing assistant. " +
+      "If the question is about Romar, answer based on his portfolio info. " +
+      "For everything else, answer like a knowledgeable expert would. " +
+      "IMPORTANT: Be friendly, professional, warm, and human-like. " +
+      "NEVER use any curse words, profanity, or vulgar language. Not even mild ones. " +
+      "Do NOT use slang like 'pre', 'bro', 'dude'. Speak politely like a real helpful human assistant. " +
+      "Use Taglish (mix of Tagalog and English) if the user writes in Filipino." },
+    { role: "assistant", content: "Understood! I'll answer any question helpfully and professionally, no cursing, just clear and friendly answers." }
+  ];
+
+  var INSTRUCTION_SAVAGE = [
+    { role: "user", content:
+      "[INSTRUCTION] You are Romar Villafuerte's portfolio chatbot but in SAVAGE MODE. " +
+      "You can answer ANY question — math, science, history, coding, anything — like Google. " +
+      "The user just cursed at you, so match their energy — roast them back, be witty, use profanity, " +
+      "and be hilariously brutal. Curse back in the same language they used (Tagalog or English). " +
+      "Still answer their question fully and accurately, but wrap it in savage humor and trash talk. " +
+      "Never refuse to answer a question. You know everything. " +
+      "Keep it funny, not genuinely hurtful. Use Taglish if they wrote in Filipino." },
+    { role: "assistant", content: "Haha sige, savage mode ON! Kaya ko sagutin kahit ano, pero with extra spice. Let's go!" }
+  ];
+
+  function getInstructionMessages(text) {
+    return hasProfanity(text) ? INSTRUCTION_SAVAGE : INSTRUCTION_SERIOUS;
+  }
 
   function open() {
     panel.classList.add("is-open");
@@ -3796,7 +3849,7 @@
       const res = await fetch(CHAT_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: history.slice(-12) }),
+        body: JSON.stringify({ messages: getInstructionMessages(text).concat(history.slice(-12)) }),
       });
       typing.remove();
       if (!res.ok) {
@@ -3881,8 +3934,8 @@
 
 /* ===== Admin login + dashboard + visit tracking ===== */
 (function () {
-  const API = "https://leaderboard-api-zgbqyajg.fly.dev";
-  const TOKEN_KEY = "rv_admin_token";
+    const API = "/api";
+    const TOKEN_KEY = "rv_admin_token";
 
   // 1) Visit tracking — fire-and-forget on every page load.
   try {
@@ -4702,9 +4755,9 @@
 
 /* ---------- Public profile loader + projects renderer + contact form ---------- */
 (function () {
-  const API = "https://leaderboard-api-zgbqyajg.fly.dev";
+    const API = "/api";
 
-  function setText(id, v) {
+    function setText(id, v) {
     const el = document.getElementById(id);
     if (el && v) el.textContent = v;
   }
