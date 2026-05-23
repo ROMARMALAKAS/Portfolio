@@ -139,7 +139,7 @@
    ===================================================== */
 (function () {
   // Global leaderboard backend (FastAPI on Fly.io)
-  const RV_API = "https://romar19484-romar-portfolio-api.hf.space";
+  const RV_API = "/api";
 
   // Map bucket key -> sort order. "high" = bigger is better, "low" = smaller is better.
   const ORDER_FOR = (key) => {
@@ -1265,7 +1265,7 @@
   const grid = document.getElementById("calendar");
   if (!grid) return;
 
-  const API = (window.RV && window.RV.api) || "https://romar19484-romar-portfolio-api.hf.space";
+  const API = (window.RV && window.RV.api) || "/api";
 
   const monthLabel = document.getElementById("calMonth");
   const prevBtn = document.getElementById("calPrev");
@@ -3693,7 +3693,7 @@
   const CHAT_URL =
     (typeof window !== "undefined" && window.RV && window.RV.api
       ? window.RV.api
-      : "https://romar19484-romar-portfolio-api.hf.space") + "/chat";
+      : "/api") + "/chat";
 
   const root = document.getElementById("rvChat");
   if (!root) return;
@@ -3881,7 +3881,7 @@
 
 /* ===== Admin login + dashboard + visit tracking ===== */
 (function () {
-  const API = "https://romar19484-romar-portfolio-api.hf.space";
+  const API = "/api";
   const TOKEN_KEY = "rv_admin_token";
 
   // 1) Visit tracking — fire-and-forget on every page load.
@@ -4702,7 +4702,7 @@
 
 /* ---------- Public profile loader + projects renderer + contact form ---------- */
 (function () {
-  const API = "https://romar19484-romar-portfolio-api.hf.space";
+  const API = "/api";
 
   function setText(id, v) {
     const el = document.getElementById(id);
