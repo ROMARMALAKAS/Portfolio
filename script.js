@@ -4027,7 +4027,7 @@
       });
       const j = await r.json().catch(() => ({}));
       if (!r.ok) {
-        showError(j.detail || "Login failed.");
+        showError(typeof j.detail === "string" ? j.detail : Array.isArray(j.detail) ? j.detail.map(e => e.msg || e).join(", ") : "Login failed.");
         return;
       }
       localStorage.setItem(TOKEN_KEY, j.token);
@@ -4944,7 +4944,7 @@
         });
         const j = await r.json().catch(() => ({}));
         if (!r.ok) {
-          msgEl.textContent = j.detail || "Failed to send message. Please try again later.";
+          msgEl.textContent = typeof j.detail === "string" ? j.detail : "Failed to send message. Please try again later.";
           msgEl.classList.add("is-error");
           msgEl.hidden = false;
           return;
