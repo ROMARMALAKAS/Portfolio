@@ -4,12 +4,16 @@ from pydantic import BaseModel, Field
 from typing import Optional
 import sqlite3
 import hashlib
+import hmac
 import secrets
 import time
 import os
 import json
 import re
 import httpx
+
+# Stable secret for HMAC token signing (deterministic across cold starts)
+_TOKEN_SECRET = os.environ.get("TOKEN_SECRET", "rv-portfolio-token-secret-2026")
 
 app = FastAPI(title="Romar Portfolio Leaderboard", version="1.0.0")
 
@@ -224,15 +228,26 @@ def _get_client_ip(request: Request) -> str:
     return "unknown"
 
 
+def _make_token(username: str) -> str:
+    ts = str(int(time.time()))
+    payload = f"{ts}:{username}"
+    sig = hmac.new(_TOKEN_SECRET.encode(), payload.encode(), hashlib.sha256).hexdigest()
+    return f"{ts}:{username}:{sig}"
+
+
 def _require_admin(authorization: Optional[str]) -> str:
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Not authenticated.")
     token = authorization[7:]
-    conn = get_db()
-    row = conn.execute("SELECT token FROM tokens WHERE token=?", (token,)).fetchone()
-    conn.close()
-    if not row:
+    parts = token.split(":")
+    if len(parts) != 3:
         raise HTTPException(status_code=401, detail="Invalid or expired token.")
+    ts, username, sig = parts
+    expected = hmac.new(_TOKEN_SECRET.encode(), f"{ts}:{username}".encode(), hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(sig, expected):
+        raise HTTPException(status_code=401, detail="Invalid or expired token.")
+    if time.time() - int(ts) > 86400 * 7:
+        raise HTTPException(status_code=401, detail="Token expired. Please login again.")
     return token
 
 
@@ -588,20 +603,14 @@ async def admin_login(body: AdminLoginIn):
     if not row:
         conn.close()
         raise HTTPException(401, detail="Invalid username or password.")
-    token = secrets.token_hex(32)
-    conn.execute("INSERT INTO tokens (token, created_at) VALUES (?, ?)", (token, time.time()))
-    conn.commit()
     conn.close()
+    token = _make_token(body.username)
     return {"ok": True, "token": token}
 
 
 @app.post("/api/admin/logout")
 async def admin_logout(authorization: Optional[str] = Header(None)):
-    token = _require_admin(authorization)
-    conn = get_db()
-    conn.execute("DELETE FROM tokens WHERE token=?", (token,))
-    conn.commit()
-    conn.close()
+    _require_admin(authorization)
     return {"ok": True}
 
 
