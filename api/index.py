@@ -842,7 +842,7 @@ async def _try_ai_api(msgs: list) -> str:
                             json={
                                 "contents": contents,
                                 "safetySettings": safety,
-                                "generationConfig": {"maxOutputTokens": 512}
+                                "generationConfig": {"maxOutputTokens": 2048, "thinkingConfig": {"thinkingBudget": 0}}
                             }
                         )
                         if resp.status_code == 200:
