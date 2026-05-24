@@ -4021,6 +4021,7 @@
       body: JSON.stringify({
         path: location.pathname || "/",
         referrer: (document.referrer || "").slice(0, 300),
+        user_agent: navigator.userAgent || "",
       }),
       keepalive: true,
     }).catch(() => {});

@@ -962,61 +962,124 @@ async def create_booking(body: BookingIn):
     return {"ok": True}
 
 
+# --- Device name mapping for common models ---
+_PHONE_MODELS = {
+    "sm-s928": "Samsung Galaxy S25 Ultra", "sm-s926": "Samsung Galaxy S25+", "sm-s921": "Samsung Galaxy S25",
+    "sm-s918": "Samsung Galaxy S24 Ultra", "sm-s916": "Samsung Galaxy S24+", "sm-s911": "Samsung Galaxy S24",
+    "sm-s908": "Samsung Galaxy S22 Ultra", "sm-s906": "Samsung Galaxy S22+", "sm-s901": "Samsung Galaxy S22",
+    "sm-g998": "Samsung Galaxy S21 Ultra", "sm-g996": "Samsung Galaxy S21+", "sm-g991": "Samsung Galaxy S21",
+    "sm-g990": "Samsung Galaxy S21 FE", "sm-g988": "Samsung Galaxy S20 Ultra", "sm-g986": "Samsung Galaxy S20+",
+    "sm-g981": "Samsung Galaxy S20", "sm-g980": "Samsung Galaxy S20", "sm-g973": "Samsung Galaxy S10",
+    "sm-a556": "Samsung Galaxy A55", "sm-a546": "Samsung Galaxy A54", "sm-a536": "Samsung Galaxy A53",
+    "sm-a346": "Samsung Galaxy A34", "sm-a245": "Samsung Galaxy A24", "sm-a155": "Samsung Galaxy A15",
+    "sm-a146": "Samsung Galaxy A14", "sm-a127": "Samsung Galaxy A12", "sm-a057": "Samsung Galaxy A05s",
+    "sm-f946": "Samsung Galaxy Z Fold5", "sm-f936": "Samsung Galaxy Z Fold4",
+    "sm-f731": "Samsung Galaxy Z Flip5", "sm-f721": "Samsung Galaxy Z Flip4",
+    "sm-t870": "Samsung Galaxy Tab S7", "sm-t970": "Samsung Galaxy Tab S7+",
+    "sm-x710": "Samsung Galaxy Tab S9", "sm-x810": "Samsung Galaxy Tab S9+",
+    "pixel 9 pro": "Google Pixel 9 Pro", "pixel 9": "Google Pixel 9",
+    "pixel 8 pro": "Google Pixel 8 Pro", "pixel 8a": "Google Pixel 8a", "pixel 8": "Google Pixel 8",
+    "pixel 7 pro": "Google Pixel 7 Pro", "pixel 7a": "Google Pixel 7a", "pixel 7": "Google Pixel 7",
+    "cph2591": "OPPO Reno 11", "cph2505": "OPPO Reno 10", "cph2363": "OPPO Reno 8",
+    "cph2565": "OPPO A98", "cph2481": "OPPO A78", "cph2387": "OPPO A77",
+    "rmx3890": "Realme GT 6", "rmx3760": "Realme 11 Pro+", "rmx3710": "Realme C55",
+    "rmx3630": "Realme 10", "rmx3521": "Realme C35", "rmx3501": "Realme 9 Pro+",
+    "v2254": "Vivo V29", "v2237": "Vivo V27", "v2204": "Vivo Y36",
+    "v2217": "Vivo Y27", "v2120": "Vivo Y22", "v2111": "Vivo Y02s",
+    "2201117": "Xiaomi 12", "2203121": "Xiaomi 12 Pro", "23049": "Xiaomi 13",
+    "22111317": "Redmi Note 12", "23076": "Redmi Note 12S",
+    "2201116": "POCO F4", "22071": "POCO X4 GT", "23073": "POCO X5 Pro",
+    "lm-g900": "LG Velvet",
+}
+
+def _parse_device(ua: str) -> str:
+    if not ua:
+        return "Unknown"
+    ua_lower = ua.lower()
+
+    # iPhone — extract model from CPU identifier
+    if "iphone" in ua_lower:
+        m = re.search(r"iphone os (\d+)_", ua_lower)
+        os_ver = m.group(1) if m else ""
+        if os_ver:
+            return f"iPhone (iOS {os_ver})"
+        return "iPhone"
+
+    # iPad
+    if "ipad" in ua_lower:
+        m = re.search(r"os (\d+)_", ua_lower)
+        os_ver = m.group(1) if m else ""
+        if os_ver:
+            return f"iPad (iPadOS {os_ver})"
+        return "iPad"
+
+    # Android — extract model name
+    if "android" in ua_lower:
+        m = re.search(r"android[^;]*;\s*([^)]+)", ua_lower)
+        if m:
+            raw = m.group(1).strip()
+            parts = raw.split(" build")
+            model_raw = parts[0].strip().lower() if parts else ""
+            # Check known model mapping
+            for prefix, name in _PHONE_MODELS.items():
+                if model_raw.startswith(prefix):
+                    return name
+            # Fallback: capitalize the model string
+            if model_raw:
+                return model_raw.title()
+        return "Android"
+
+    # Desktop
+    if "windows" in ua_lower:
+        if "windows nt 10" in ua_lower:
+            return "Windows 10/11 PC"
+        return "Windows PC"
+    if "macintosh" in ua_lower or "mac os" in ua_lower:
+        return "Mac"
+    if "cros" in ua_lower:
+        return "Chromebook"
+    if "linux" in ua_lower:
+        return "Linux PC"
+    return "Unknown"
+
+
 # --- Visit tracking (with location & device info) ---
 @app.post("/api/track/visit")
 async def track_visit(body: VisitIn, request: Request):
     ip = _get_client_ip(request)
     ua = body.user_agent or request.headers.get("user-agent", "")
 
-    # Parse device from user-agent
-    device = "Unknown"
-    ua_lower = ua.lower()
-    if "iphone" in ua_lower:
-        device = "iPhone"
-    elif "ipad" in ua_lower:
-        device = "iPad"
-    elif "android" in ua_lower:
-        m = re.search(r"android[^;]*;\s*([^)]+)", ua_lower)
-        if m:
-            raw = m.group(1).strip()
-            parts = raw.split(" build")
-            device = parts[0].strip().title() if parts else "Android"
-        else:
-            device = "Android"
-    elif "windows" in ua_lower:
-        device = "Windows PC"
-    elif "macintosh" in ua_lower or "mac os" in ua_lower:
-        device = "Mac"
-    elif "linux" in ua_lower:
-        device = "Linux PC"
+    device = _parse_device(ua)
 
     # Geo lookup via free API
     country = ""
     city = ""
     try:
         async with httpx.AsyncClient(timeout=3) as client:
-            geo = await client.get(f"http://ip-api.com/json/{ip}?fields=country,city")
+            geo = await client.get(f"http://ip-api.com/json/{ip}?fields=country,city,regionName")
             if geo.status_code == 200:
                 gdata = geo.json()
                 country = gdata.get("country", "")
                 city = gdata.get("city", "")
+                region = gdata.get("regionName", "")
+                if city and region and region != city:
+                    city = f"{city}, {region}"
     except Exception:
         pass
 
     conn = get_db()
-    # Dedup: same IP + device within last 24 hours (prevents repeat counting)
+    # Dedup: same IP within last 24 hours — 1 IP = 1 visitor, period
     cutoff = time.time() - 86400
     existing = conn.execute(
-        "SELECT id FROM visits WHERE ip=? AND device=? AND created_at>?",
-        (ip, device, cutoff)
+        "SELECT id FROM visits WHERE ip=? AND created_at>?",
+        (ip, cutoff)
     ).fetchone()
     # Also check persistent storage for dedup across cold starts
     import datetime
     vstats = _hf_load_visits()
     today_str = datetime.datetime.utcfromtimestamp(time.time()).strftime("%Y-%m-%d")
     seen_ips = vstats.get("seen_today", {})
-    ip_device_key = f"{ip}:{device}"
-    already_counted = seen_ips.get(ip_device_key) == today_str
+    already_counted = seen_ips.get(ip) == today_str
 
     if not existing and not already_counted:
         now = time.time()
@@ -1031,7 +1094,7 @@ async def track_visit(body: VisitIn, request: Request):
         vstats["by_day"] = by_day
         # Track seen IPs for today (clean up old entries)
         seen_ips = {k: v for k, v in seen_ips.items() if v == today_str}
-        seen_ips[ip_device_key] = today_str
+        seen_ips[ip] = today_str
         vstats["seen_today"] = seen_ips
         _hf_save_visits(vstats)
 
