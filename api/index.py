@@ -506,7 +506,7 @@ def _chat_reply(text: str) -> str:
         ])
     if words & {"contact", "email", "reach", "message", "makipag"}:
         return "📧 romarmalakass@gmail.com\n📝 Contact form sa baba\n🔗 GitHub: https://github.com/ROMARMALAKAS\n📘 FB: https://www.facebook.com/share/1BJX3bLk66/\n\nMag-reach out ka lang! 😊"
-    if words & {"skill", "skills", "technology", "programming", "language", "tools", "expertise"}:
+    if words & {"skill", "skills", "technology", "programming", "language", "tools", "expertise", "tech", "stack", "code", "coding"}:
         return "Si Romar? Jack of all trades sa web dev! 🔧\n• HTML, CSS, JS, Bootstrap — frontend master\n• PHP, Python, FastAPI — backend pro\n• MySQL, SQLite — database handler\n• WebSocket — real-time specialist\n\nFull-stack na full-stack! 💪"
     if words & {"enrollment", "enroll", "student", "registrar"}:
         return "Yung Enrollment System? PHP + MySQL yun! 📚 May role-based logins (registrar, teacher, student), schedule conflict detection, at student record cards. Pinaka-proud feature: enrollment time bumaba from 10 minutes to under 1 minute! Speed! ⚡"
