@@ -4352,6 +4352,10 @@
       } else {
         visitors.forEach((v) => {
           const loc = [v.city, v.country].filter(Boolean).join(", ") || "Unknown location";
+          const hasCoords = v.lat && v.lon;
+          const mapsUrl = hasCoords
+            ? "https://www.google.com/maps?q=" + v.lat + "," + v.lon
+            : "https://www.google.com/maps/search/" + encodeURIComponent(loc);
           const div = document.createElement("div");
           div.className = "rv-visitor-item";
           div.innerHTML =
@@ -4359,7 +4363,9 @@
             '<div class="rv-visitor-info">' +
               '<div class="rv-visitor-device">' + escapeHtml(v.device || "Unknown device") + '</div>' +
               '<div class="rv-visitor-meta">' +
-                '<span><i class="bi bi-geo-alt"></i> ' + escapeHtml(loc) + '</span>' +
+                '<a href="' + mapsUrl + '" target="_blank" rel="noopener" class="rv-visitor-loc-link">' +
+                  '<i class="bi bi-geo-alt"></i> ' + escapeHtml(loc) +
+                '</a>' +
                 '<span><i class="bi bi-globe"></i> ' + escapeHtml(v.ip || "—") + '</span>' +
               '</div>' +
             '</div>' +

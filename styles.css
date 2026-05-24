@@ -3827,6 +3827,22 @@ body.rv-splash-active {
   white-space: nowrap;
   padding-top: 2px;
 }
+.rv-visitor-loc-link {
+  color: #2563eb;
+  text-decoration: none;
+  display: inline-block;
+  margin-right: 10px;
+}
+.rv-visitor-loc-link:hover {
+  text-decoration: underline;
+  color: #1d4ed8;
+}
+[data-bs-theme="dark"] .rv-visitor-loc-link {
+  color: #60a5fa;
+}
+[data-bs-theme="dark"] .rv-visitor-loc-link:hover {
+  color: #93bbfd;
+}
 
 /* ---------- Scroll progress bar ---------- */
 .rv-scroll-progress {

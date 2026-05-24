@@ -1051,17 +1051,21 @@ async def track_visit(body: VisitIn, request: Request):
 
     device = _parse_device(ua)
 
-    # Geo lookup via free API
+    # Geo lookup via free API (include lat/lon for Google Maps)
     country = ""
     city = ""
+    lat = 0.0
+    lon = 0.0
     try:
         async with httpx.AsyncClient(timeout=3) as client:
-            geo = await client.get(f"http://ip-api.com/json/{ip}?fields=country,city,regionName")
+            geo = await client.get(f"http://ip-api.com/json/{ip}?fields=country,city,regionName,lat,lon")
             if geo.status_code == 200:
                 gdata = geo.json()
                 country = gdata.get("country", "")
                 city = gdata.get("city", "")
                 region = gdata.get("regionName", "")
+                lat = gdata.get("lat", 0.0)
+                lon = gdata.get("lon", 0.0)
                 if city and region and region != city:
                     city = f"{city}, {region}"
     except Exception:
@@ -1100,6 +1104,7 @@ async def track_visit(body: VisitIn, request: Request):
         recent = vstats.get("recent_visitors", [])
         recent.insert(0, {
             "ip": ip, "device": device, "country": country, "city": city,
+            "lat": lat, "lon": lon,
             "path": body.path, "referrer": body.referrer, "created_at": now,
         })
         vstats["recent_visitors"] = recent[:200]
