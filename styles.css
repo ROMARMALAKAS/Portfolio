@@ -2644,13 +2644,14 @@ body.rv-admin-open { overflow: hidden; }
 }
 .rv-chat-msg-bot { justify-content: flex-start; align-items: flex-end; }
 .rv-chat-msg-user { justify-content: flex-end; }
-.rv-chat-avatar {
+.rv-chat-msg-avatar {
   width: 28px;
   height: 28px;
   border-radius: 50%;
   margin-right: 8px;
   flex-shrink: 0;
-  object-fit: cover;
+  background: url("assets/romar-avatar.jpg") center/cover no-repeat;
+  border: 1px solid rgba(0,0,0,0.1);
 }
 .rv-chat-bubble-msg {
   max-width: 85%;

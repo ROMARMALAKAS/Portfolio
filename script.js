@@ -3853,10 +3853,8 @@
           ? "rv-chat-msg-bot rv-chat-msg-error"
           : "rv-chat-msg-bot");
     if (role !== "user") {
-      var avatar = document.createElement("img");
-      avatar.className = "rv-chat-avatar";
-      avatar.src = "assets/romar-hero.jpg";
-      avatar.alt = "Romar";
+      var avatar = document.createElement("div");
+      avatar.className = "rv-chat-msg-avatar";
       wrap.appendChild(avatar);
     }
     const b = document.createElement("div");
@@ -3896,10 +3894,8 @@
   function appendTyping() {
     const wrap = document.createElement("div");
     wrap.className = "rv-chat-msg rv-chat-msg-bot";
-    var avatar = document.createElement("img");
-    avatar.className = "rv-chat-avatar";
-    avatar.src = "assets/romar-hero.jpg";
-    avatar.alt = "Romar";
+    var avatar = document.createElement("div");
+    avatar.className = "rv-chat-msg-avatar";
     wrap.appendChild(avatar);
     const b = document.createElement("div");
     b.className = "rv-chat-bubble-msg rv-chat-typing";
