@@ -459,160 +459,31 @@ async def submit_score(body: ScoreIn):
     return {"ok": True, "id": sid}
 
 
-# --- Smart Chat Assistant ---
-_CHAT_RESPONSES = {
-    "greeting": [
-        "Hey there! 👋 I'm Romar's AI assistant. Ask me anything about his skills, projects, or how to work with him!",
-        "Hi! Welcome to Romar's portfolio! I can tell you about his projects, skills, or help you get in touch. What would you like to know?",
-        "Hello! 😊 Great to have you here. I can help you learn about Romar's work — just ask away!",
-    ],
-    "about": (
-        "Romar Villafuerte is a Website Developer from the Philippines. "
-        "He specializes in building full-stack web applications — from school enrollment systems to ride-hailing platforms to game arcades. "
-        "He's passionate about turning real-world problems into clean, working software."
-    ),
-    "skills": (
-        "Romar's tech stack includes:\n"
-        "• Frontend: HTML, CSS, JavaScript, Bootstrap, Canvas API\n"
-        "• Backend: PHP, Python, FastAPI, Node.js\n"
-        "• Database: MySQL, SQLite\n"
-        "• Realtime: WebSocket\n"
-        "• Tools: Git, GitHub, Vercel, Fly.io\n\n"
-        "He's a full-stack developer who can handle everything from UI design to database architecture!"
-    ),
-    "enrollment": (
-        "📚 Enrollment System — Romar built a PHP + MySQL web app for managing student enrollment, sections, and class schedules. "
-        "It has role-based logins (registrar, teacher, student), a class-schedule grid that flags conflicts, and per-student record cards. "
-        "Result: cut enrollment time from ~10 minutes (paper) to under a minute!"
-    ),
-    "ridehailing": (
-        "🚗 Ride Hailing System — A mobile-first ride-hailing platform where riders post destinations, drivers see requests on a live map, "
-        "accept rides, and both track each other in real-time using WebSocket. "
-        "Try it: https://romar-web.ct.ws/login.php?skip_intro=1&i=1"
-    ),
-    "arcade": (
-        "🎮 Mini-game Arcade — A web arcade with 13 mini-games including Snake (with Adventure mode!), Bomberman, Math Quiz, "
-        "Piano Tiles, Basketball, Memory, Sliding Puzzle, and more. They all share a global leaderboard powered by a FastAPI backend. "
-        "Each game has a how-to-play card, lives system, and timed rounds. Try it right here on this site — scroll up to the Games section!"
-    ),
-    "contact": (
-        "You can reach Romar through:\n"
-        "📧 Email: romarmalakass@gmail.com\n"
-        "📝 Contact form: scroll down to the Contact section on this page\n"
-        "🔗 GitHub: https://github.com/ROMARMALAKAS\n"
-        "📘 Facebook: https://www.facebook.com/share/1BJX3bLk66/\n\n"
-        "He typically responds within 24 hours!"
-    ),
-    "hire": (
-        "Interested in working with Romar? Great! 🎉 He's available for freelance web development projects. "
-        "Send him a message through the contact form on this page or email him at romarmalakass@gmail.com with your project details. "
-        "He'll get back to you with a quote and timeline!"
-    ),
-    "price": (
-        "For pricing, it depends on the project scope and complexity. "
-        "Send Romar a message through the contact form with details about what you need, "
-        "and he'll provide a custom quote. Email: romarmalakass@gmail.com"
-    ),
-    "location": "Romar is based in the Philippines 🇵🇭 and works with clients both locally and internationally.",
-    "thanks": "You're welcome! 😊 If you have more questions, feel free to ask. Have a great day!",
-    "bye": "Goodbye! 👋 Thanks for visiting Romar's portfolio. Feel free to come back anytime!",
-    "fallback": [
-        "That's an interesting question! I'm not sure about that specific detail, but you can ask Romar directly through the contact form below or email romarmalakass@gmail.com 😊",
-        "Hmm, I don't have info on that. But Romar would love to chat with you! Use the contact form or email romarmalakass@gmail.com.",
-        "I'm not sure about that one! For specific questions, try reaching out to Romar via the contact form on this page. He's super responsive!",
-    ],
-}
-
-import random
-
-def _match_chat_intent(text: str) -> str:
-    t = text.lower().strip()
-    words = set(re.findall(r'\w+', t))
-
-    # Check phrases first (multi-word matches)
-    phrases = [
-        ("about", ["who is romar", "about romar", "tell me about", "who are you", "sino si romar", "about you", "introduce yourself"]),
-        ("skills", ["tech stack", "what can you do", "ano alam", "what do you know"]),
-        ("hire", ["work with", "need developer", "need a website", "website for", "i want to hire", "looking for developer"]),
-        ("contact", ["get in touch", "how to contact", "how to reach"]),
-        ("ridehailing", ["ride hailing"]),
-        ("greeting", ["good morning", "good afternoon", "good evening"]),
-    ]
-    for intent, plist in phrases:
-        if any(p in t for p in plist):
-            return intent
-
-    # Single-word matches (check word boundaries)
-    word_intents = [
-        ("hire", ["hire", "freelance", "available", "kumuha"]),
-        ("price", ["price", "cost", "rate", "magkano", "presyo", "budget", "quote", "bayad"]),
-        ("contact", ["contact", "email", "reach", "message", "makipag"]),
-        ("skills", ["skill", "skills", "technology", "programming", "language", "tools", "expertise"]),
-        ("enrollment", ["enrollment", "enroll", "school", "student", "registrar"]),
-        ("ridehailing", ["ride", "hailing", "uber", "grab", "driver"]),
-        ("arcade", ["game", "games", "arcade", "snake", "bomberman", "piano", "basketball", "laro"]),
-        ("about", ["project", "projects", "portfolio", "gawa", "ginawa"]),
-        ("location", ["where", "location", "country", "saan", "based"]),
-        ("thanks", ["thank", "thanks", "salamat", "appreciate"]),
-        ("bye", ["bye", "goodbye", "paalam"]),
-    ]
-    for intent, kws in word_intents:
-        if words & set(kws):
-            return intent
-
-    # Greeting last (to avoid "hi" matching in other words)
-    if words & {"hello", "hey", "kumusta", "musta", "sup"}:
-        return "greeting"
-    if "hi" in words and len(words) <= 3:
-        return "greeting"
-
-    return "fallback"
-
-
+# --- Chat (proxy to OpenAI-compatible API) ---
 @app.post("/api/chat")
 async def chat(body: ChatIn):
-    last_msg = ""
-    for m in body.messages:
-        if m.get("role") == "user":
-            last_msg = m.get("content", "")
-
-    # Try OpenAI if available
     api_key = os.getenv("OPENAI_API_KEY", "")
-    if api_key:
-        system = (
-            "You are Romar Villafuerte's AI assistant on his portfolio. "
-            "Romar is a Website Developer from the Philippines skilled in HTML, CSS, JS, PHP, MySQL, Python, FastAPI. "
-            "His projects: Enrollment System, Ride Hailing System, Mini-game Arcade. "
-            "Email: romarmalakass@gmail.com. Be friendly, concise (2-3 sentences)."
-        )
-        msgs = [{"role": "system", "content": system}]
-        for m in body.messages:
-            role = m.get("role", "user")
-            content = m.get("content", "")
-            if role in ("user", "assistant"):
-                msgs.append({"role": role, "content": content})
-        try:
-            async with httpx.AsyncClient(timeout=30) as client:
-                resp = await client.post(
-                    "https://api.openai.com/v1/chat/completions",
-                    headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-                    json={"model": "gpt-4o-mini", "messages": msgs, "max_tokens": 512}
-                )
-                data = resp.json()
-                reply = data.get("choices", [{}])[0].get("message", {}).get("content", "")
-                if reply:
-                    return {"reply": reply}
-        except Exception:
-            pass
-
-    # Smart built-in responses
-    intent = _match_chat_intent(last_msg)
-    response = _CHAT_RESPONSES.get(intent, _CHAT_RESPONSES["fallback"])
-    if isinstance(response, list):
-        reply = random.choice(response)
-    else:
-        reply = response
-    return {"reply": reply}
+    if not api_key:
+        return {"reply": "Chat is temporarily unavailable. Please try again later."}
+    msgs = []
+    for m in body.messages:
+        role = m.get("role", "user")
+        content = m.get("content", "")
+        if role in ("user", "assistant", "system"):
+            msgs.append({"role": role, "content": content})
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            resp = await client.post(
+                "https://api.openai.com/v1/chat/completions",
+                headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+                json={"model": "gpt-4o-mini", "messages": msgs, "max_tokens": 1024}
+            )
+            data = resp.json()
+            reply = data.get("choices", [{}])[0].get("message", {}).get("content",
+                    "Sorry, I couldn't generate a response.")
+            return {"reply": reply}
+    except Exception:
+        return {"reply": "Chat is temporarily unavailable. Please try again later."}
 
 
 # --- Bookings ---
