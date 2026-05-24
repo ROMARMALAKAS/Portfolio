@@ -527,40 +527,45 @@ import random
 
 def _match_chat_intent(text: str) -> str:
     t = text.lower().strip()
-    # Greeting
-    if any(w in t for w in ["hello", "hi", "hey", "good morning", "good afternoon", "good evening", "kumusta", "musta", "sup"]):
+    words = set(re.findall(r'\w+', t))
+
+    # Check phrases first (multi-word matches)
+    phrases = [
+        ("about", ["who is romar", "about romar", "tell me about", "who are you", "sino si romar", "about you", "introduce yourself"]),
+        ("skills", ["tech stack", "what can you do", "ano alam", "what do you know"]),
+        ("hire", ["work with", "need developer", "need a website", "website for", "i want to hire", "looking for developer"]),
+        ("contact", ["get in touch", "how to contact", "how to reach"]),
+        ("ridehailing", ["ride hailing"]),
+        ("greeting", ["good morning", "good afternoon", "good evening"]),
+    ]
+    for intent, plist in phrases:
+        if any(p in t for p in plist):
+            return intent
+
+    # Single-word matches (check word boundaries)
+    word_intents = [
+        ("hire", ["hire", "freelance", "available", "kumuha"]),
+        ("price", ["price", "cost", "rate", "magkano", "presyo", "budget", "quote", "bayad"]),
+        ("contact", ["contact", "email", "reach", "message", "makipag"]),
+        ("skills", ["skill", "skills", "technology", "programming", "language", "tools", "expertise"]),
+        ("enrollment", ["enrollment", "enroll", "school", "student", "registrar"]),
+        ("ridehailing", ["ride", "hailing", "uber", "grab", "driver"]),
+        ("arcade", ["game", "games", "arcade", "snake", "bomberman", "piano", "basketball", "laro"]),
+        ("about", ["project", "projects", "portfolio", "gawa", "ginawa"]),
+        ("location", ["where", "location", "country", "saan", "based"]),
+        ("thanks", ["thank", "thanks", "salamat", "appreciate"]),
+        ("bye", ["bye", "goodbye", "paalam"]),
+    ]
+    for intent, kws in word_intents:
+        if words & set(kws):
+            return intent
+
+    # Greeting last (to avoid "hi" matching in other words)
+    if words & {"hello", "hey", "kumusta", "musta", "sup"}:
         return "greeting"
-    # About
-    if any(w in t for w in ["who is romar", "about romar", "tell me about", "who are you", "sino si romar", "about you", "introduce"]):
-        return "about"
-    # Skills
-    if any(w in t for w in ["skill", "tech stack", "technology", "programming", "language", "what can you do", "tools", "expertise", "ano alam"]):
-        return "skills"
-    # Projects
-    if any(w in t for w in ["enrollment", "school system", "student"]):
-        return "enrollment"
-    if any(w in t for w in ["ride", "hailing", "uber", "grab", "driver"]):
-        return "ridehailing"
-    if any(w in t for w in ["game", "arcade", "mini-game", "snake", "bomberman", "piano", "basketball", "laro"]):
-        return "arcade"
-    if any(w in t for w in ["project", "portfolio", "work", "gawa", "ginawa"]):
-        return "about"
-    # Contact / Hire
-    if any(w in t for w in ["contact", "email", "reach", "message", "get in touch", "makipag"]):
-        return "contact"
-    if any(w in t for w in ["hire", "freelance", "available", "work with", "kumuha", "need developer", "need a website", "website for"]):
-        return "hire"
-    if any(w in t for w in ["price", "cost", "rate", "magkano", "presyo", "budget", "quote", "bayad"]):
-        return "price"
-    # Location
-    if any(w in t for w in ["where", "location", "country", "saan", "based"]):
-        return "location"
-    # Thanks
-    if any(w in t for w in ["thank", "thanks", "salamat", "ty", "appreciate"]):
-        return "thanks"
-    # Bye
-    if any(w in t for w in ["bye", "goodbye", "see you", "paalam", "sige"]):
-        return "bye"
+    if "hi" in words and len(words) <= 3:
+        return "greeting"
+
     return "fallback"
 
 
