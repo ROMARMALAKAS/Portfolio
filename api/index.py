@@ -811,9 +811,16 @@ async def _try_ai_api(msgs: list) -> str:
     """Try Gemini first, then Grok, then OpenAI, then HuggingFace."""
     enriched = _enrich_messages(msgs)
 
-    # 1) Google Gemini (free, high quality)
-    gemini_key = os.getenv("GEMINI_API_KEY", "")
-    if gemini_key:
+    # 1) Google Gemini (free, high quality) — rotate across multiple API keys
+    gemini_keys = [k for k in [
+        os.getenv("GEMINI_API_KEY", ""),
+        os.getenv("GEMINI_API_KEY_2", ""),
+        os.getenv("GEMINI_API_KEY_3", ""),
+        os.getenv("GEMINI_API_KEY_4", ""),
+        os.getenv("GEMINI_API_KEY_5", ""),
+        os.getenv("GEMINI_API_KEY_6", ""),
+    ] if k]
+    if gemini_keys:
         contents = _to_gemini_contents(enriched)
         safety = [
             {"category": c, "threshold": "BLOCK_NONE"}
@@ -824,35 +831,36 @@ async def _try_ai_api(msgs: list) -> str:
                 "HARM_CATEGORY_DANGEROUS_CONTENT",
             ]
         ]
-        for gemini_model in ["gemini-3.5-flash", "gemini-flash-lite-latest", "gemini-flash-latest"]:
-            try:
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/{gemini_model}:generateContent?key={gemini_key}"
-                async with httpx.AsyncClient(timeout=25) as client:
-                    resp = await client.post(
-                        url,
-                        headers={"Content-Type": "application/json"},
-                        json={
-                            "contents": contents,
-                            "safetySettings": safety,
-                            "generationConfig": {"maxOutputTokens": 512}
-                        }
-                    )
-                    if resp.status_code == 200:
-                        data = resp.json()
-                        cands = data.get("candidates", [])
-                        if cands:
-                            parts = cands[0].get("content", {}).get("parts", [])
-                            if parts:
-                                reply = parts[0].get("text", "")
-                                if reply:
-                                    return reply
-                            finish = cands[0].get("finishReason", "")
-                            if finish == "SAFETY":
-                                continue
-                    elif resp.status_code == 429:
-                        continue
-            except Exception:
-                continue
+        for gemini_key in gemini_keys:
+            for gemini_model in ["gemini-3.5-flash", "gemini-flash-lite-latest", "gemini-flash-latest"]:
+                try:
+                    url = f"https://generativelanguage.googleapis.com/v1beta/models/{gemini_model}:generateContent?key={gemini_key}"
+                    async with httpx.AsyncClient(timeout=25) as client:
+                        resp = await client.post(
+                            url,
+                            headers={"Content-Type": "application/json"},
+                            json={
+                                "contents": contents,
+                                "safetySettings": safety,
+                                "generationConfig": {"maxOutputTokens": 512}
+                            }
+                        )
+                        if resp.status_code == 200:
+                            data = resp.json()
+                            cands = data.get("candidates", [])
+                            if cands:
+                                parts = cands[0].get("content", {}).get("parts", [])
+                                if parts:
+                                    reply = parts[0].get("text", "")
+                                    if reply:
+                                        return reply
+                                finish = cands[0].get("finishReason", "")
+                                if finish == "SAFETY":
+                                    continue
+                        elif resp.status_code == 429:
+                            continue
+                except Exception:
+                    continue
 
     # 2) Grok (xAI)
     xai_key = os.getenv("XAI_API_KEY", "")
