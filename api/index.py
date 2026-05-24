@@ -812,11 +812,20 @@ async def _try_ai_api(msgs: list) -> str:
         try:
             contents = _to_gemini_contents(enriched)
             url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={gemini_key}"
+            safety = [
+                {"category": c, "threshold": "BLOCK_NONE"}
+                for c in [
+                    "HARM_CATEGORY_HARASSMENT",
+                    "HARM_CATEGORY_HATE_SPEECH",
+                    "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                    "HARM_CATEGORY_DANGEROUS_CONTENT",
+                ]
+            ]
             async with httpx.AsyncClient(timeout=30) as client:
                 resp = await client.post(
                     url,
                     headers={"Content-Type": "application/json"},
-                    json={"contents": contents}
+                    json={"contents": contents, "safetySettings": safety}
                 )
                 if resp.status_code == 200:
                     data = resp.json()
