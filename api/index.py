@@ -459,31 +459,155 @@ async def submit_score(body: ScoreIn):
     return {"ok": True, "id": sid}
 
 
-# --- Chat (proxy to OpenAI-compatible API) ---
+# --- Chat ---
+import random as _random
+
+
+def _chat_reply(text: str) -> str:
+    t = text.lower().strip()
+    words = set(re.findall(r'\w+', t))
+
+    # --- Phrases first ---
+    if any(p in t for p in ["who is romar", "sino si romar", "about romar", "tell me about"]):
+        return _random.choice([
+            "Si Romar? Isa siyang Website Developer na taga-Philippines! Full-stack siya — kaya niya front to back. From enrollment systems hanggang game arcades, ginawa na niya lahat. 💪",
+            "Romar Villafuerte — Website Developer from the Philippines. Yung tipo ng dev na bigyan mo ng idea, babalik sayo may working app na. 😎",
+            "Si boss Romar? Full-stack web developer siya! HTML, CSS, JS, PHP, Python — lahat kaya niya. Check out yung projects niya sa site na to!",
+        ])
+    if any(p in t for p in ["what can you do", "ano kaya mo", "what do you know"]):
+        return "Marami akong alam tungkol kay Romar! Tanungin mo ko about his skills, projects, o kung paano siya ma-contact. Pwede rin tayo mag-kwentuhan! 😄"
+    if any(p in t for p in ["good morning", "good afternoon", "good evening"]):
+        return _random.choice([
+            "Magandang araw! 🌞 Kumusta? Ano meron — interested ka sa work ni Romar?",
+            "Hello! Good vibes today! Ano pwede kong itulungan sayo? 😊",
+        ])
+    if any(p in t for p in ["i want to hire", "need developer", "need a website", "website for", "looking for developer", "work with"]):
+        return _random.choice([
+            "Nice! Si Romar available for freelance projects! 🎉 Mag-message ka sa contact form or email siya: romarmalakass@gmail.com — mabilis siya mag-reply!",
+            "Oh interested ka mag-hire kay Romar? Swerte niya! 😄 Fill up yung contact form sa baba or email: romarmalakass@gmail.com. Bigay mo lang yung project details!",
+        ])
+    if any(p in t for p in ["how to contact", "how to reach", "get in touch", "pano makipag"]):
+        return "Easy lang! 📧 Email: romarmalakass@gmail.com\n📝 Contact form: scroll down sa page na to\n📘 Facebook: https://www.facebook.com/share/1BJX3bLk66/\n\nUsually nag-rereply siya within 24 hours! 😊"
+    if any(p in t for p in ["tech stack", "ano alam"]):
+        return "Eto yung mga baril ni Romar sa dev world:\n• Frontend: HTML, CSS, JavaScript, Bootstrap\n• Backend: PHP, Python, FastAPI, Node.js\n• Database: MySQL, SQLite\n• Realtime: WebSocket\n• Tools: Git, GitHub, Vercel\n\nBasically, full-stack warrior siya! ⚔️"
+    if any(p in t for p in ["ride hailing"]):
+        return "Yung Ride Hailing System? Parang Grab/Uber clone siya! 🚗 Live map, real-time tracking, driver-rider matching — lahat gamit WebSocket. Try mo: https://romar-web.ct.ws/login.php?skip_intro=1&i=1"
+
+    # --- Single-word intents ---
+    if words & {"hire", "freelance", "kumuha"}:
+        return _random.choice([
+            "Interested ka mag-hire? Solid choice! 🎉 Email mo siya: romarmalakass@gmail.com or gamitin yung contact form sa baba!",
+            "Uy, mag-hire ka kay Romar? Good taste! 😄 Message mo siya sa contact form or email: romarmalakass@gmail.com",
+        ])
+    if words & {"price", "cost", "magkano", "presyo", "budget", "quote", "bayad", "rate"}:
+        return _random.choice([
+            "Depende sa project yan boss! 😊 Mag-message ka sa contact form or email: romarmalakass@gmail.com — i-quote niya sayo based sa requirements mo.",
+            "Hmmm, pricing depends on complexity! Best way — i-describe mo yung project mo sa contact form and si Romar mag-bibigay ng custom quote. Fair deal! 💰",
+        ])
+    if words & {"contact", "email", "reach", "message", "makipag"}:
+        return "📧 romarmalakass@gmail.com\n📝 Contact form sa baba\n🔗 GitHub: https://github.com/ROMARMALAKAS\n📘 FB: https://www.facebook.com/share/1BJX3bLk66/\n\nMag-reach out ka lang! 😊"
+    if words & {"skill", "skills", "technology", "programming", "language", "tools", "expertise"}:
+        return "Si Romar? Jack of all trades sa web dev! 🔧\n• HTML, CSS, JS, Bootstrap — frontend master\n• PHP, Python, FastAPI — backend pro\n• MySQL, SQLite — database handler\n• WebSocket — real-time specialist\n\nFull-stack na full-stack! 💪"
+    if words & {"enrollment", "enroll", "student", "registrar"}:
+        return "Yung Enrollment System? PHP + MySQL yun! 📚 May role-based logins (registrar, teacher, student), schedule conflict detection, at student record cards. Pinaka-proud feature: enrollment time bumaba from 10 minutes to under 1 minute! Speed! ⚡"
+    if words & {"ride", "hailing", "uber", "grab", "driver"}:
+        return "Ride Hailing System — basically Grab clone! 🚗 May live map, real-time tracking between driver at rider gamit WebSocket. Cool project! Try mo: https://romar-web.ct.ws/login.php?skip_intro=1&i=1"
+    if words & {"game", "games", "arcade", "snake", "bomberman", "piano", "basketball", "laro", "play"}:
+        return _random.choice([
+            "Yung Mini-game Arcade? 13 games yan! 🎮 Snake, Bomberman, Math Quiz, Piano Tiles, Basketball, Memory, at marami pa — lahat may shared leaderboard. Try mo, addicting! 🔥",
+            "Ah gusto mo mag-laro? 🎮 May 13 mini-games dito — Snake (may Adventure mode pa!), Bomberman, Piano Tiles, Math Quiz, at iba pa! Scroll up sa Games section!",
+        ])
+    if words & {"project", "projects", "portfolio", "gawa", "ginawa"}:
+        return "Tatlong main projects ni Romar:\n\n📚 Enrollment System — school management app\n🚗 Ride Hailing System — Grab-style clone\n🎮 Mini-game Arcade — 13 games with leaderboard\n\nLahat solo dev siya! Tanungin mo ko about any of them! 😊"
+    if words & {"where", "location", "country", "saan", "based", "taga"}:
+        return _random.choice([
+            "Si Romar? Taga-Philippines siya! 🇵🇭 Pero nag-a-accept siya ng clients worldwide — basta may internet, kaya yan! 🌍",
+            "Philippines-based si boss Romar! 🇵🇭 International clients? Game! Remote work lang naman lahat ngayon eh 😎",
+        ])
+    if words & {"thank", "thanks", "salamat", "appreciate"}:
+        return _random.choice([
+            "Walang anuman! 😊 If may iba ka pang tanong, G lang! Nandito lang ako 24/7!",
+            "No problem! Salamat din sa pagbisita! 🙏 Kung may need ka pa, ask lang!",
+            "You're welcome! 😄 Kung gusto mo mag-contact kay Romar, nandyan yung form sa baba!",
+        ])
+    if words & {"bye", "goodbye", "paalam", "sige"}:
+        return _random.choice([
+            "Bye bye! 👋 Salamat sa pagbisita sa portfolio ni Romar! Balik ka ulit ha! 😊",
+            "Sige, ingat! 👋 Feel free to come back anytime! Nandito lang kami! 🙌",
+        ])
+    if words & {"joke", "jokes", "funny", "biro", "biruan", "haha", "lol", "humor"}:
+        jokes = [
+            "Eto ha: Why do programmers prefer dark mode? Kasi light attracts bugs! 🐛😂",
+            "Knock knock! Who's there? Java. Java who? JavaScript ka ba? Kasi you make my heart run! 💛😂",
+            "Bakit malungkot si HTML? Kasi walang style! Kailangan niya si CSS! 😂👔",
+            "What's a programmer's favorite hangout place? Foo Bar! 🍺😂",
+            "Alam mo ba bakit magaling si Romar? Kasi 'di siya nag-quit() kahit may errors! 💪😂",
+        ]
+        return _random.choice(jokes)
+    if words & {"love", "crush", "ganda", "pogi", "cute", "guapo", "beautiful", "handsome"}:
+        return _random.choice([
+            "Hala! 😳 Basta si Romar, pogi at magaling mag-code! Perfect combo! 😂💻",
+            "Aww sweet! 😊 Pero mas maganda i-check yung projects ni Romar — dun talaga siya nagshi-shine! ✨",
+        ])
+    if words & {"age", "edad", "old", "birthday", "bday"}:
+        return "Hmm, 'di ko sure sa exact age niya! 🤔 Pero bata pa siya at ang dami na niyang na-build na projects. Future tech leader! 🚀"
+    if words & {"study", "school", "graduate", "college", "university", "aral"}:
+        return "Si Romar? Passionate learner siya! 📖 Self-taught sa maraming tech skills — hands-on ang approach niya. Yung projects niya sa site na to, lahat real-world applications na ginawa niya habang nag-aaral!"
+
+    # Greeting (checked last to avoid false matches like "hi" in "hire")
+    if words & {"hello", "hey", "kumusta", "musta", "sup", "yo", "oi", "oy"}:
+        return _random.choice([
+            "Uy hello! 👋 Welcome sa portfolio ni Romar! Ano meron — curious ka sa projects niya? Ask away!",
+            "Hey hey! 😄 Kumusta? I'm Romar's AI assistant! Tanong ka lang — about skills, projects, o kahit random kwento!",
+            "Yo! 👋 Welcome! Nandito ako para i-assist ka. Wanna know about Romar's projects? Or tara mag-kwentuhan! 😊",
+        ])
+    if "hi" in words and len(words) <= 3:
+        return _random.choice([
+            "Hi! 👋 Kumusta? Ask me anything about Romar — skills, projects, o kung paano siya ma-hire!",
+            "Hello! 😊 Welcome! Ano gusto mong malaman about Romar?",
+        ])
+
+    # Fallback - playful
+    return _random.choice([
+        "Hmmm interesting tanong yan! 🤔 Hindi ko sure sa sagot pero pwede mo i-ask directly kay Romar — email siya: romarmalakass@gmail.com or gamitin yung contact form!",
+        "Uy, good question! 😄 Pero mas maganda i-ask mo na lang si Romar directly sa contact form sa baba. Mabilis siya mag-reply!",
+        "Hmm, 'di ko alam yang exact na yan eh! 🤔 Pero hey, try mo i-ask kay Romar mismo — romarmalakass@gmail.com. Sure sagot niya yan!",
+        "Interesting! 😊 Pero para mas accurate na sagot, i-message mo na lang si Romar sa contact form. Promise, friendly siya!",
+    ])
+
+
 @app.post("/api/chat")
 async def chat(body: ChatIn):
-    api_key = os.getenv("OPENAI_API_KEY", "")
-    if not api_key:
-        return {"reply": "Chat is temporarily unavailable. Please try again later."}
-    msgs = []
+    last_msg = ""
     for m in body.messages:
-        role = m.get("role", "user")
-        content = m.get("content", "")
-        if role in ("user", "assistant", "system"):
-            msgs.append({"role": role, "content": content})
-    try:
-        async with httpx.AsyncClient(timeout=30) as client:
-            resp = await client.post(
-                "https://api.openai.com/v1/chat/completions",
-                headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-                json={"model": "gpt-4o-mini", "messages": msgs, "max_tokens": 1024}
-            )
-            data = resp.json()
-            reply = data.get("choices", [{}])[0].get("message", {}).get("content",
-                    "Sorry, I couldn't generate a response.")
-            return {"reply": reply}
-    except Exception:
-        return {"reply": "Chat is temporarily unavailable. Please try again later."}
+        if m.get("role") == "user":
+            last_msg = m.get("content", "")
+
+    # Try OpenAI if API key is available
+    api_key = os.getenv("OPENAI_API_KEY", "")
+    if api_key:
+        msgs = []
+        for m in body.messages:
+            role = m.get("role", "user")
+            content = m.get("content", "")
+            if role in ("user", "assistant", "system"):
+                msgs.append({"role": role, "content": content})
+        try:
+            async with httpx.AsyncClient(timeout=30) as client:
+                resp = await client.post(
+                    "https://api.openai.com/v1/chat/completions",
+                    headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+                    json={"model": "gpt-4o-mini", "messages": msgs, "max_tokens": 1024}
+                )
+                data = resp.json()
+                reply = data.get("choices", [{}])[0].get("message", {}).get("content", "")
+                if reply:
+                    return {"reply": reply}
+        except Exception:
+            pass
+
+    # Built-in smart assistant (works without API key)
+    return {"reply": _chat_reply(last_msg)}
 
 
 # --- Bookings ---
@@ -551,23 +675,35 @@ async def track_visit(body: VisitIn, request: Request):
         pass
 
     conn = get_db()
-    # Dedup: same IP within last 30 minutes
-    cutoff = time.time() - 1800
-    existing = conn.execute("SELECT id FROM visits WHERE ip=? AND created_at>?", (ip, cutoff)).fetchone()
-    if not existing:
+    # Dedup: same IP + device within last 24 hours (prevents repeat counting)
+    cutoff = time.time() - 86400
+    existing = conn.execute(
+        "SELECT id FROM visits WHERE ip=? AND device=? AND created_at>?",
+        (ip, device, cutoff)
+    ).fetchone()
+    # Also check persistent storage for dedup across cold starts
+    import datetime
+    vstats = _hf_load_visits()
+    today_str = datetime.datetime.utcfromtimestamp(time.time()).strftime("%Y-%m-%d")
+    seen_ips = vstats.get("seen_today", {})
+    ip_device_key = f"{ip}:{device}"
+    already_counted = seen_ips.get(ip_device_key) == today_str
+
+    if not existing and not already_counted:
         now = time.time()
         conn.execute(
             "INSERT INTO visits (ip, path, referrer, user_agent, country, city, device, created_at) VALUES (?,?,?,?,?,?,?,?)",
             (ip, body.path, body.referrer, ua, country, city, device, now))
         conn.commit()
-        # Persist visit count to HuggingFace Hub
-        import datetime
-        today_str = datetime.datetime.utcfromtimestamp(now).strftime("%Y-%m-%d")
-        vstats = _hf_load_visits()
+        # Persist visit count + dedup info to HuggingFace Hub
         vstats["total"] = vstats.get("total", 0) + 1
         by_day = vstats.get("by_day", {})
         by_day[today_str] = by_day.get(today_str, 0) + 1
         vstats["by_day"] = by_day
+        # Track seen IPs for today (clean up old entries)
+        seen_ips = {k: v for k, v in seen_ips.items() if v == today_str}
+        seen_ips[ip_device_key] = today_str
+        vstats["seen_today"] = seen_ips
         _hf_save_visits(vstats)
 
     today_start = int(time.time()) - (int(time.time()) % 86400)
