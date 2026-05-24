@@ -756,13 +756,10 @@ def _chat_reply(text: str, history: list, is_savage: bool = False) -> str:
 
 
 _ROMAR_CONTEXT = (
-    "Romar Villafuerte is a full-stack web developer from the Philippines. "
-    "His projects: (1) Enrollment System (PHP+MySQL, role-based logins, cut enrollment from 10min to <1min), "
-    "(2) Ride Hailing System (like Grab/Uber, live map, WebSocket real-time tracking), "
-    "(3) Mini-game Arcade (13 browser games with global leaderboard). "
-    "Skills: HTML, CSS, JavaScript, Bootstrap, PHP, Python, FastAPI, MySQL, SQLite, WebSocket, Git. "
-    "Contact: romarmalakass@gmail.com, GitHub: ROMARMALAKAS, FB: https://www.facebook.com/share/1BJX3bLk66/. "
-    "All projects built solo. Available for freelance."
+    "Context about Romar Villafuerte: Full-stack web developer from the Philippines. "
+    "Projects: Enrollment System (PHP+MySQL), Ride Hailing System (WebSocket), "
+    "Mini-game Arcade (13 games). Skills: HTML, CSS, JS, PHP, Python, FastAPI, MySQL, SQLite, WebSocket. "
+    "Contact: romarmalakass@gmail.com. GitHub: ROMARMALAKAS. All solo dev. Available for freelance."
 )
 
 _HF_MODELS = [
@@ -771,27 +768,30 @@ _HF_MODELS = [
 ]
 
 
-def _enrich_system_prompt(msgs: list) -> list:
-    """Inject Romar's context into the system prompt."""
-    enriched = []
-    has_system = False
-    for m in msgs:
-        if m.get("role") == "system":
-            has_system = True
-            enriched.append({
-                "role": "system",
-                "content": m["content"] + "\n\nContext about Romar: " + _ROMAR_CONTEXT
-            })
-        else:
-            enriched.append(m)
-    if not has_system:
-        enriched.insert(0, {"role": "system", "content": _ROMAR_CONTEXT})
+def _enrich_messages(msgs: list) -> list:
+    """Add Romar context and enforce short human replies."""
+    enriched = list(msgs)
+    # Find the instruction message and append Romar context to it
+    for i, m in enumerate(enriched):
+        if m.get("role") == "user" and "[INSTRUCTION]" in m.get("content", ""):
+            enriched[i] = {
+                "role": "user",
+                "content": m["content"] + "\n\n" + _ROMAR_CONTEXT
+            }
+            return enriched
+    # If no instruction found, add basic context
+    enriched.insert(0, {
+        "role": "user",
+        "content": "[INSTRUCTION] Keep replies SHORT — 1 to 3 sentences, like a text message. "
+                   "Talk like a real human, not an AI. " + _ROMAR_CONTEXT
+    })
+    enriched.insert(1, {"role": "assistant", "content": "Got it, short and human. What's up?"})
     return enriched
 
 
 async def _try_ai_api(msgs: list) -> str:
     """Try OpenAI first, then HuggingFace Router (free)."""
-    enriched = _enrich_system_prompt(msgs)
+    enriched = _enrich_messages(msgs)
 
     # 1) OpenAI
     api_key = os.getenv("OPENAI_API_KEY", "")
@@ -838,9 +838,11 @@ async def chat(body: ChatIn):
     is_savage = False
     for m in body.messages:
         if m.get("role") == "user":
-            last_msg = m.get("content", "")
-        if m.get("role") == "system" and "SAVAGE" in m.get("content", ""):
-            is_savage = True
+            content = m.get("content", "")
+            if "[INSTRUCTION]" not in content:
+                last_msg = content
+            if "SAVAGE" in content:
+                is_savage = True
 
     msgs = []
     for m in body.messages:

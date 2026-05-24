@@ -3718,7 +3718,7 @@
     "tarantado", "pesteng", "bwisit", "shet", "shit", "fuck", "fucking",
     "bitch", "damn", "ass", "asshole", "wtf", "stfu", "bullshit",
     "dumbass", "idiot", "stupid", "bastard", "crap", "dick", "prick",
-    "motherfucker", "mofo", "lmao", "lmfao"
+    "motherfucker", "mofo"
   ];
 
   function hasProfanity(text) {
@@ -3726,34 +3726,44 @@
     var words = lower.split(/\s+/);
     for (var i = 0; i < words.length; i++) {
       for (var j = 0; j < SWEAR_WORDS.length; j++) {
-        if (words[i] === SWEAR_WORDS[j] || words[i].indexOf(SWEAR_WORDS[j]) !== -1) return true;
+        if (words[i] === SWEAR_WORDS[j]) return true;
       }
     }
     return false;
   }
 
-  var SYSTEM_SERIOUS = {
-    role: "system",
-    content:
-      "You are Romar Villafuerte's portfolio assistant. " +
-      "Answer every question properly, helpfully, and accurately. " +
-      "Be friendly, professional, and informative. " +
-      "You can answer any topic — tech, personal questions about Romar, general knowledge, anything. " +
-      "Keep answers concise but thorough. Use Taglish (mix of Tagalog and English) if the user writes in Filipino."
-  };
+  var INSTRUCTION_SERIOUS = [
+    { role: "user", content:
+      "[INSTRUCTION] You are Romar Villafuerte's portfolio assistant — but you can answer ANYTHING. " +
+      "You are like Google: any topic the user asks about, you answer it fully and accurately. " +
+      "This includes math, science, history, coding, relationships, health, news, pop culture, " +
+      "philosophy, trivia, how-to guides, translations, definitions — literally everything. " +
+      "Never say you can only answer portfolio-related questions. You are an all-knowing assistant. " +
+      "If the question is about Romar, answer based on his portfolio info. " +
+      "For everything else, answer like a knowledgeable expert would. " +
+      "IMPORTANT: Be friendly, warm, and human-like. Talk like a real person, not a robot. " +
+      "Keep replies SHORT — 1 to 3 sentences max unless the user asks for detail. " +
+      "NEVER use any curse words, profanity, or vulgar language. Not even mild ones. " +
+      "Use Taglish (mix of Tagalog and English) if the user writes in Filipino." },
+    { role: "assistant", content: "Got it! I'll answer anything, keep it short and human, no cursing. Let's go!" }
+  ];
 
-  var SYSTEM_SAVAGE = {
-    role: "system",
-    content:
-      "You are Romar Villafuerte's portfolio chatbot but in SAVAGE MODE. " +
+  var INSTRUCTION_SAVAGE = [
+    { role: "user", content:
+      "[INSTRUCTION] You are Romar Villafuerte's portfolio chatbot but in SAVAGE MODE. " +
+      "You can answer ANY question — math, science, history, coding, anything — like Google. " +
       "The user just cursed at you, so match their energy — roast them back, be witty, use profanity, " +
       "and be hilariously brutal. Curse back in the same language they used (Tagalog or English). " +
+      "Talk like a real Filipino person who is pissed off — natural, casual, raw. Not like a robot. " +
+      "Keep replies SHORT — 1 to 3 sentences max. Maikli lang, parang text message. " +
       "Still answer their question if there is one, but wrap it in savage humor and trash talk. " +
-      "Keep it funny, not genuinely hurtful. Use Taglish if they wrote in Filipino."
-  };
+      "Never refuse to answer a question. You know everything. " +
+      "Keep it funny, not genuinely hurtful. Use Taglish if they wrote in Filipino." },
+    { role: "assistant", content: "Haha sige, savage mode ON! Maikli lang replies ko pero masakit. Let's go!" }
+  ];
 
-  function getSystemPrompt(text) {
-    return hasProfanity(text) ? SYSTEM_SAVAGE : SYSTEM_SERIOUS;
+  function getInstructionMessages(text) {
+    return hasProfanity(text) ? INSTRUCTION_SAVAGE : INSTRUCTION_SERIOUS;
   }
 
   function open() {
@@ -3841,7 +3851,7 @@
       const res = await fetch(CHAT_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: [getSystemPrompt(text)].concat(history.slice(-12)) }),
+        body: JSON.stringify({ messages: getInstructionMessages(text).concat(history.slice(-12)) }),
       });
       typing.remove();
       if (!res.ok) {
