@@ -5441,12 +5441,8 @@
   const fontSize = 14;
   let columns, drops;
 
-  function isDark() {
-    return document.documentElement.getAttribute("data-bs-theme") === "dark";
-  }
-
   function fadeColor() {
-    return isDark() ? "rgba(15, 19, 32, 0.06)" : "rgba(240, 244, 255, 0.06)";
+    return "rgba(11, 15, 26, 0.05)";
   }
 
   function resize() {
