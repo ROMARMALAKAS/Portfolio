@@ -824,7 +824,7 @@ async def _try_ai_api(msgs: list) -> str:
                 "HARM_CATEGORY_DANGEROUS_CONTENT",
             ]
         ]
-        for gemini_model in ["gemini-2.5-flash", "gemini-2.5-flash-lite"]:
+        for gemini_model in ["gemini-2.5-flash-lite", "gemini-2.5-flash"]:
             try:
                 url = f"https://generativelanguage.googleapis.com/v1beta/models/{gemini_model}:generateContent?key={gemini_key}"
                 async with httpx.AsyncClient(timeout=55) as client:
@@ -888,38 +888,6 @@ async def _try_ai_api(msgs: list) -> str:
     return ""
 
 
-@app.get("/api/debug-gemini")
-async def debug_gemini():
-    """Temporary debug endpoint to test Gemini connectivity."""
-    gemini_key = os.getenv("GEMINI_API_KEY", "")
-    if not gemini_key:
-        return {"error": "GEMINI_API_KEY not set", "key_len": 0}
-    results = {}
-    for model in ["gemini-2.5-flash-lite"]:
-        try:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={gemini_key}"
-            async with httpx.AsyncClient(timeout=25) as client:
-                resp = await client.post(
-                    url,
-                    headers={"Content-Type": "application/json"},
-                    json={
-                        "contents": [{"role": "user", "parts": [{"text": "Say hello in 3 words"}]}],
-                        "safetySettings": [
-                            {"category": c, "threshold": "BLOCK_NONE"}
-                            for c in ["HARM_CATEGORY_HARASSMENT", "HARM_CATEGORY_HATE_SPEECH",
-                                      "HARM_CATEGORY_SEXUALLY_EXPLICIT", "HARM_CATEGORY_DANGEROUS_CONTENT"]
-                        ]
-                    }
-                )
-                results[model] = {
-                    "status": resp.status_code,
-                    "body": resp.text[:500]
-                }
-        except Exception as e:
-            results[model] = {"error": str(e)}
-    return {"key_len": len(gemini_key), "key_start": gemini_key[:8], "results": results}
-
-
 @app.post("/api/chat")
 async def chat(body: ChatIn):
     last_msg = ""
@@ -944,8 +912,12 @@ async def chat(body: ChatIn):
     if reply:
         return {"reply": reply}
 
-    # Fallback to built-in assistant
-    return {"reply": _chat_reply(last_msg, body.messages, is_savage)}
+    # Fallback to built-in for Romar-specific questions
+    builtin = _chat_reply(last_msg, body.messages, is_savage)
+    if builtin and "wala akong alam" not in builtin.lower() and "i don't have info" not in builtin.lower():
+        return {"reply": builtin}
+
+    return {"reply": "Sandali lang pre, medyo maraming nagcha-chat sakin ngayon haha. Try mo ulit in a few seconds!"}
 
 
 # --- Bookings ---
