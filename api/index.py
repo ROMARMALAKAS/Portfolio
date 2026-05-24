@@ -835,11 +835,18 @@ async def _try_ai_api(msgs: list) -> str:
                     )
                     if resp.status_code == 200:
                         data = resp.json()
-                        parts = data.get("candidates", [{}])[0].get("content", {}).get("parts", [])
-                        if parts:
-                            reply = parts[0].get("text", "")
-                            if reply:
-                                return reply
+                        cands = data.get("candidates", [])
+                        if cands:
+                            parts = cands[0].get("content", {}).get("parts", [])
+                            if parts:
+                                reply = parts[0].get("text", "")
+                                if reply:
+                                    return reply
+                            finish = cands[0].get("finishReason", "")
+                            if finish == "SAFETY":
+                                continue
+                    elif resp.status_code == 429:
+                        continue
             except Exception:
                 continue
 
@@ -881,6 +888,38 @@ async def _try_ai_api(msgs: list) -> str:
     return ""
 
 
+@app.get("/api/debug-gemini")
+async def debug_gemini():
+    """Temporary debug endpoint to test Gemini connectivity."""
+    gemini_key = os.getenv("GEMINI_API_KEY", "")
+    if not gemini_key:
+        return {"error": "GEMINI_API_KEY not set", "key_len": 0}
+    results = {}
+    for model in ["gemini-2.5-flash-lite"]:
+        try:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={gemini_key}"
+            async with httpx.AsyncClient(timeout=25) as client:
+                resp = await client.post(
+                    url,
+                    headers={"Content-Type": "application/json"},
+                    json={
+                        "contents": [{"role": "user", "parts": [{"text": "Say hello in 3 words"}]}],
+                        "safetySettings": [
+                            {"category": c, "threshold": "BLOCK_NONE"}
+                            for c in ["HARM_CATEGORY_HARASSMENT", "HARM_CATEGORY_HATE_SPEECH",
+                                      "HARM_CATEGORY_SEXUALLY_EXPLICIT", "HARM_CATEGORY_DANGEROUS_CONTENT"]
+                        ]
+                    }
+                )
+                results[model] = {
+                    "status": resp.status_code,
+                    "body": resp.text[:500]
+                }
+        except Exception as e:
+            results[model] = {"error": str(e)}
+    return {"key_len": len(gemini_key), "key_start": gemini_key[:8], "results": results}
+
+
 @app.post("/api/chat")
 async def chat(body: ChatIn):
     last_msg = ""
@@ -900,7 +939,7 @@ async def chat(body: ChatIn):
         if role in ("user", "assistant", "system"):
             msgs.append({"role": role, "content": content})
 
-    # Try real AI (OpenAI or HuggingFace)
+    # Try real AI
     reply = await _try_ai_api(msgs)
     if reply:
         return {"reply": reply}
