@@ -460,120 +460,295 @@ async def submit_score(body: ScoreIn):
 
 
 # --- Chat ---
-import random as _random
+import random as _rng
+
+# Detect if text is mostly Tagalog
+_TAGALOG_MARKERS = {
+    "ako", "ko", "ka", "mo", "siya", "niya", "namin", "natin", "nila",
+    "ang", "ng", "sa", "na", "pa", "po", "opo", "naman", "din", "rin",
+    "lang", "lamang", "ba", "yung", "yun", "dito", "doon", "diyan",
+    "ano", "sino", "saan", "bakit", "paano", "kailan", "magkano",
+    "oo", "hindi", "ewan", "kasi", "pero", "at", "o", "kung",
+    "gusto", "ayaw", "alam", "pano", "pwede", "puwede", "talaga",
+    "grabe", "gago", "gaga", "bobo", "boba", "tanga", "tangina",
+    "putangina", "pota", "puta", "ulol", "luh", "hoy", "uy",
+    "sige", "tara", "diba", "noh", "eh", "nga", "kayo", "tayo",
+    "kumusta", "musta", "kamusta", "maganda", "pangit", "gwapo",
+    "pre", "pare", "bro", "kuya", "ate", "mars", "bes", "besh",
+    "nag", "mag", "pag", "may", "wala", "meron", "mahal", "libre",
+}
 
 
-def _chat_reply(text: str) -> str:
+def _is_tagalog(text: str) -> bool:
+    words = re.findall(r'\w+', text.lower())
+    if not words:
+        return False
+    tag_count = sum(1 for w in words if w in _TAGALOG_MARKERS)
+    return tag_count / len(words) > 0.25 or tag_count >= 2
+
+
+def _chat_reply(text: str, history: list) -> str:
     t = text.lower().strip()
     words = set(re.findall(r'\w+', t))
+    tl = _is_tagalog(text)
+    msg_count = len(history)
 
-    # --- Phrases first ---
-    if any(p in t for p in ["who is romar", "sino si romar", "about romar", "tell me about"]):
-        return _random.choice([
-            "Si Romar? Isa siyang Website Developer na taga-Philippines! Full-stack siya — kaya niya front to back. From enrollment systems hanggang game arcades, ginawa na niya lahat. 💪",
-            "Romar Villafuerte — Website Developer from the Philippines. Yung tipo ng dev na bigyan mo ng idea, babalik sayo may working app na. 😎",
-            "Si boss Romar? Full-stack web developer siya! HTML, CSS, JS, PHP, Python — lahat kaya niya. Check out yung projects niya sa site na to!",
-        ])
-    if any(p in t for p in ["what can you do", "ano kaya mo", "what do you know"]):
-        return "Marami akong alam tungkol kay Romar! Tanungin mo ko about his skills, projects, o kung paano siya ma-contact. Pwede rin tayo mag-kwentuhan! 😄"
-    if any(p in t for p in ["good morning", "good afternoon", "good evening"]):
-        return _random.choice([
-            "Magandang araw! 🌞 Kumusta? Ano meron — interested ka sa work ni Romar?",
-            "Hello! Good vibes today! Ano pwede kong itulungan sayo? 😊",
-        ])
-    if any(p in t for p in ["i want to hire", "need developer", "need a website", "website for", "looking for developer", "work with"]):
-        return _random.choice([
-            "Nice! Si Romar available for freelance projects! 🎉 Mag-message ka sa contact form or email siya: romarmalakass@gmail.com — mabilis siya mag-reply!",
-            "Oh interested ka mag-hire kay Romar? Swerte niya! 😄 Fill up yung contact form sa baba or email: romarmalakass@gmail.com. Bigay mo lang yung project details!",
-        ])
-    if any(p in t for p in ["how to contact", "how to reach", "get in touch", "pano makipag"]):
-        return "Easy lang! 📧 Email: romarmalakass@gmail.com\n📝 Contact form: scroll down sa page na to\n📘 Facebook: https://www.facebook.com/share/1BJX3bLk66/\n\nUsually nag-rereply siya within 24 hours! 😊"
-    if any(p in t for p in ["tech stack", "ano alam"]):
-        return "Eto yung mga baril ni Romar sa dev world:\n• Frontend: HTML, CSS, JavaScript, Bootstrap\n• Backend: PHP, Python, FastAPI, Node.js\n• Database: MySQL, SQLite\n• Realtime: WebSocket\n• Tools: Git, GitHub, Vercel\n\nBasically, full-stack warrior siya! ⚔️"
-    if any(p in t for p in ["ride hailing"]):
-        return "Yung Ride Hailing System? Parang Grab/Uber clone siya! 🚗 Live map, real-time tracking, driver-rider matching — lahat gamit WebSocket. Try mo: https://romar-web.ct.ws/login.php?skip_intro=1&i=1"
+    # === SAVAGE / MURA / KULIT MODE ===
+    mura_words = {"gago", "gaga", "bobo", "boba", "tanga", "tangina",
+                  "putangina", "pota", "puta", "ulol", "tarantado",
+                  "hayop", "animal", "leche", "bwisit", "peste",
+                  "pakyu", "fuck", "shit", "damn", "stupid", "idiot",
+                  "dumb", "asshole", "bitch", "wtf", "stfu"}
+    if words & mura_words:
+        if tl:
+            return _rng.choice([
+                "Hoy hoy relax ka lang dyan, wag ka magmura baka ma-report ka sa admin ni Romar ha 😂",
+                "Luh nagmumura, chill ka lang pre. Di ka makakalusot sa ganyan dito 💀",
+                "Grabe ka naman magmura, sino ba nakaaway mo? Wag mo ko idamay dyan 😤",
+                "Oy wag ganyan, nandito lang ako para tumulong. Gusto mo ba mag-usap ng maayos o magpapakatanga ka lang? 🤨",
+                "Aba may ganyan pa, sige magmura ka pa baka ma-ban ka ni Romar dito sa site niya 😏",
+                "Hahaha galit na galit! Relax, inom ka muna tubig bago ka magtanong ulit 💀😂",
+                "Weh di nga? Magmumura ka tapos may kailangan ka pala? Tanong ka na lang ng maayos 🙄",
+            ])
+        else:
+            return _rng.choice([
+                "Whoa there, calm down buddy. I'm just a chatbot, no need for that language 😂",
+                "Lol someone's having a bad day. Chill out and ask a proper question maybe? 💀",
+                "Hey easy with the words there. You wanna talk or you just here to vent? 🤨",
+                "Hahaha okay tough guy. You done? Cool, now ask me something useful 😏",
+                "Wow such language! I've seen worse though. Anyway, what do you actually need? 🙄",
+            ])
 
-    # --- Single-word intents ---
-    if words & {"hire", "freelance", "kumuha"}:
-        return _random.choice([
-            "Interested ka mag-hire? Solid choice! 🎉 Email mo siya: romarmalakass@gmail.com or gamitin yung contact form sa baba!",
-            "Uy, mag-hire ka kay Romar? Good taste! 😄 Message mo siya sa contact form or email: romarmalakass@gmail.com",
-        ])
-    if words & {"price", "cost", "magkano", "presyo", "budget", "quote", "bayad", "rate"}:
-        return _random.choice([
-            "Depende sa project yan boss! 😊 Mag-message ka sa contact form or email: romarmalakass@gmail.com — i-quote niya sayo based sa requirements mo.",
-            "Hmmm, pricing depends on complexity! Best way — i-describe mo yung project mo sa contact form and si Romar mag-bibigay ng custom quote. Fair deal! 💰",
-        ])
-    if words & {"contact", "email", "reach", "message", "makipag"}:
-        return "📧 romarmalakass@gmail.com\n📝 Contact form sa baba\n🔗 GitHub: https://github.com/ROMARMALAKAS\n📘 FB: https://www.facebook.com/share/1BJX3bLk66/\n\nMag-reach out ka lang! 😊"
-    if words & {"skill", "skills", "technology", "programming", "language", "tools", "expertise", "tech", "stack", "code", "coding"}:
-        return "Si Romar? Jack of all trades sa web dev! 🔧\n• HTML, CSS, JS, Bootstrap — frontend master\n• PHP, Python, FastAPI — backend pro\n• MySQL, SQLite — database handler\n• WebSocket — real-time specialist\n\nFull-stack na full-stack! 💪"
-    if words & {"enrollment", "enroll", "student", "registrar"}:
-        return "Yung Enrollment System? PHP + MySQL yun! 📚 May role-based logins (registrar, teacher, student), schedule conflict detection, at student record cards. Pinaka-proud feature: enrollment time bumaba from 10 minutes to under 1 minute! Speed! ⚡"
-    if words & {"ride", "hailing", "uber", "grab", "driver"}:
-        return "Ride Hailing System — basically Grab clone! 🚗 May live map, real-time tracking between driver at rider gamit WebSocket. Cool project! Try mo: https://romar-web.ct.ws/login.php?skip_intro=1&i=1"
-    if words & {"game", "games", "arcade", "snake", "bomberman", "piano", "basketball", "laro", "play"}:
-        return _random.choice([
-            "Yung Mini-game Arcade? 13 games yan! 🎮 Snake, Bomberman, Math Quiz, Piano Tiles, Basketball, Memory, at marami pa — lahat may shared leaderboard. Try mo, addicting! 🔥",
-            "Ah gusto mo mag-laro? 🎮 May 13 mini-games dito — Snake (may Adventure mode pa!), Bomberman, Piano Tiles, Math Quiz, at iba pa! Scroll up sa Games section!",
-        ])
-    if words & {"project", "projects", "portfolio", "gawa", "ginawa"}:
-        return "Tatlong main projects ni Romar:\n\n📚 Enrollment System — school management app\n🚗 Ride Hailing System — Grab-style clone\n🎮 Mini-game Arcade — 13 games with leaderboard\n\nLahat solo dev siya! Tanungin mo ko about any of them! 😊"
-    if words & {"where", "location", "country", "saan", "based", "taga"}:
-        return _random.choice([
-            "Si Romar? Taga-Philippines siya! 🇵🇭 Pero nag-a-accept siya ng clients worldwide — basta may internet, kaya yan! 🌍",
-            "Philippines-based si boss Romar! 🇵🇭 International clients? Game! Remote work lang naman lahat ngayon eh 😎",
-        ])
-    if words & {"thank", "thanks", "salamat", "appreciate"}:
-        return _random.choice([
-            "Walang anuman! 😊 If may iba ka pang tanong, G lang! Nandito lang ako 24/7!",
-            "No problem! Salamat din sa pagbisita! 🙏 Kung may need ka pa, ask lang!",
-            "You're welcome! 😄 Kung gusto mo mag-contact kay Romar, nandyan yung form sa baba!",
-        ])
-    if words & {"bye", "goodbye", "paalam", "sige"}:
-        return _random.choice([
-            "Bye bye! 👋 Salamat sa pagbisita sa portfolio ni Romar! Balik ka ulit ha! 😊",
-            "Sige, ingat! 👋 Feel free to come back anytime! Nandito lang kami! 🙌",
-        ])
-    if words & {"joke", "jokes", "funny", "biro", "biruan", "haha", "lol", "humor"}:
-        jokes = [
-            "Eto ha: Why do programmers prefer dark mode? Kasi light attracts bugs! 🐛😂",
-            "Knock knock! Who's there? Java. Java who? JavaScript ka ba? Kasi you make my heart run! 💛😂",
-            "Bakit malungkot si HTML? Kasi walang style! Kailangan niya si CSS! 😂👔",
-            "What's a programmer's favorite hangout place? Foo Bar! 🍺😂",
-            "Alam mo ba bakit magaling si Romar? Kasi 'di siya nag-quit() kahit may errors! 💪😂",
-        ]
-        return _random.choice(jokes)
-    if words & {"love", "crush", "ganda", "pogi", "cute", "guapo", "beautiful", "handsome"}:
-        return _random.choice([
-            "Hala! 😳 Basta si Romar, pogi at magaling mag-code! Perfect combo! 😂💻",
-            "Aww sweet! 😊 Pero mas maganda i-check yung projects ni Romar — dun talaga siya nagshi-shine! ✨",
-        ])
-    if words & {"age", "edad", "old", "birthday", "bday"}:
-        return "Hmm, 'di ko sure sa exact age niya! 🤔 Pero bata pa siya at ang dami na niyang na-build na projects. Future tech leader! 🚀"
-    if words & {"study", "school", "graduate", "college", "university", "aral"}:
-        return "Si Romar? Passionate learner siya! 📖 Self-taught sa maraming tech skills — hands-on ang approach niya. Yung projects niya sa site na to, lahat real-world applications na ginawa niya habang nag-aaral!"
+    # Annoying / kulit / spam detection
+    kulit_words = {"kulit", "annoying", "spam", "ulit", "paulit", "daldal",
+                   "makulit", "shut", "tumahimik", "tahan", "stop", "quit"}
+    if words & kulit_words:
+        if tl:
+            return _rng.choice([
+                "Ako makulit?? Ikaw nga paulit ulit eh! 😂 Pero sige tanong ka pa",
+                "Hoy sino makulit sa atin? Check mo sarili mo pre 💀",
+                "Aba sinasabihan akong makulit, eh nandito lang naman ako para tumulong. Ingrato 😤😂",
+            ])
+        else:
+            return _rng.choice([
+                "Me annoying?? Have you met yourself? 😂 But sure, ask away",
+                "Oh I'm the annoying one? That's rich coming from you 💀",
+                "Lol okay I'll tone it down. What do you actually wanna know?",
+            ])
 
-    # Greeting (checked last to avoid false matches like "hi" in "hire")
-    if words & {"hello", "hey", "kumusta", "musta", "sup", "yo", "oi", "oy"}:
-        return _random.choice([
-            "Uy hello! 👋 Welcome sa portfolio ni Romar! Ano meron — curious ka sa projects niya? Ask away!",
-            "Hey hey! 😄 Kumusta? I'm Romar's AI assistant! Tanong ka lang — about skills, projects, o kahit random kwento!",
-            "Yo! 👋 Welcome! Nandito ako para i-assist ka. Wanna know about Romar's projects? Or tara mag-kwentuhan! 😊",
+    # Repeat / boring
+    if msg_count > 6 and any(w in t for w in ["same", "ulit", "paulit", "boring", "lame"]):
+        if tl:
+            return "Hoy di ako boring! Ikaw kasi paulit ulit ang tanong. Try mo mag-ask ng iba naman! 😤"
+        else:
+            return "I'm not boring, YOU keep asking the same thing! Try a different question 😤"
+
+    # === GREETINGS ===
+    greet_en = ["good morning", "good afternoon", "good evening"]
+    if any(p in t for p in greet_en):
+        return _rng.choice([
+            "Hey! Good vibes today. What can I help you with?",
+            "Hello! Nice of you to drop by. Wanna know about Romar's work?",
         ])
+    greet_tl = ["magandang umaga", "magandang hapon", "magandang gabi"]
+    if any(p in t for p in greet_tl):
+        return _rng.choice([
+            "Magandang araw! Kumusta? Ano meron, curious ka sa work ni Romar?",
+            "Hello! Kamusta ka? Tanong ka lang kung may gusto kang malaman!",
+        ])
+
+    if words & {"hello", "hey", "kumusta", "musta", "kamusta", "sup", "yo"}:
+        if tl:
+            return _rng.choice([
+                "Uy kumusta! Anong balita? Tanong ka lang kung may gusto kang malaman kay Romar",
+                "Hoy kamusta! Nandito lang ako, tanong mo lang kung ano man yan",
+                "Musta pre! G lang tanong ka, nandito naman ako 24/7",
+            ])
+        else:
+            return _rng.choice([
+                "Hey! What's up? Feel free to ask me anything about Romar",
+                "Hello there! What brings you to Romar's portfolio?",
+                "Yo! Welcome. Ask me about Romar's skills, projects, whatever you want",
+            ])
     if "hi" in words and len(words) <= 3:
-        return _random.choice([
-            "Hi! 👋 Kumusta? Ask me anything about Romar — skills, projects, o kung paano siya ma-hire!",
-            "Hello! 😊 Welcome! Ano gusto mong malaman about Romar?",
+        if tl:
+            return "Uy hi! Anong meron? Tanong ka lang"
+        else:
+            return "Hi! What would you like to know about Romar?"
+
+    # === ABOUT ROMAR ===
+    if any(p in t for p in ["who is romar", "who's romar", "tell me about romar"]):
+        return _rng.choice([
+            "Romar Villafuerte is a Website Developer from the Philippines. He builds full-stack web apps — enrollment systems, ride-hailing platforms, game arcades, you name it. The guy can do front-end and back-end no problem.",
+            "He's a full-stack web developer based in the Philippines. His projects include an enrollment system, a ride-hailing app, and a 13-game arcade. Pretty solid portfolio for his age honestly.",
+        ])
+    if any(p in t for p in ["sino si romar", "sino siya", "about romar", "kwento mo"]):
+        return _rng.choice([
+            "Si Romar? Full-stack web developer siya taga-Philippines. Gumawa na siya ng enrollment system, ride-hailing app, at 13-game arcade. Lahat solo dev pa.",
+            "Web developer siya pre. Kaya niya front-end at back-end. Yung mga projects niya dito sa site, lahat siya gumawa mag-isa. Solid yan.",
+            "Si boss Romar, website developer. PHP, JavaScript, Python — lahat kaya niya. Tingnan mo na lang yung projects niya dito sa site, makikita mo.",
         ])
 
-    # Fallback - playful
-    return _random.choice([
-        "Hmmm interesting tanong yan! 🤔 Hindi ko sure sa sagot pero pwede mo i-ask directly kay Romar — email siya: romarmalakass@gmail.com or gamitin yung contact form!",
-        "Uy, good question! 😄 Pero mas maganda i-ask mo na lang si Romar directly sa contact form sa baba. Mabilis siya mag-reply!",
-        "Hmm, 'di ko alam yang exact na yan eh! 🤔 Pero hey, try mo i-ask kay Romar mismo — romarmalakass@gmail.com. Sure sagot niya yan!",
-        "Interesting! 😊 Pero para mas accurate na sagot, i-message mo na lang si Romar sa contact form. Promise, friendly siya!",
-    ])
+    # === SKILLS / TECH ===
+    if any(p in t for p in ["tech stack", "what tech", "what does he use"]):
+        return "His stack:\n- Frontend: HTML, CSS, JavaScript, Bootstrap\n- Backend: PHP, Python, FastAPI, Node.js\n- Database: MySQL, SQLite\n- Real-time: WebSocket\n- Tools: Git, GitHub, Vercel\n\nFull-stack developer through and through."
+    if any(p in t for p in ["ano alam", "anong alam", "ano gamit"]):
+        return "Eto mga gamit ni Romar:\n- Frontend: HTML, CSS, JavaScript, Bootstrap\n- Backend: PHP, Python, FastAPI, Node.js\n- Database: MySQL, SQLite\n- Real-time: WebSocket\n- Tools: Git, GitHub, Vercel\n\nFull-stack talaga siya."
+    if words & {"skill", "skills", "technology", "programming", "tools", "expertise", "tech", "stack", "code", "coding"}:
+        if tl:
+            return "Maraming alam si Romar — HTML, CSS, JS, PHP, Python, MySQL, SQLite, FastAPI, WebSocket. Full-stack dev talaga siya, kaya niya lahat from frontend to backend."
+        else:
+            return "Romar's skilled in HTML, CSS, JavaScript, PHP, Python, MySQL, SQLite, FastAPI, and WebSocket. He's a full-stack developer who handles both frontend and backend."
+
+    # === PROJECTS ===
+    if words & {"enrollment", "enroll", "student", "registrar"}:
+        if tl:
+            return "Yung Enrollment System niya, PHP at MySQL gamit. May login system per role — registrar, teacher, student. May schedule grid pa na nagde-detect ng conflicts. Dati 10 minutes mag-enroll, ngayon under 1 minute na lang."
+        else:
+            return "His Enrollment System is built with PHP and MySQL. It has role-based logins for registrar, teacher, and student, plus a schedule grid that detects conflicts. Cut enrollment time from 10 minutes to under 1 minute."
+    if words & {"ride", "hailing", "uber", "grab", "driver"} or "ride hailing" in t:
+        if tl:
+            return "Yung Ride Hailing System niya, parang Grab yun. May live map, real-time tracking between driver at rider gamit WebSocket. Try mo dito: https://romar-web.ct.ws/login.php?skip_intro=1&i=1"
+        else:
+            return "His Ride Hailing System is basically a Grab/Uber clone. Live map, real-time driver-rider tracking via WebSocket. Check it out: https://romar-web.ct.ws/login.php?skip_intro=1&i=1"
+    if words & {"game", "games", "arcade", "snake", "bomberman", "piano", "basketball", "laro", "play", "laruan"}:
+        if tl:
+            return "May 13 mini-games siya dito — Snake, Bomberman, Math Quiz, Piano Tiles, Basketball, Memory, at iba pa. Lahat may shared leaderboard. Scroll up sa Games section kung gusto mong maglaro."
+        else:
+            return "He built a web arcade with 13 mini-games — Snake, Bomberman, Math Quiz, Piano Tiles, Basketball, Memory, and more. They all share a global leaderboard. Scroll up to the Games section to try them."
+    if words & {"project", "projects", "portfolio", "gawa", "ginawa", "work"}:
+        if tl:
+            return "Tatlong main projects ni Romar:\n1. Enrollment System — school management app\n2. Ride Hailing System — parang Grab\n3. Mini-game Arcade — 13 games na may leaderboard\n\nLahat solo dev siya. Tanong mo ko kung gusto mo malaman yung details."
+        else:
+            return "Romar's main projects:\n1. Enrollment System — school management app\n2. Ride Hailing System — like Grab/Uber\n3. Mini-game Arcade — 13 games with a leaderboard\n\nAll built solo. Ask me about any of them for details."
+
+    # === CONTACT / HIRE ===
+    if any(p in t for p in ["how to contact", "how to reach", "get in touch", "pano makipag", "pano mag contact"]):
+        if tl:
+            return "Email: romarmalakass@gmail.com\nContact form: nandyan sa baba ng page\nFacebook: https://www.facebook.com/share/1BJX3bLk66/\nGitHub: https://github.com/ROMARMALAKAS\n\nMag-message ka lang, mabilis naman siya mag-reply."
+        else:
+            return "Email: romarmalakass@gmail.com\nContact form: scroll down on this page\nFacebook: https://www.facebook.com/share/1BJX3bLk66/\nGitHub: https://github.com/ROMARMALAKAS\n\nHe usually replies within 24 hours."
+    if any(p in t for p in ["i want to hire", "need developer", "need a website", "looking for developer", "work with"]):
+        return "Romar's available for freelance work! Send him a message through the contact form or email romarmalakass@gmail.com with your project details. He'll get back to you with a quote."
+    if words & {"hire", "freelance", "kumuha"}:
+        if tl:
+            return "Available si Romar for freelance. Message mo siya sa contact form o kaya email: romarmalakass@gmail.com. Sabihin mo lang yung project details."
+        else:
+            return "Romar's available for freelance work. Hit him up through the contact form or email romarmalakass@gmail.com with your project details."
+    if words & {"price", "cost", "magkano", "presyo", "budget", "quote", "bayad", "rate"}:
+        if tl:
+            return "Depende sa project yan eh. Mag-message ka na lang sa contact form, sabihin mo yung kailangan mo tapos siya na mag-bibigay ng quote. Email: romarmalakass@gmail.com"
+        else:
+            return "Pricing depends on the project scope. Send your requirements through the contact form or email romarmalakass@gmail.com and he'll give you a custom quote."
+    if words & {"contact", "email", "reach", "makipag"}:
+        if tl:
+            return "Email niya: romarmalakass@gmail.com. O kaya gamitin mo yung contact form sa baba ng page na to."
+        else:
+            return "You can reach him at romarmalakass@gmail.com or use the contact form at the bottom of this page."
+
+    # === LOCATION ===
+    if words & {"where", "location", "country", "saan", "based", "taga", "nasaan"}:
+        if tl:
+            return "Taga-Philippines si Romar. Pero tumatanggap siya ng clients kahit saan — remote work naman lahat ngayon eh."
+        else:
+            return "He's based in the Philippines but works with clients worldwide. Everything's remote anyway."
+
+    # === PERSONAL ===
+    if words & {"age", "edad", "old", "birthday", "bday"}:
+        if tl:
+            return "Di ko alam exact age niya eh. Pero bata pa siya at ang dami na niyang nagawa. Tingnan mo na lang yung projects niya."
+        else:
+            return "I'm not sure about his exact age. But he's young and already has an impressive portfolio. Check out his projects."
+    if words & {"study", "school", "graduate", "college", "university", "aral", "nag-aaral"}:
+        if tl:
+            return "Passion niya talaga yung coding. Self-taught siya sa maraming tech skills. Yung mga projects niya dito, lahat real-world applications na ginawa niya habang nag-aaral."
+        else:
+            return "He's passionate about coding and largely self-taught. The projects on this site are all real-world applications he built while studying."
+    if words & {"love", "crush", "ganda", "pogi", "cute", "guapo", "beautiful", "handsome", "gwapo"}:
+        if tl:
+            return _rng.choice([
+                "Hala crush mo si Romar?? Hahaha message mo na sa contact form, baka type ka rin 😂",
+                "Uy may crush! Wag ka lang dito sa chatbot, mag-message ka na sa kanya directly 💀😂",
+                "Pogi ba? Oo naman! Pero mas pogi yung code niya, promise 😂",
+            ])
+        else:
+            return _rng.choice([
+                "Haha someone's got a crush! Why don't you message him through the contact form? 😂",
+                "Oh? Interested in more than his code? Hit him up via the contact form 💀😂",
+            ])
+    if words & {"single", "jowa", "girlfriend", "boyfriend", "taken", "relationship", "gf", "bf"}:
+        if tl:
+            return "Aba ayoko na makisawsaw dyan! Tanong mo na lang siya mismo sa contact form hahaha 😂"
+        else:
+            return "Haha I'm not getting into that! You can ask him yourself through the contact form 😂"
+
+    # === JOKES ===
+    if words & {"joke", "jokes", "funny", "biro", "biruan", "humor", "patawa"}:
+        if tl:
+            return _rng.choice([
+                "Bakit malungkot si HTML? Kasi walang style. Kailangan niya si CSS 😂",
+                "Knock knock! Sino? Si Java. Java sino? JavaScript ka ba? Kasi pinapatubo mo puso ko 😂",
+                "Bakit magaling si Romar? Kasi di siya nag-quit() kahit puno ng errors yung buhay niya 😂",
+                "Ano sabi ng programmer sa jowa niya? 'You had me at Hello World' 😂",
+                "Bakit di makatulog yung developer? Kasi di niya ma-catch yung bug 😂",
+            ])
+        else:
+            return _rng.choice([
+                "Why do programmers prefer dark mode? Because light attracts bugs 😂",
+                "What's a programmer's favorite hangout place? Foo Bar 😂",
+                "Why was the HTML sad? Because it had no style. It needed CSS 😂",
+                "Why did Romar become a programmer? Because he didn't want a 9-to-5... he wanted a 9-to-undefined 😂",
+                "How do you comfort a JavaScript bug? You console it 😂",
+            ])
+
+    # === THANKS ===
+    if words & {"thank", "thanks", "salamat", "appreciate", "tysm"}:
+        if tl:
+            return _rng.choice([
+                "Walang anuman! Tanong ka lang ulit kung may kailangan ka pa",
+                "Sige sige, wala yun. Nandito lang ako kung may tanong ka pa",
+            ])
+        else:
+            return _rng.choice([
+                "No problem! Let me know if you have more questions",
+                "You're welcome! Feel free to ask anything else",
+            ])
+
+    # === BYE ===
+    if words & {"bye", "goodbye", "paalam"}:
+        if tl:
+            return _rng.choice([
+                "Sige ingat! Balik ka ulit ha",
+                "Bye! Salamat sa pagbisita. Nandito lang kami kung kailangan mo ulit",
+            ])
+        else:
+            return _rng.choice([
+                "See ya! Come back anytime",
+                "Bye! Thanks for stopping by Romar's portfolio",
+            ])
+
+    # === WHAT CAN YOU DO ===
+    if any(p in t for p in ["what can you do", "ano kaya mo", "what do you know", "anong alam mo"]):
+        if tl:
+            return "Alam ko lahat tungkol kay Romar — skills, projects, contact info. Pwede mo rin akong kausapin kung bored ka. Tanong ka lang!"
+        else:
+            return "I know all about Romar — his skills, projects, and how to reach him. You can also just chat with me if you're bored. Ask away!"
+
+    # === FALLBACK ===
+    if tl:
+        return _rng.choice([
+            "Hmm di ko alam yang exact na yan eh. Pero pwede mo itanong directly kay Romar — romarmalakass@gmail.com o gamitin yung contact form sa baba",
+            "Di ko sure jan pre. Try mo i-message si Romar sa contact form, mabilis siya mag-reply",
+            "Ewan ko jan ah haha. Pero seryoso, i-message mo na lang si Romar kung gusto mo ng sagot — nandyan yung contact form sa baba",
+            "Wala akong alam jan. Pero kung important yan, tanong mo na lang kay Romar mismo. Email: romarmalakass@gmail.com",
+        ])
+    else:
+        return _rng.choice([
+            "Hmm I'm not sure about that one. You can ask Romar directly at romarmalakass@gmail.com or through the contact form below",
+            "I don't have info on that. Try messaging Romar through the contact form — he's pretty responsive",
+            "Not sure about that honestly. But Romar can probably answer it — hit him up at romarmalakass@gmail.com",
+            "Can't help you with that one. But the man himself is just a message away — use the contact form below",
+        ])
 
 
 @app.post("/api/chat")
@@ -606,8 +781,8 @@ async def chat(body: ChatIn):
         except Exception:
             pass
 
-    # Built-in smart assistant (works without API key)
-    return {"reply": _chat_reply(last_msg)}
+    # Built-in smart assistant
+    return {"reply": _chat_reply(last_msg, body.messages)}
 
 
 # --- Bookings ---
