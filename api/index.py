@@ -23,32 +23,48 @@ _HF_FILE = "messages.json"
 _hf_headers = {"Authorization": f"Bearer {_HF_TOKEN}"}
 
 
-def _hf_load_messages() -> list:
+def _hf_load(filename: str):
     try:
         r = httpx.get(
-            f"https://huggingface.co/datasets/{_HF_REPO}/resolve/main/{_HF_FILE}",
+            f"https://huggingface.co/datasets/{_HF_REPO}/resolve/main/{filename}",
             headers=_hf_headers, timeout=10,
         )
         if r.status_code == 200:
             return r.json()
     except Exception:
         pass
-    return []
+    return None
 
 
-def _hf_save_messages(messages: list):
+def _hf_save(filename: str, data, summary: str = "update"):
     try:
         httpx.post(
             f"https://huggingface.co/api/datasets/{_HF_REPO}/commit/main",
             headers={**_hf_headers, "Content-Type": "application/json"},
             json={
-                "summary": "update messages",
-                "files": [{"path": _HF_FILE, "content": json.dumps(messages, default=str)}],
+                "summary": summary,
+                "files": [{"path": filename, "content": json.dumps(data, default=str)}],
             },
             timeout=15,
         )
     except Exception:
         pass
+
+
+def _hf_load_messages() -> list:
+    return _hf_load(_HF_FILE) or []
+
+
+def _hf_save_messages(messages: list):
+    _hf_save(_HF_FILE, messages, "update messages")
+
+
+def _hf_load_visits() -> dict:
+    return _hf_load("visits.json") or {"total": 0, "by_day": {}}
+
+
+def _hf_save_visits(stats: dict):
+    _hf_save("visits.json", stats, "update visits")
 
 
 app = FastAPI(title="Romar Portfolio Leaderboard", version="1.0.0")
@@ -443,31 +459,155 @@ async def submit_score(body: ScoreIn):
     return {"ok": True, "id": sid}
 
 
-# --- Chat (proxy to OpenAI-compatible API) ---
+# --- Smart Chat Assistant ---
+_CHAT_RESPONSES = {
+    "greeting": [
+        "Hey there! 👋 I'm Romar's AI assistant. Ask me anything about his skills, projects, or how to work with him!",
+        "Hi! Welcome to Romar's portfolio! I can tell you about his projects, skills, or help you get in touch. What would you like to know?",
+        "Hello! 😊 Great to have you here. I can help you learn about Romar's work — just ask away!",
+    ],
+    "about": (
+        "Romar Villafuerte is a Website Developer from the Philippines. "
+        "He specializes in building full-stack web applications — from school enrollment systems to ride-hailing platforms to game arcades. "
+        "He's passionate about turning real-world problems into clean, working software."
+    ),
+    "skills": (
+        "Romar's tech stack includes:\n"
+        "• Frontend: HTML, CSS, JavaScript, Bootstrap, Canvas API\n"
+        "• Backend: PHP, Python, FastAPI, Node.js\n"
+        "• Database: MySQL, SQLite\n"
+        "• Realtime: WebSocket\n"
+        "• Tools: Git, GitHub, Vercel, Fly.io\n\n"
+        "He's a full-stack developer who can handle everything from UI design to database architecture!"
+    ),
+    "enrollment": (
+        "📚 Enrollment System — Romar built a PHP + MySQL web app for managing student enrollment, sections, and class schedules. "
+        "It has role-based logins (registrar, teacher, student), a class-schedule grid that flags conflicts, and per-student record cards. "
+        "Result: cut enrollment time from ~10 minutes (paper) to under a minute!"
+    ),
+    "ridehailing": (
+        "🚗 Ride Hailing System — A mobile-first ride-hailing platform where riders post destinations, drivers see requests on a live map, "
+        "accept rides, and both track each other in real-time using WebSocket. "
+        "Try it: https://romar-web.ct.ws/login.php?skip_intro=1&i=1"
+    ),
+    "arcade": (
+        "🎮 Mini-game Arcade — A web arcade with 13 mini-games including Snake (with Adventure mode!), Bomberman, Math Quiz, "
+        "Piano Tiles, Basketball, Memory, Sliding Puzzle, and more. They all share a global leaderboard powered by a FastAPI backend. "
+        "Each game has a how-to-play card, lives system, and timed rounds. Try it right here on this site — scroll up to the Games section!"
+    ),
+    "contact": (
+        "You can reach Romar through:\n"
+        "📧 Email: romarmalakass@gmail.com\n"
+        "📝 Contact form: scroll down to the Contact section on this page\n"
+        "🔗 GitHub: https://github.com/ROMARMALAKAS\n"
+        "📘 Facebook: https://www.facebook.com/share/1BJX3bLk66/\n\n"
+        "He typically responds within 24 hours!"
+    ),
+    "hire": (
+        "Interested in working with Romar? Great! 🎉 He's available for freelance web development projects. "
+        "Send him a message through the contact form on this page or email him at romarmalakass@gmail.com with your project details. "
+        "He'll get back to you with a quote and timeline!"
+    ),
+    "price": (
+        "For pricing, it depends on the project scope and complexity. "
+        "Send Romar a message through the contact form with details about what you need, "
+        "and he'll provide a custom quote. Email: romarmalakass@gmail.com"
+    ),
+    "location": "Romar is based in the Philippines 🇵🇭 and works with clients both locally and internationally.",
+    "thanks": "You're welcome! 😊 If you have more questions, feel free to ask. Have a great day!",
+    "bye": "Goodbye! 👋 Thanks for visiting Romar's portfolio. Feel free to come back anytime!",
+    "fallback": [
+        "That's an interesting question! I'm not sure about that specific detail, but you can ask Romar directly through the contact form below or email romarmalakass@gmail.com 😊",
+        "Hmm, I don't have info on that. But Romar would love to chat with you! Use the contact form or email romarmalakass@gmail.com.",
+        "I'm not sure about that one! For specific questions, try reaching out to Romar via the contact form on this page. He's super responsive!",
+    ],
+}
+
+import random
+
+def _match_chat_intent(text: str) -> str:
+    t = text.lower().strip()
+    # Greeting
+    if any(w in t for w in ["hello", "hi", "hey", "good morning", "good afternoon", "good evening", "kumusta", "musta", "sup"]):
+        return "greeting"
+    # About
+    if any(w in t for w in ["who is romar", "about romar", "tell me about", "who are you", "sino si romar", "about you", "introduce"]):
+        return "about"
+    # Skills
+    if any(w in t for w in ["skill", "tech stack", "technology", "programming", "language", "what can you do", "tools", "expertise", "ano alam"]):
+        return "skills"
+    # Projects
+    if any(w in t for w in ["enrollment", "school system", "student"]):
+        return "enrollment"
+    if any(w in t for w in ["ride", "hailing", "uber", "grab", "driver"]):
+        return "ridehailing"
+    if any(w in t for w in ["game", "arcade", "mini-game", "snake", "bomberman", "piano", "basketball", "laro"]):
+        return "arcade"
+    if any(w in t for w in ["project", "portfolio", "work", "gawa", "ginawa"]):
+        return "about"
+    # Contact / Hire
+    if any(w in t for w in ["contact", "email", "reach", "message", "get in touch", "makipag"]):
+        return "contact"
+    if any(w in t for w in ["hire", "freelance", "available", "work with", "kumuha", "need developer", "need a website", "website for"]):
+        return "hire"
+    if any(w in t for w in ["price", "cost", "rate", "magkano", "presyo", "budget", "quote", "bayad"]):
+        return "price"
+    # Location
+    if any(w in t for w in ["where", "location", "country", "saan", "based"]):
+        return "location"
+    # Thanks
+    if any(w in t for w in ["thank", "thanks", "salamat", "ty", "appreciate"]):
+        return "thanks"
+    # Bye
+    if any(w in t for w in ["bye", "goodbye", "see you", "paalam", "sige"]):
+        return "bye"
+    return "fallback"
+
+
 @app.post("/api/chat")
 async def chat(body: ChatIn):
-    api_key = os.getenv("OPENAI_API_KEY", "")
-    if not api_key:
-        return {"reply": "Chat is temporarily unavailable. Please try again later."}
-    msgs = []
+    last_msg = ""
     for m in body.messages:
-        role = m.get("role", "user")
-        content = m.get("content", "")
-        if role in ("user", "assistant", "system"):
-            msgs.append({"role": role, "content": content})
-    try:
-        async with httpx.AsyncClient(timeout=30) as client:
-            resp = await client.post(
-                "https://api.openai.com/v1/chat/completions",
-                headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-                json={"model": "gpt-4o-mini", "messages": msgs, "max_tokens": 1024}
-            )
-            data = resp.json()
-            reply = data.get("choices", [{}])[0].get("message", {}).get("content",
-                    "Sorry, I couldn't generate a response.")
-            return {"reply": reply}
-    except Exception:
-        return {"reply": "Chat is temporarily unavailable. Please try again later."}
+        if m.get("role") == "user":
+            last_msg = m.get("content", "")
+
+    # Try OpenAI if available
+    api_key = os.getenv("OPENAI_API_KEY", "")
+    if api_key:
+        system = (
+            "You are Romar Villafuerte's AI assistant on his portfolio. "
+            "Romar is a Website Developer from the Philippines skilled in HTML, CSS, JS, PHP, MySQL, Python, FastAPI. "
+            "His projects: Enrollment System, Ride Hailing System, Mini-game Arcade. "
+            "Email: romarmalakass@gmail.com. Be friendly, concise (2-3 sentences)."
+        )
+        msgs = [{"role": "system", "content": system}]
+        for m in body.messages:
+            role = m.get("role", "user")
+            content = m.get("content", "")
+            if role in ("user", "assistant"):
+                msgs.append({"role": role, "content": content})
+        try:
+            async with httpx.AsyncClient(timeout=30) as client:
+                resp = await client.post(
+                    "https://api.openai.com/v1/chat/completions",
+                    headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+                    json={"model": "gpt-4o-mini", "messages": msgs, "max_tokens": 512}
+                )
+                data = resp.json()
+                reply = data.get("choices", [{}])[0].get("message", {}).get("content", "")
+                if reply:
+                    return {"reply": reply}
+        except Exception:
+            pass
+
+    # Smart built-in responses
+    intent = _match_chat_intent(last_msg)
+    response = _CHAT_RESPONSES.get(intent, _CHAT_RESPONSES["fallback"])
+    if isinstance(response, list):
+        reply = random.choice(response)
+    else:
+        reply = response
+    return {"reply": reply}
 
 
 # --- Bookings ---
@@ -539,10 +679,20 @@ async def track_visit(body: VisitIn, request: Request):
     cutoff = time.time() - 1800
     existing = conn.execute("SELECT id FROM visits WHERE ip=? AND created_at>?", (ip, cutoff)).fetchone()
     if not existing:
+        now = time.time()
         conn.execute(
             "INSERT INTO visits (ip, path, referrer, user_agent, country, city, device, created_at) VALUES (?,?,?,?,?,?,?,?)",
-            (ip, body.path, body.referrer, ua, country, city, device, time.time()))
+            (ip, body.path, body.referrer, ua, country, city, device, now))
         conn.commit()
+        # Persist visit count to HuggingFace Hub
+        import datetime
+        today_str = datetime.datetime.utcfromtimestamp(now).strftime("%Y-%m-%d")
+        vstats = _hf_load_visits()
+        vstats["total"] = vstats.get("total", 0) + 1
+        by_day = vstats.get("by_day", {})
+        by_day[today_str] = by_day.get(today_str, 0) + 1
+        vstats["by_day"] = by_day
+        _hf_save_visits(vstats)
 
     today_start = int(time.time()) - (int(time.time()) % 86400)
     count = conn.execute("SELECT COUNT(*) FROM visits WHERE created_at>=?", (today_start,)).fetchone()[0]
@@ -669,25 +819,36 @@ async def admin_check(authorization: Optional[str] = Header(None)):
 @app.get("/api/admin/stats")
 async def admin_stats(authorization: Optional[str] = Header(None)):
     _require_admin(authorization)
+    import datetime
+    vstats = _hf_load_visits()
+    total_visits = vstats.get("total", 0)
+    by_day = vstats.get("by_day", {})
+    today_str = datetime.datetime.utcnow().strftime("%Y-%m-%d")
+    today_visits = by_day.get(today_str, 0)
+    # Week visits (last 7 days)
+    week_visits = 0
+    for i in range(7):
+        d = (datetime.datetime.utcnow() - datetime.timedelta(days=i)).strftime("%Y-%m-%d")
+        week_visits += by_day.get(d, 0)
+    # Build by_day list for sparkline (last 30 days)
+    by_day_list = []
+    for i in range(29, -1, -1):
+        d = (datetime.datetime.utcnow() - datetime.timedelta(days=i)).strftime("%Y-%m-%d")
+        by_day_list.append({"day": d, "count": by_day.get(d, 0)})
+    # Also merge local SQLite visits for current warm session
     conn = get_db()
-    total_visits = conn.execute("SELECT COUNT(*) FROM visits").fetchone()[0]
-    today_start = int(time.time()) - (int(time.time()) % 86400)
-    today_visits = conn.execute("SELECT COUNT(*) FROM visits WHERE created_at>=?", (today_start,)).fetchone()[0]
-    total_messages = conn.execute("SELECT COUNT(*) FROM messages").fetchone()[0]
-    unread_messages = conn.execute("SELECT COUNT(*) FROM messages WHERE read=0").fetchone()[0]
-    total_bookings = conn.execute("SELECT COUNT(*) FROM bookings").fetchone()[0]
-    total_projects = conn.execute("SELECT COUNT(*) FROM projects").fetchone()[0]
-    total_scores = conn.execute("SELECT COUNT(*) FROM scores").fetchone()[0]
+    local_today_start = int(time.time()) - (int(time.time()) % 86400)
+    local_today = conn.execute("SELECT COUNT(*) FROM visits WHERE created_at>=?", (local_today_start,)).fetchone()[0]
     conn.close()
+    today_visits = max(today_visits, local_today)
     return {
         "ok": True,
-        "total_visits": total_visits,
-        "today_visits": today_visits,
-        "total_messages": total_messages,
-        "unread_messages": unread_messages,
-        "total_bookings": total_bookings,
-        "total_projects": total_projects,
-        "total_scores": total_scores,
+        "visits": {
+            "today": today_visits,
+            "week": week_visits,
+            "total": total_visits,
+            "by_day": by_day_list,
+        },
     }
 
 
@@ -728,9 +889,27 @@ async def admin_stats2(authorization: Optional[str] = Header(None)):
         "GROUP BY device ORDER BY cnt DESC LIMIT 10"
     ).fetchall()
 
+    # Message stats from HF persistent storage
+    hf_msgs = _hf_load_messages()
+    messages_total = len(hf_msgs)
+    messages_unread = sum(1 for m in hf_msgs if not m.get("read"))
+
+    # Month visits from HF
+    import datetime
+    vstats = _hf_load_visits()
+    month_visits = 0
+    by_day = vstats.get("by_day", {})
+    for i in range(30):
+        d = (datetime.datetime.utcnow() - datetime.timedelta(days=i)).strftime("%Y-%m-%d")
+        month_visits += by_day.get(d, 0)
+
     conn.close()
     return {
         "ok": True,
+        "visits_month": month_visits,
+        "messages_total": messages_total,
+        "messages_unread": messages_unread,
+        "most_viewed_projects": [],
         "visitors": visitor_list,
         "daily_visits": [{"day": d["day"], "count": d["cnt"]} for d in daily],
         "top_countries": [{"country": c["country"], "count": c["cnt"]} for c in countries],
