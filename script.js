@@ -35,7 +35,7 @@
   }
 
   // Fall off naturally after the reveal animation finishes.
-  const AUTO_MS = 2400;
+  const AUTO_MS = 4400;
   const tAuto = setTimeout(dismiss, AUTO_MS);
 
   // Click / tap / Esc / scroll all skip the splash.
@@ -51,7 +51,7 @@
   // Safety: once the page is fully loaded, ensure the splash is dismissed
   // (in case JS animations are slower than expected).
   window.addEventListener("load", () => {
-    setTimeout(() => { clearTimeout(tAuto); dismiss(); }, 1800);
+    setTimeout(() => { clearTimeout(tAuto); dismiss(); }, 3800);
   });
 })();
 
@@ -5460,7 +5460,7 @@
     ctx.font = fontSize + "px JetBrains Mono, monospace";
     for (let i = 0; i < drops.length; i++) {
       const char = chars[Math.floor(Math.random() * chars.length)];
-      ctx.fillStyle = Math.random() > 0.95 ? "#7fff7f" : "#00cc00";
+      ctx.fillStyle = Math.random() > 0.95 ? "#aaffaa" : "#00ff41";
       ctx.fillText(char, i * fontSize, drops[i] * fontSize);
       if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
         drops[i] = 0;
