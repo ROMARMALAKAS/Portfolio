@@ -809,33 +809,34 @@ async def _try_ai_api(msgs: list) -> str:
     # 1) Google Gemini (free, high quality)
     gemini_key = os.getenv("GEMINI_API_KEY", "")
     if gemini_key:
-        try:
-            contents = _to_gemini_contents(enriched)
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={gemini_key}"
-            safety = [
-                {"category": c, "threshold": "BLOCK_NONE"}
-                for c in [
-                    "HARM_CATEGORY_HARASSMENT",
-                    "HARM_CATEGORY_HATE_SPEECH",
-                    "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-                    "HARM_CATEGORY_DANGEROUS_CONTENT",
-                ]
+        contents = _to_gemini_contents(enriched)
+        safety = [
+            {"category": c, "threshold": "BLOCK_NONE"}
+            for c in [
+                "HARM_CATEGORY_HARASSMENT",
+                "HARM_CATEGORY_HATE_SPEECH",
+                "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                "HARM_CATEGORY_DANGEROUS_CONTENT",
             ]
-            async with httpx.AsyncClient(timeout=30) as client:
-                resp = await client.post(
-                    url,
-                    headers={"Content-Type": "application/json"},
-                    json={"contents": contents, "safetySettings": safety}
-                )
-                if resp.status_code == 200:
-                    data = resp.json()
-                    parts = data.get("candidates", [{}])[0].get("content", {}).get("parts", [])
-                    if parts:
-                        reply = parts[0].get("text", "")
-                        if reply:
-                            return reply
-        except Exception:
-            pass
+        ]
+        for gemini_model in ["gemini-2.5-flash", "gemini-2.5-flash-lite"]:
+            try:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{gemini_model}:generateContent?key={gemini_key}"
+                async with httpx.AsyncClient(timeout=55) as client:
+                    resp = await client.post(
+                        url,
+                        headers={"Content-Type": "application/json"},
+                        json={"contents": contents, "safetySettings": safety}
+                    )
+                    if resp.status_code == 200:
+                        data = resp.json()
+                        parts = data.get("candidates", [{}])[0].get("content", {}).get("parts", [])
+                        if parts:
+                            reply = parts[0].get("text", "")
+                            if reply:
+                                return reply
+            except Exception:
+                continue
 
     # 2) Grok (xAI)
     xai_key = os.getenv("XAI_API_KEY", "")
