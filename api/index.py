@@ -831,7 +831,11 @@ async def _try_ai_api(msgs: list) -> str:
                     resp = await client.post(
                         url,
                         headers={"Content-Type": "application/json"},
-                        json={"contents": contents, "safetySettings": safety}
+                        json={
+                            "contents": contents,
+                            "safetySettings": safety,
+                            "generationConfig": {"maxOutputTokens": 256}
+                        }
                     )
                     if resp.status_code == 200:
                         data = resp.json()
