@@ -755,6 +755,55 @@ def _chat_reply(text: str, history: list, is_savage: bool = False) -> str:
         ])
 
 
+_HF_MODELS = [
+    "meta-llama/Meta-Llama-3.1-8B-Instruct",
+    "mistralai/Mistral-7B-Instruct-v0.3",
+    "microsoft/Phi-3-mini-4k-instruct",
+]
+
+
+async def _try_ai_api(msgs: list) -> str:
+    """Try OpenAI first, then HuggingFace Inference API (free)."""
+    # 1) OpenAI
+    api_key = os.getenv("OPENAI_API_KEY", "")
+    if api_key:
+        try:
+            async with httpx.AsyncClient(timeout=30) as client:
+                resp = await client.post(
+                    "https://api.openai.com/v1/chat/completions",
+                    headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+                    json={"model": "gpt-4o-mini", "messages": msgs, "max_tokens": 1024}
+                )
+                data = resp.json()
+                reply = data.get("choices", [{}])[0].get("message", {}).get("content", "")
+                if reply:
+                    return reply
+        except Exception:
+            pass
+
+    # 2) HuggingFace Inference API (free with HF token)
+    hf_token = os.getenv("HF_TOKEN", "")
+    if hf_token:
+        for model in _HF_MODELS:
+            try:
+                url = f"https://api-inference.huggingface.co/models/{model}/v1/chat/completions"
+                async with httpx.AsyncClient(timeout=30) as client:
+                    resp = await client.post(
+                        url,
+                        headers={"Authorization": f"Bearer {hf_token}", "Content-Type": "application/json"},
+                        json={"model": model, "messages": msgs, "max_tokens": 512}
+                    )
+                    if resp.status_code == 200:
+                        data = resp.json()
+                        reply = data.get("choices", [{}])[0].get("message", {}).get("content", "")
+                        if reply:
+                            return reply
+            except Exception:
+                continue
+
+    return ""
+
+
 @app.post("/api/chat")
 async def chat(body: ChatIn):
     last_msg = ""
@@ -772,24 +821,12 @@ async def chat(body: ChatIn):
         if role in ("user", "assistant", "system"):
             msgs.append({"role": role, "content": content})
 
-    # Try OpenAI if API key is available
-    api_key = os.getenv("OPENAI_API_KEY", "")
-    if api_key:
-        try:
-            async with httpx.AsyncClient(timeout=30) as client:
-                resp = await client.post(
-                    "https://api.openai.com/v1/chat/completions",
-                    headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-                    json={"model": "gpt-4o-mini", "messages": msgs, "max_tokens": 1024}
-                )
-                data = resp.json()
-                reply = data.get("choices", [{}])[0].get("message", {}).get("content", "")
-                if reply:
-                    return {"reply": reply}
-        except Exception:
-            pass
+    # Try real AI (OpenAI or HuggingFace)
+    reply = await _try_ai_api(msgs)
+    if reply:
+        return {"reply": reply}
 
-    # Built-in smart assistant
+    # Fallback to built-in assistant
     return {"reply": _chat_reply(last_msg, body.messages, is_savage)}
 
 
