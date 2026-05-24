@@ -824,7 +824,7 @@ async def _try_ai_api(msgs: list) -> str:
                 "HARM_CATEGORY_DANGEROUS_CONTENT",
             ]
         ]
-        for gemini_model in ["gemini-2.5-flash-lite", "gemini-2.5-flash"]:
+        for gemini_model in ["gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-flash-lite-latest", "gemini-flash-latest"]:
             try:
                 url = f"https://generativelanguage.googleapis.com/v1beta/models/{gemini_model}:generateContent?key={gemini_key}"
                 async with httpx.AsyncClient(timeout=55) as client:
@@ -886,38 +886,6 @@ async def _try_ai_api(msgs: list) -> str:
             pass
 
     return ""
-
-
-@app.get("/api/debug-ai")
-async def debug_ai():
-    """Temp debug endpoint."""
-    import traceback
-    gemini_key = os.getenv("GEMINI_API_KEY", "")
-    info = {"key_present": bool(gemini_key), "key_len": len(gemini_key)}
-    if gemini_key:
-        info["key_start"] = gemini_key[:10]
-        info["key_end"] = gemini_key[-5:]
-    try:
-        msgs = [
-            {"role": "user", "content": "Say hi"},
-        ]
-        enriched = _enrich_messages(msgs)
-        contents = _to_gemini_contents(enriched)
-        info["contents_count"] = len(contents)
-        safety = [{"category": c, "threshold": "BLOCK_NONE"} for c in [
-            "HARM_CATEGORY_HARASSMENT", "HARM_CATEGORY_HATE_SPEECH",
-            "HARM_CATEGORY_SEXUALLY_EXPLICIT", "HARM_CATEGORY_DANGEROUS_CONTENT"
-        ]]
-        for model in ["gemini-2.5-flash-lite"]:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={gemini_key}"
-            async with httpx.AsyncClient(timeout=25) as client:
-                resp = await client.post(url, headers={"Content-Type": "application/json"},
-                    json={"contents": contents, "safetySettings": safety})
-                info[model] = {"status": resp.status_code, "body": resp.text[:500]}
-    except Exception as e:
-        info["error"] = str(e)
-        info["tb"] = traceback.format_exc()[-500:]
-    return info
 
 
 @app.post("/api/chat")
