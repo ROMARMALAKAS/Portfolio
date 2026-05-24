@@ -789,11 +789,46 @@ def _enrich_messages(msgs: list) -> list:
     return enriched
 
 
+def _to_gemini_contents(msgs: list) -> list:
+    """Convert OpenAI-style messages to Gemini contents format."""
+    contents = []
+    for m in msgs:
+        role = m.get("role", "user")
+        text = m.get("content", "")
+        if role in ("user", "system"):
+            contents.append({"role": "user", "parts": [{"text": text}]})
+        elif role == "assistant":
+            contents.append({"role": "model", "parts": [{"text": text}]})
+    return contents
+
+
 async def _try_ai_api(msgs: list) -> str:
-    """Try Grok first, then OpenAI, then HuggingFace."""
+    """Try Gemini first, then Grok, then OpenAI, then HuggingFace."""
     enriched = _enrich_messages(msgs)
 
-    # 1) Grok (xAI) — primary
+    # 1) Google Gemini (free, high quality)
+    gemini_key = os.getenv("GEMINI_API_KEY", "")
+    if gemini_key:
+        try:
+            contents = _to_gemini_contents(enriched)
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={gemini_key}"
+            async with httpx.AsyncClient(timeout=30) as client:
+                resp = await client.post(
+                    url,
+                    headers={"Content-Type": "application/json"},
+                    json={"contents": contents}
+                )
+                if resp.status_code == 200:
+                    data = resp.json()
+                    parts = data.get("candidates", [{}])[0].get("content", {}).get("parts", [])
+                    if parts:
+                        reply = parts[0].get("text", "")
+                        if reply:
+                            return reply
+        except Exception:
+            pass
+
+    # 2) Grok (xAI)
     xai_key = os.getenv("XAI_API_KEY", "")
     if xai_key:
         try:
@@ -811,7 +846,7 @@ async def _try_ai_api(msgs: list) -> str:
         except Exception:
             pass
 
-    # 2) OpenAI
+    # 3) OpenAI
     api_key = os.getenv("OPENAI_API_KEY", "")
     if api_key:
         try:
@@ -828,7 +863,7 @@ async def _try_ai_api(msgs: list) -> str:
         except Exception:
             pass
 
-    # 3) HuggingFace Router (free fallback)
+    # 4) HuggingFace Router (free fallback)
     hf_token = os.getenv("HF_TOKEN", "")
     if hf_token:
         for model in _HF_MODELS:
