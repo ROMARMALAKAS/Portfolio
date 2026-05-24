@@ -824,7 +824,7 @@ async def _try_ai_api(msgs: list) -> str:
                 "HARM_CATEGORY_DANGEROUS_CONTENT",
             ]
         ]
-        for gemini_model in ["gemini-flash-lite-latest", "gemini-flash-latest"]:
+        for gemini_model in ["gemini-3.5-flash", "gemini-flash-lite-latest", "gemini-flash-latest"]:
             try:
                 url = f"https://generativelanguage.googleapis.com/v1beta/models/{gemini_model}:generateContent?key={gemini_key}"
                 async with httpx.AsyncClient(timeout=25) as client:
