@@ -5360,6 +5360,12 @@
     ".rv-album-picker",
     ".rv-hero .rv-stat-card",
     ".rv-hero .rv-hero-body",
+    "#about .text-body-secondary",
+    "#contact .rv-contact-form",
+    "#contact .d-flex.flex-wrap",
+    "#contact .rv-contact-or",
+    ".rv-schedule-card",
+    ".rv-facts",
   ];
   autoTargets.forEach((sel) => {
     document.querySelectorAll(sel).forEach((el, idx) => {
