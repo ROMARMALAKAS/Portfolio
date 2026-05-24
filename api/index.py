@@ -487,7 +487,7 @@ def _is_tagalog(text: str) -> bool:
     return tag_count / len(words) > 0.25 or tag_count >= 2
 
 
-def _chat_reply(text: str, history: list) -> str:
+def _chat_reply(text: str, history: list, is_savage: bool = False) -> str:
     t = text.lower().strip()
     words = set(re.findall(r'\w+', t))
     tl = _is_tagalog(text)
@@ -499,24 +499,28 @@ def _chat_reply(text: str, history: list) -> str:
                   "hayop", "animal", "leche", "bwisit", "peste",
                   "pakyu", "fuck", "shit", "damn", "stupid", "idiot",
                   "dumb", "asshole", "bitch", "wtf", "stfu"}
-    if words & mura_words:
+    if words & mura_words or is_savage:
         if tl:
             return _rng.choice([
-                "Hoy hoy relax ka lang dyan, wag ka magmura baka ma-report ka sa admin ni Romar ha 😂",
-                "Luh nagmumura, chill ka lang pre. Di ka makakalusot sa ganyan dito 💀",
-                "Grabe ka naman magmura, sino ba nakaaway mo? Wag mo ko idamay dyan 😤",
-                "Oy wag ganyan, nandito lang ako para tumulong. Gusto mo ba mag-usap ng maayos o magpapakatanga ka lang? 🤨",
-                "Aba may ganyan pa, sige magmura ka pa baka ma-ban ka ni Romar dito sa site niya 😏",
-                "Hahaha galit na galit! Relax, inom ka muna tubig bago ka magtanong ulit 💀😂",
-                "Weh di nga? Magmumura ka tapos may kailangan ka pala? Tanong ka na lang ng maayos 🙄",
+                "Oy putangina ka rin! Joke lang hahaha. Pero seryoso, ano ba kailangan mo? 😂",
+                "Hoy gago, sino ka ba? Pumunta ka dito sa site ni Romar tapos magmumura ka? Tangina mo rin! 💀😂",
+                "Luh palamura amputa hahaha. Sige sige, game lang. Ano tanong mo, bilis!",
+                "Aba nagmumura, akala mo naman kung sino ka. Chill ka lang dyan, wag kang umasta. Ano ba kailangan mo? 😤😂",
+                "Grabe ka magmura ah, sino ba nasaktan feelings mo? Dito ka na lang, tatanungin kita — okay ka ba pre? 💀",
+                "Hahaha galit na galit! Tangina relax ka, inom ka muna ng tubig. Tapos tanong ka na lang ng maayos 😂",
+                "Wow ang tapang mo naman magmura sa chatbot. Sige pa, di naman ako nasasaktan, robot lang ako gago 😂💀",
+                "Oy ulol ka rin! Charot. Pero legit, ano gusto mong malaman? Wag pure mura lang ah 😏",
             ])
         else:
             return _rng.choice([
-                "Whoa there, calm down buddy. I'm just a chatbot, no need for that language 😂",
-                "Lol someone's having a bad day. Chill out and ask a proper question maybe? 💀",
-                "Hey easy with the words there. You wanna talk or you just here to vent? 🤨",
-                "Hahaha okay tough guy. You done? Cool, now ask me something useful 😏",
-                "Wow such language! I've seen worse though. Anyway, what do you actually need? 🙄",
+                "Oh wow, someone's feisty today huh? Lol chill out and ask a real question 😂",
+                "Hahaha you kiss your mother with that mouth? Anyway, what do you actually want? 💀",
+                "Lol okay tough guy, I've been called worse by better people. Now what do you need? 😏",
+                "Damn bro calm down, it's just a portfolio website. You good? 😂",
+                "Well fuck you too buddy! Jk jk. But seriously, what's your question? 💀😂",
+                "Whoa there keyboard warrior! Save that energy for something useful. What do you wanna know? 🤣",
+                "Lmao someone woke up and chose violence. I respect that. Now ask me something real 😂",
+                "Oh shit we got a badass over here! Haha okay okay, what can I help you with? 💀",
             ])
 
     # Annoying / kulit / spam detection
@@ -754,19 +758,23 @@ def _chat_reply(text: str, history: list) -> str:
 @app.post("/api/chat")
 async def chat(body: ChatIn):
     last_msg = ""
+    is_savage = False
     for m in body.messages:
         if m.get("role") == "user":
             last_msg = m.get("content", "")
+        if m.get("role") == "system" and "SAVAGE" in m.get("content", ""):
+            is_savage = True
+
+    msgs = []
+    for m in body.messages:
+        role = m.get("role", "user")
+        content = m.get("content", "")
+        if role in ("user", "assistant", "system"):
+            msgs.append({"role": role, "content": content})
 
     # Try OpenAI if API key is available
     api_key = os.getenv("OPENAI_API_KEY", "")
     if api_key:
-        msgs = []
-        for m in body.messages:
-            role = m.get("role", "user")
-            content = m.get("content", "")
-            if role in ("user", "assistant", "system"):
-                msgs.append({"role": role, "content": content})
         try:
             async with httpx.AsyncClient(timeout=30) as client:
                 resp = await client.post(
@@ -782,7 +790,7 @@ async def chat(body: ChatIn):
             pass
 
     # Built-in smart assistant
-    return {"reply": _chat_reply(last_msg, body.messages)}
+    return {"reply": _chat_reply(last_msg, body.messages, is_savage)}
 
 
 # --- Bookings ---

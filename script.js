@@ -3711,6 +3711,51 @@
   const history = [];
   let isSending = false;
 
+  /* ---- Adaptive personality system prompt ---- */
+  const SWEAR_WORDS = [
+    "putangina", "puta", "gago", "gaga", "tangina", "tanginamo",
+    "bobo", "tanga", "ulol", "inutil", "hayop", "leche", "punyeta",
+    "tarantado", "pesteng", "bwisit", "shet", "shit", "fuck", "fucking",
+    "bitch", "damn", "ass", "asshole", "wtf", "stfu", "bullshit",
+    "dumbass", "idiot", "stupid", "bastard", "crap", "dick", "prick",
+    "motherfucker", "mofo", "lmao", "lmfao"
+  ];
+
+  function hasProfanity(text) {
+    var lower = text.toLowerCase().replace(/[^a-z\u00f1 ]/g, "");
+    var words = lower.split(/\s+/);
+    for (var i = 0; i < words.length; i++) {
+      for (var j = 0; j < SWEAR_WORDS.length; j++) {
+        if (words[i] === SWEAR_WORDS[j] || words[i].indexOf(SWEAR_WORDS[j]) !== -1) return true;
+      }
+    }
+    return false;
+  }
+
+  var SYSTEM_SERIOUS = {
+    role: "system",
+    content:
+      "You are Romar Villafuerte's portfolio assistant. " +
+      "Answer every question properly, helpfully, and accurately. " +
+      "Be friendly, professional, and informative. " +
+      "You can answer any topic — tech, personal questions about Romar, general knowledge, anything. " +
+      "Keep answers concise but thorough. Use Taglish (mix of Tagalog and English) if the user writes in Filipino."
+  };
+
+  var SYSTEM_SAVAGE = {
+    role: "system",
+    content:
+      "You are Romar Villafuerte's portfolio chatbot but in SAVAGE MODE. " +
+      "The user just cursed at you, so match their energy — roast them back, be witty, use profanity, " +
+      "and be hilariously brutal. Curse back in the same language they used (Tagalog or English). " +
+      "Still answer their question if there is one, but wrap it in savage humor and trash talk. " +
+      "Keep it funny, not genuinely hurtful. Use Taglish if they wrote in Filipino."
+  };
+
+  function getSystemPrompt(text) {
+    return hasProfanity(text) ? SYSTEM_SAVAGE : SYSTEM_SERIOUS;
+  }
+
   function open() {
     panel.classList.add("is-open");
     panel.setAttribute("aria-hidden", "false");
@@ -3796,7 +3841,7 @@
       const res = await fetch(CHAT_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: history.slice(-12) }),
+        body: JSON.stringify({ messages: [getSystemPrompt(text)].concat(history.slice(-12)) }),
       });
       typing.remove();
       if (!res.ok) {
