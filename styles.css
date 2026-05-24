@@ -3740,6 +3740,94 @@ body.rv-splash-active {
   .rv-splash-bar { opacity: 1; transform: none; }
 }
 
+/* ---------- Visitor details panel (admin) ---------- */
+.rv-admin-card-blue, .rv-admin-card-violet { cursor: pointer; }
+.rv-admin-card-blue:hover, .rv-admin-card-violet:hover {
+  filter: brightness(1.08);
+  transform: translateY(-2px);
+  transition: all 0.2s;
+}
+.rv-visitor-details {
+  margin-top: 16px;
+  background: var(--rv-surface, #f8fafc);
+  border: 1px solid var(--rv-border, #e2e8f0);
+  border-radius: 12px;
+  padding: 16px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+[data-bs-theme="dark"] .rv-visitor-details {
+  background: #1a1f2e;
+  border-color: #2a2f3e;
+}
+.rv-visitor-details-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.rv-visitor-details-header h5 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+.rv-visitor-close {
+  background: none;
+  border: none;
+  font-size: 1.4rem;
+  cursor: pointer;
+  color: inherit;
+  opacity: 0.6;
+  padding: 0 4px;
+}
+.rv-visitor-close:hover { opacity: 1; }
+.rv-visitor-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  margin-bottom: 6px;
+  background: rgba(0,0,0,0.03);
+  transition: background 0.15s;
+}
+[data-bs-theme="dark"] .rv-visitor-item {
+  background: rgba(255,255,255,0.04);
+}
+.rv-visitor-item:hover {
+  background: rgba(37,99,235,0.08);
+}
+.rv-visitor-icon {
+  font-size: 1.3rem;
+  min-width: 28px;
+  text-align: center;
+  padding-top: 2px;
+}
+.rv-visitor-info {
+  flex: 1;
+  min-width: 0;
+}
+.rv-visitor-device {
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 2px;
+}
+.rv-visitor-meta {
+  font-size: 0.78rem;
+  opacity: 0.7;
+  line-height: 1.4;
+}
+.rv-visitor-meta span {
+  display: inline-block;
+  margin-right: 10px;
+}
+.rv-visitor-time {
+  font-size: 0.75rem;
+  opacity: 0.5;
+  white-space: nowrap;
+  padding-top: 2px;
+}
+
 /* ---------- Scroll progress bar ---------- */
 .rv-scroll-progress {
   position: fixed;

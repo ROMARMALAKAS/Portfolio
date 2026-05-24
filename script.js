@@ -4321,6 +4321,65 @@
       });
     }
 
+    // Visitor details — make visit stat cards clickable
+    const visitorPanel = document.getElementById("rvVisitorDetails");
+    const visitorList = document.getElementById("rvVisitorList");
+    const visitorClose = document.getElementById("rvVisitorClose");
+    const visitors = (s2 && s2.visitors) || [];
+
+    function deviceIcon(dev) {
+      const d = (dev || "").toLowerCase();
+      if (d.includes("iphone") || d.includes("android") || d.includes("samsung") ||
+          d.includes("oppo") || d.includes("vivo") || d.includes("realme") ||
+          d.includes("xiaomi") || d.includes("redmi") || d.includes("poco") ||
+          d.includes("pixel")) return "bi-phone";
+      if (d.includes("ipad") || d.includes("tab")) return "bi-tablet";
+      return "bi-laptop";
+    }
+
+    function timeAgo(ts) {
+      const diff = Math.floor(Date.now() / 1000 - ts);
+      if (diff < 60) return "just now";
+      if (diff < 3600) return Math.floor(diff / 60) + "m ago";
+      if (diff < 86400) return Math.floor(diff / 3600) + "h ago";
+      return Math.floor(diff / 86400) + "d ago";
+    }
+
+    function showVisitors() {
+      visitorList.innerHTML = "";
+      if (!visitors.length) {
+        visitorList.innerHTML = '<p style="opacity:0.5;text-align:center;padding:20px;">No visitors yet.</p>';
+      } else {
+        visitors.forEach((v) => {
+          const loc = [v.city, v.country].filter(Boolean).join(", ") || "Unknown location";
+          const div = document.createElement("div");
+          div.className = "rv-visitor-item";
+          div.innerHTML =
+            '<div class="rv-visitor-icon"><i class="bi ' + deviceIcon(v.device) + '"></i></div>' +
+            '<div class="rv-visitor-info">' +
+              '<div class="rv-visitor-device">' + escapeHtml(v.device || "Unknown device") + '</div>' +
+              '<div class="rv-visitor-meta">' +
+                '<span><i class="bi bi-geo-alt"></i> ' + escapeHtml(loc) + '</span>' +
+                '<span><i class="bi bi-globe"></i> ' + escapeHtml(v.ip || "—") + '</span>' +
+              '</div>' +
+            '</div>' +
+            '<div class="rv-visitor-time">' + timeAgo(v.created_at) + '</div>';
+          visitorList.appendChild(div);
+        });
+      }
+      visitorPanel.hidden = false;
+      visitorPanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+
+    // Make all visit stat cards clickable
+    document.querySelectorAll("#rvAdminStats .rv-admin-card-blue, #rvAdminStats .rv-admin-card-violet").forEach((card) => {
+      card.addEventListener("click", showVisitors);
+    });
+
+    if (visitorClose) {
+      visitorClose.addEventListener("click", () => { visitorPanel.hidden = true; });
+    }
+
     document.getElementById("rvAdminFoot").textContent =
       "Updated " + new Date(s.generated_at * 1000).toLocaleString();
   }
