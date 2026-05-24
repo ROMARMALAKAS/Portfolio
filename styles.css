@@ -2642,8 +2642,16 @@ body.rv-admin-open { overflow: hidden; }
   display: flex;
   max-width: 100%;
 }
-.rv-chat-msg-bot { justify-content: flex-start; }
+.rv-chat-msg-bot { justify-content: flex-start; align-items: flex-end; }
 .rv-chat-msg-user { justify-content: flex-end; }
+.rv-chat-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  margin-right: 8px;
+  flex-shrink: 0;
+  object-fit: cover;
+}
 .rv-chat-bubble-msg {
   max-width: 85%;
   padding: 10px 14px;
