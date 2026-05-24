@@ -861,7 +861,7 @@ async def _try_ai_api(msgs: list) -> str:
         except Exception:
             pass
 
-    # 3) OpenAI
+    # 3) OpenAI (if key available)
     api_key = os.getenv("OPENAI_API_KEY", "")
     if api_key:
         try:
@@ -877,25 +877,6 @@ async def _try_ai_api(msgs: list) -> str:
                     return reply
         except Exception:
             pass
-
-    # 4) HuggingFace Router (free fallback)
-    hf_token = os.getenv("HF_TOKEN", "")
-    if hf_token:
-        for model in _HF_MODELS:
-            try:
-                async with httpx.AsyncClient(timeout=30) as client:
-                    resp = await client.post(
-                        "https://router.huggingface.co/v1/chat/completions",
-                        headers={"Authorization": f"Bearer {hf_token}", "Content-Type": "application/json"},
-                        json={"model": model, "messages": enriched, "max_tokens": 512}
-                    )
-                    if resp.status_code == 200:
-                        data = resp.json()
-                        reply = data.get("choices", [{}])[0].get("message", {}).get("content", "")
-                        if reply:
-                            return reply
-            except Exception:
-                continue
 
     return ""
 
