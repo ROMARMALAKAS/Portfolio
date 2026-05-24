@@ -1078,7 +1078,9 @@ async def track_visit(body: VisitIn, request: Request):
     import datetime
     vstats = _hf_load_visits()
     today_str = datetime.datetime.utcfromtimestamp(time.time()).strftime("%Y-%m-%d")
-    seen_ips = vstats.get("seen_today", {})
+    # Clean seen_today: keep only today's entries with clean IP keys (no colons)
+    raw_seen = vstats.get("seen_today", {})
+    seen_ips = {k: v for k, v in raw_seen.items() if v == today_str and ":" not in k}
     already_counted = seen_ips.get(ip) == today_str
 
     if not existing and not already_counted:
@@ -1087,15 +1089,20 @@ async def track_visit(body: VisitIn, request: Request):
             "INSERT INTO visits (ip, path, referrer, user_agent, country, city, device, created_at) VALUES (?,?,?,?,?,?,?,?)",
             (ip, body.path, body.referrer, ua, country, city, device, now))
         conn.commit()
-        # Persist visit count + dedup info to HuggingFace Hub
+        # Persist visit count + dedup info + visitor details to HuggingFace Hub
         vstats["total"] = vstats.get("total", 0) + 1
         by_day = vstats.get("by_day", {})
         by_day[today_str] = by_day.get(today_str, 0) + 1
         vstats["by_day"] = by_day
-        # Track seen IPs for today (clean up old entries)
-        seen_ips = {k: v for k, v in seen_ips.items() if v == today_str}
         seen_ips[ip] = today_str
         vstats["seen_today"] = seen_ips
+        # Save visitor details (keep last 200)
+        recent = vstats.get("recent_visitors", [])
+        recent.insert(0, {
+            "ip": ip, "device": device, "country": country, "city": city,
+            "path": body.path, "referrer": body.referrer, "created_at": now,
+        })
+        vstats["recent_visitors"] = recent[:200]
         _hf_save_visits(vstats)
 
     today_start = int(time.time()) - (int(time.time()) % 86400)
@@ -1259,55 +1266,42 @@ async def admin_stats(authorization: Optional[str] = Header(None)):
 @app.get("/api/admin/stats2")
 async def admin_stats2(authorization: Optional[str] = Header(None)):
     _require_admin(authorization)
-    conn = get_db()
-    visitors = conn.execute(
-        "SELECT ip, path, referrer, user_agent, country, city, device, created_at "
-        "FROM visits ORDER BY created_at DESC LIMIT 100"
-    ).fetchall()
-    visitor_list = []
-    for v in visitors:
-        visitor_list.append({
-            "ip": v["ip"],
-            "path": v["path"],
-            "referrer": v["referrer"],
-            "user_agent": v["user_agent"],
-            "country": v["country"],
-            "city": v["city"],
-            "device": v["device"],
-            "created_at": v["created_at"],
-        })
-
-    thirty_days_ago = time.time() - (30 * 86400)
-    daily = conn.execute(
-        "SELECT date(created_at, 'unixepoch') as day, COUNT(*) as cnt "
-        "FROM visits WHERE created_at>=? GROUP BY day ORDER BY day",
-        (thirty_days_ago,)).fetchall()
-
-    countries = conn.execute(
-        "SELECT country, COUNT(*) as cnt FROM visits WHERE country!='' "
-        "GROUP BY country ORDER BY cnt DESC LIMIT 10"
-    ).fetchall()
-
-    devices = conn.execute(
-        "SELECT device, COUNT(*) as cnt FROM visits WHERE device!='' "
-        "GROUP BY device ORDER BY cnt DESC LIMIT 10"
-    ).fetchall()
-
-    # Message stats from HF persistent storage
-    hf_msgs = _hf_load_messages()
-    messages_total = len(hf_msgs)
-    messages_unread = sum(1 for m in hf_msgs if not m.get("read"))
-
-    # Month visits from HF
     import datetime
+    from collections import Counter
+
+    # Load all data from HuggingFace persistent storage
     vstats = _hf_load_visits()
-    month_visits = 0
+    hf_msgs = _hf_load_messages()
+
+    # Visitor list from HF (persistent across cold starts)
+    recent_visitors = vstats.get("recent_visitors", [])
+    visitor_list = recent_visitors[:100]
+
+    # Daily visits from HF by_day
     by_day = vstats.get("by_day", {})
+    thirty_days_ago_str = (datetime.datetime.utcnow() - datetime.timedelta(days=30)).strftime("%Y-%m-%d")
+    daily = []
+    for d_str, cnt in sorted(by_day.items()):
+        if d_str >= thirty_days_ago_str:
+            daily.append({"day": d_str, "count": cnt})
+
+    # Top countries from recent visitors
+    country_counts = Counter(v.get("country", "") for v in recent_visitors if v.get("country"))
+    top_countries = [{"country": c, "count": n} for c, n in country_counts.most_common(10)]
+
+    # Top devices from recent visitors
+    device_counts = Counter(v.get("device", "") for v in recent_visitors if v.get("device"))
+    top_devices = [{"device": d, "count": n} for d, n in device_counts.most_common(10)]
+
+    # Month visits
+    month_visits = 0
     for i in range(30):
         d = (datetime.datetime.utcnow() - datetime.timedelta(days=i)).strftime("%Y-%m-%d")
         month_visits += by_day.get(d, 0)
 
-    conn.close()
+    messages_total = len(hf_msgs)
+    messages_unread = sum(1 for m in hf_msgs if not m.get("read"))
+
     return {
         "ok": True,
         "visits_month": month_visits,
@@ -1315,9 +1309,9 @@ async def admin_stats2(authorization: Optional[str] = Header(None)):
         "messages_unread": messages_unread,
         "most_viewed_projects": [],
         "visitors": visitor_list,
-        "daily_visits": [{"day": d["day"], "count": d["cnt"]} for d in daily],
-        "top_countries": [{"country": c["country"], "count": c["cnt"]} for c in countries],
-        "top_devices": [{"device": d["device"], "count": d["cnt"]} for d in devices],
+        "daily_visits": daily,
+        "top_countries": top_countries,
+        "top_devices": top_devices,
     }
 
 
