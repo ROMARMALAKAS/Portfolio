@@ -763,7 +763,8 @@ _ROMAR_CONTEXT = (
     "Facebook: https://www.facebook.com/share/1BJX3bLk66/ "
     "GitHub: https://github.com/ROMARMALAKAS "
     "All solo dev. Available for freelance. "
-    "NEVER use [IMG:...] tags. NEVER send images. If asked for a picture, describe it in words or say hindi mo mapakita."
+    "You can show Romar's profile photo by writing exactly: [IMG:assets/romar-hero.jpg] "
+    "ONLY use this when they ask for Romar's picture/photo. NEVER invent other image URLs."
 )
 
 _HF_MODELS = [
@@ -823,10 +824,10 @@ async def _try_ai_api(msgs: list) -> str:
                 "HARM_CATEGORY_DANGEROUS_CONTENT",
             ]
         ]
-        for gemini_model in ["gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-flash-lite-latest", "gemini-flash-latest"]:
+        for gemini_model in ["gemini-2.0-flash-lite", "gemini-2.0-flash", "gemini-2.5-flash-lite", "gemini-2.5-flash"]:
             try:
                 url = f"https://generativelanguage.googleapis.com/v1beta/models/{gemini_model}:generateContent?key={gemini_key}"
-                async with httpx.AsyncClient(timeout=55) as client:
+                async with httpx.AsyncClient(timeout=25) as client:
                     resp = await client.post(
                         url,
                         headers={"Content-Type": "application/json"},
