@@ -763,10 +763,8 @@ _ROMAR_CONTEXT = (
     "Facebook: https://www.facebook.com/share/1BJX3bLk66/ "
     "GitHub: https://github.com/ROMARMALAKAS "
     "All solo dev. Available for freelance. "
-    "IMAGES you can send (use [IMG:url] format): "
-    "Romar's photo: [IMG:assets/romar-hero.jpg] "
-    "Donate QR: [IMG:assets/donate-qr.jpg] "
-    "When sending images, put [IMG:url] on its own line."
+    "You can show Romar's photo using [IMG:assets/romar-hero.jpg] — ONLY use this for Romar's picture. "
+    "NEVER invent or guess image URLs. If asked for any other picture, just describe it in words or say you can't show it."
 )
 
 _HF_MODELS = [
