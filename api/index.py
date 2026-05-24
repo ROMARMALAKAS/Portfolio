@@ -15,6 +15,42 @@ import httpx
 # Stable secret for HMAC token signing (deterministic across cold starts)
 _TOKEN_SECRET = os.environ.get("TOKEN_SECRET", "rv-portfolio-token-secret-2026")
 
+# HuggingFace Hub persistence for messages (survives cold starts)
+_HF_TOKEN = os.environ.get("HF_TOKEN", "")
+_HF_REPO = "Romar19484/portfolio-data"
+_HF_FILE = "messages.json"
+
+_hf_headers = {"Authorization": f"Bearer {_HF_TOKEN}"}
+
+
+def _hf_load_messages() -> list:
+    try:
+        r = httpx.get(
+            f"https://huggingface.co/datasets/{_HF_REPO}/resolve/main/{_HF_FILE}",
+            headers=_hf_headers, timeout=10,
+        )
+        if r.status_code == 200:
+            return r.json()
+    except Exception:
+        pass
+    return []
+
+
+def _hf_save_messages(messages: list):
+    try:
+        httpx.post(
+            f"https://huggingface.co/api/datasets/{_HF_REPO}/commit/main",
+            headers={**_hf_headers, "Content-Type": "application/json"},
+            json={
+                "summary": "update messages",
+                "files": [{"path": _HF_FILE, "content": json.dumps(messages, default=str)}],
+            },
+            timeout=15,
+        )
+    except Exception:
+        pass
+
+
 app = FastAPI(title="Romar Portfolio Leaderboard", version="1.0.0")
 
 # Disable CORS. Do not remove this for full-stack development.
@@ -569,11 +605,21 @@ async def list_projects(all: bool = False):
 # --- Messages (public submit) ---
 @app.post("/api/messages")
 async def post_message(body: MessageIn):
+    now = time.time()
     conn = get_db()
     conn.execute("INSERT INTO messages (name, email, subject, body, created_at) VALUES (?,?,?,?,?)",
-                  (body.name, body.email, body.subject, body.body, time.time()))
+                  (body.name, body.email, body.subject, body.body, now))
     conn.commit()
     conn.close()
+    # Persist to HuggingFace Hub (survives cold starts)
+    msgs = _hf_load_messages()
+    msgs.append({
+        "id": int(now * 1000),
+        "name": body.name, "email": body.email,
+        "subject": body.subject, "body": body.body,
+        "read": 0, "created_at": now,
+    })
+    _hf_save_messages(msgs)
     return {"ok": True}
 
 
@@ -759,10 +805,19 @@ async def admin_delete_project(pid: int, authorization: Optional[str] = Header(N
 @app.get("/api/admin/messages")
 async def admin_list_messages(authorization: Optional[str] = Header(None)):
     _require_admin(authorization)
+    # Load from HF Hub (persistent) and merge with local SQLite
+    hf_msgs = _hf_load_messages()
     conn = get_db()
-    rows = conn.execute("SELECT * FROM messages ORDER BY created_at DESC").fetchall()
+    local_rows = conn.execute("SELECT * FROM messages ORDER BY created_at DESC").fetchall()
     conn.close()
-    return {"ok": True, "messages": [dict(r) for r in rows]}
+    # Merge: use HF as source of truth, add any local-only messages
+    hf_times = {m.get("created_at") for m in hf_msgs}
+    for row in local_rows:
+        d = dict(row)
+        if d.get("created_at") not in hf_times:
+            hf_msgs.append(d)
+    hf_msgs.sort(key=lambda m: m.get("created_at", 0), reverse=True)
+    return {"ok": True, "messages": hf_msgs}
 
 
 @app.put("/api/admin/messages/{mid}")
@@ -772,6 +827,12 @@ async def admin_update_message(mid: int, body: MessageReadIn, authorization: Opt
     conn.execute("UPDATE messages SET read=? WHERE id=?", (int(body.read), mid))
     conn.commit()
     conn.close()
+    # Also update in HF persistent storage
+    msgs = _hf_load_messages()
+    for m in msgs:
+        if m.get("id") == mid:
+            m["read"] = int(body.read)
+    _hf_save_messages(msgs)
     return {"ok": True}
 
 
@@ -782,6 +843,10 @@ async def admin_delete_message(mid: int, authorization: Optional[str] = Header(N
     conn.execute("DELETE FROM messages WHERE id=?", (mid,))
     conn.commit()
     conn.close()
+    # Also remove from HF persistent storage
+    msgs = _hf_load_messages()
+    msgs = [m for m in msgs if m.get("id") != mid]
+    _hf_save_messages(msgs)
     return {"ok": True}
 
 
