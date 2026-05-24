@@ -4631,8 +4631,8 @@
         headers: { Authorization: "Bearer " + currentToken },
       });
       const j = await r.json();
-      const items = j.items || [];
-      const unread = j.unread || 0;
+      const items = j.messages || j.items || [];
+      const unread = items.filter(m => !m.read).length;
       sub.textContent = items.length === 0
         ? "No messages yet. Visitors who use the contact form will appear here."
         : `${items.length} message${items.length === 1 ? "" : "s"}${unread ? ` · ${unread} unread` : ""}`;
@@ -4653,7 +4653,7 @@
   function renderMessageRow(m) {
     const row = document.createElement("div");
     row.className = "rv-admin-message" + (m.read ? "" : " is-unread");
-    const date = new Date((m.ts || 0) * 1000).toLocaleString();
+    const date = new Date((m.created_at || m.ts || 0) * 1000).toLocaleString();
     const subject = m.subject || "(no subject)";
     const replySubject = encodeURIComponent("Re: " + subject);
     const replyBody = encodeURIComponent(`\n\n----\nOn ${date}, ${m.name} <${m.email}> wrote:\n${m.body || ""}`);
