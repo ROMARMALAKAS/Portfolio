@@ -5460,7 +5460,7 @@
     ctx.font = fontSize + "px JetBrains Mono, monospace";
     for (let i = 0; i < drops.length; i++) {
       const char = chars[Math.floor(Math.random() * chars.length)];
-      ctx.fillStyle = Math.random() > 0.95 ? "#60a5fa" : "#2563eb";
+      ctx.fillStyle = Math.random() > 0.95 ? "#7fff7f" : "#00cc00";
       ctx.fillText(char, i * fontSize, drops[i] * fontSize);
       if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
         drops[i] = 0;
