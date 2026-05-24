@@ -888,6 +888,38 @@ async def _try_ai_api(msgs: list) -> str:
     return ""
 
 
+@app.get("/api/debug-ai")
+async def debug_ai():
+    """Temp debug endpoint."""
+    import traceback
+    gemini_key = os.getenv("GEMINI_API_KEY", "")
+    info = {"key_present": bool(gemini_key), "key_len": len(gemini_key)}
+    if gemini_key:
+        info["key_start"] = gemini_key[:10]
+        info["key_end"] = gemini_key[-5:]
+    try:
+        msgs = [
+            {"role": "user", "content": "Say hi"},
+        ]
+        enriched = _enrich_messages(msgs)
+        contents = _to_gemini_contents(enriched)
+        info["contents_count"] = len(contents)
+        safety = [{"category": c, "threshold": "BLOCK_NONE"} for c in [
+            "HARM_CATEGORY_HARASSMENT", "HARM_CATEGORY_HATE_SPEECH",
+            "HARM_CATEGORY_SEXUALLY_EXPLICIT", "HARM_CATEGORY_DANGEROUS_CONTENT"
+        ]]
+        for model in ["gemini-2.5-flash-lite"]:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={gemini_key}"
+            async with httpx.AsyncClient(timeout=25) as client:
+                resp = await client.post(url, headers={"Content-Type": "application/json"},
+                    json={"contents": contents, "safetySettings": safety})
+                info[model] = {"status": resp.status_code, "body": resp.text[:500]}
+    except Exception as e:
+        info["error"] = str(e)
+        info["tb"] = traceback.format_exc()[-500:]
+    return info
+
+
 @app.post("/api/chat")
 async def chat(body: ChatIn):
     last_msg = ""
@@ -908,13 +940,20 @@ async def chat(body: ChatIn):
             msgs.append({"role": role, "content": content})
 
     # Try real AI
-    reply = await _try_ai_api(msgs)
+    try:
+        reply = await _try_ai_api(msgs)
+    except Exception as exc:
+        reply = ""
+
     if reply:
         return {"reply": reply}
 
     # Fallback to built-in for Romar-specific questions
     builtin = _chat_reply(last_msg, body.messages, is_savage)
-    if builtin and "wala akong alam" not in builtin.lower() and "i don't have info" not in builtin.lower():
+    # Use builtin only for known-good Romar responses, not generic "di ko alam"
+    generic_fallbacks = ["di ko alam", "wala akong alam", "i don't have info", "hmm di ko"]
+    is_generic = any(g in builtin.lower() for g in generic_fallbacks) if builtin else True
+    if builtin and not is_generic:
         return {"reply": builtin}
 
     return {"reply": "Sandali lang pre, medyo maraming nagcha-chat sakin ngayon haha. Try mo ulit in a few seconds!"}
