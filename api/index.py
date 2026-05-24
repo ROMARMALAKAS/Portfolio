@@ -592,7 +592,7 @@ def _chat_reply(text: str, history: list) -> str:
     # === SKILLS / TECH ===
     if any(p in t for p in ["tech stack", "what tech", "what does he use"]):
         return "His stack:\n- Frontend: HTML, CSS, JavaScript, Bootstrap\n- Backend: PHP, Python, FastAPI, Node.js\n- Database: MySQL, SQLite\n- Real-time: WebSocket\n- Tools: Git, GitHub, Vercel\n\nFull-stack developer through and through."
-    if any(p in t for p in ["ano alam", "anong alam", "ano gamit"]):
+    if any(p in t for p in ["ano alam", "anong alam", "ano gamit", "alam ni romar", "alam niya"]):
         return "Eto mga gamit ni Romar:\n- Frontend: HTML, CSS, JavaScript, Bootstrap\n- Backend: PHP, Python, FastAPI, Node.js\n- Database: MySQL, SQLite\n- Real-time: WebSocket\n- Tools: Git, GitHub, Vercel\n\nFull-stack talaga siya."
     if words & {"skill", "skills", "technology", "programming", "tools", "expertise", "tech", "stack", "code", "coding"}:
         if tl:
