@@ -5430,3 +5430,48 @@
   window.addEventListener("resize", onScroll, { passive: true });
   update();
 })();
+
+/* ---------- Matrix Rain Effect (Hero) ---------- */
+(function () {
+  const canvas = document.getElementById("rvMatrixCanvas");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  const chars =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%^&*<>{}[]|/~アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン";
+  const fontSize = 14;
+  let columns, drops;
+
+  function isDark() {
+    return document.documentElement.getAttribute("data-bs-theme") === "dark";
+  }
+
+  function fadeColor() {
+    return isDark() ? "rgba(15, 19, 32, 0.06)" : "rgba(240, 244, 255, 0.06)";
+  }
+
+  function resize() {
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+    columns = Math.floor(canvas.width / fontSize);
+    drops = Array(columns).fill(1);
+  }
+  resize();
+  window.addEventListener("resize", resize);
+
+  function draw() {
+    ctx.fillStyle = fadeColor();
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.font = fontSize + "px JetBrains Mono, monospace";
+    for (let i = 0; i < drops.length; i++) {
+      const char = chars[Math.floor(Math.random() * chars.length)];
+      ctx.fillStyle = Math.random() > 0.95 ? "#60a5fa" : "#2563eb";
+      ctx.fillText(char, i * fontSize, drops[i] * fontSize);
+      if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+        drops[i] = 0;
+      }
+      drops[i]++;
+    }
+  }
+
+  setInterval(draw, 60);
+})();

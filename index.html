@@ -165,8 +165,9 @@
 
     <main id="top" class="rv-main">
       <!-- HERO -->
-      <section class="rv-section rv-hero">
-        <div class="container">
+      <section class="rv-section rv-hero" style="position:relative;overflow:hidden;">
+        <canvas id="rvMatrixCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;opacity:0.22;pointer-events:none;"></canvas>
+        <div class="container" style="position:relative;z-index:1;">
           <div class="row align-items-center g-5">
             <div class="col-lg-7">
               <div class="rv-hero-id">
