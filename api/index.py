@@ -790,10 +790,28 @@ def _enrich_messages(msgs: list) -> list:
 
 
 async def _try_ai_api(msgs: list) -> str:
-    """Try OpenAI first, then HuggingFace Router (free)."""
+    """Try Grok first, then OpenAI, then HuggingFace."""
     enriched = _enrich_messages(msgs)
 
-    # 1) OpenAI
+    # 1) Grok (xAI) — primary
+    xai_key = os.getenv("XAI_API_KEY", "")
+    if xai_key:
+        try:
+            async with httpx.AsyncClient(timeout=30) as client:
+                resp = await client.post(
+                    "https://api.x.ai/v1/chat/completions",
+                    headers={"Authorization": f"Bearer {xai_key}", "Content-Type": "application/json"},
+                    json={"model": "grok-3-mini-fast", "messages": enriched, "max_tokens": 512}
+                )
+                if resp.status_code == 200:
+                    data = resp.json()
+                    reply = data.get("choices", [{}])[0].get("message", {}).get("content", "")
+                    if reply:
+                        return reply
+        except Exception:
+            pass
+
+    # 2) OpenAI
     api_key = os.getenv("OPENAI_API_KEY", "")
     if api_key:
         try:
@@ -810,7 +828,7 @@ async def _try_ai_api(msgs: list) -> str:
         except Exception:
             pass
 
-    # 2) HuggingFace Router (free inference)
+    # 3) HuggingFace Router (free fallback)
     hf_token = os.getenv("HF_TOKEN", "")
     if hf_token:
         for model in _HF_MODELS:
