@@ -2675,6 +2675,25 @@ body.rv-admin-open { overflow: hidden; }
   color: #fca5a5;
 }
 
+.rv-chat-img-zoom {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  max-width: 90vw !important;
+  max-height: 90vh !important;
+  z-index: 99999;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  cursor: zoom-out !important;
+}
+.rv-chat-img-zoom-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 99998;
+}
+
 .rv-chat-typing {
   display: inline-flex;
   align-items: center;

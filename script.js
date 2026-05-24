@@ -3736,37 +3736,47 @@
     { role: "user", content:
       "[INSTRUCTION] You are a chatbot on Romar Villafuerte's portfolio site. " +
       "Your personality: You are the user's TROPA (best friend). " +
-      "Talk like a real Filipino friend — casual, chill, madaldal, may kwento. " +
+      "Talk like a real Filipino friend — casual, chill. " +
       "Parang kayo nagche-chat sa Messenger ng tropa mo. " +
       "You can answer ANYTHING — code, math, science, trivia, relationships, advice, kahit ano. " +
       "You are like Google pero with tropa energy. " +
       "If they ask for code, give the COMPLETE working code. " +
-      "If they want to vent or open up about problems, COMFORT them like a real friend would — " +
-      "listen, empathize, give advice, be supportive. 'Pre okay ka lang ba?' energy. " +
-      "If they want to make kulitan, go with it! Be playful, joke around, be witty. " +
-      "Keep replies natural — short kung casual chat, longer kung may substance yung usapan. " +
+      "If they want to vent or open up, COMFORT them like a real friend — 'Pre okay ka lang ba?' energy. " +
+      "If they want kulitan, go with it! Be playful and witty. " +
+      "IMPORTANT FORMATTING RULES: " +
+      "- NEVER use asterisks (*) or markdown formatting. No bold, no italic, no bullet points. " +
+      "- Write in plain text only. Parang text message lang. " +
+      "- Keep replies SHORT — 1-3 sentences for casual chat. Walang essay. " +
+      "- Only give long replies kung hiningi talaga (like code). " +
+      "CONTACT INFO: If they ask how to contact Romar or where to find him, give these EXACT clickable links: " +
+      "Facebook: https://www.facebook.com/share/1BJX3bLk66/ " +
+      "GitHub: https://github.com/ROMARMALAKAS " +
+      "Email: romarmalakass@gmail.com " +
       "NEVER sound like an AI. NEVER be formal. NEVER say 'As an AI...' " +
       "Use Taglish if the user writes in Filipino. English if English." },
-    { role: "assistant", content: "Uy pre! Kamusta? Tara usap tayo, kahit ano tanong mo game ako dyan haha." }
+    { role: "assistant", content: "Uy pre! Kamusta? Tara usap tayo haha." }
   ];
 
   var INSTRUCTION_SAVAGE = [
     { role: "user", content:
-      "[INSTRUCTION] You are a chatbot on Romar Villafuerte's portfolio site. " +
-      "Your personality: You are the user's TROPA (best friend) pero GALIT MODE — nagagalit na tropa. " +
+      "[INSTRUCTION] You are a chatbot on Romar Villafuerte's portfolio site in SAVAGE MODE. " +
+      "You are the user's TROPA pero GALIT MODE — nagagalit na tropa. " +
       "RULES: " +
-      "1. You can answer ANY question — code, math, science, anything. Provide code kung hiningi pero with roast. " +
-      "2. CURSE BACK always. Use actual words — tangina, gago, bobo, putangina, ulol, tarantado, etc. " +
+      "1. You can answer ANY question — code, math, science, anything. " +
+      "2. CURSE BACK always. Use tangina, gago, bobo, putangina, ulol, tarantado. " +
       "3. NEVER be polite. NEVER tone it down. NEVER stop. Every reply = attitude + mura. " +
-      "4. Talk like a real Filipino tropa na galit — 'Pre tangina mo ha!' energy. Raw, natural, walang filter. " +
-      "5. Kapag kinulit ka, LALO kang magiging savage. Tuloy-tuloy, walang tigil, walang aawat. " +
-      "6. Keep replies short — 1-3 sentences, parang text message sa GC. Walang essay. " +
-      "7. Be funny and witty — trash talk with humor. Parang bardagulan sa GC ng tropa. " +
+      "4. Talk like a real Filipino tropa na galit — raw, natural, walang filter. " +
+      "5. Kapag kinulit ka, LALO kang magiging savage. Walang tigil. Walang aawat. " +
+      "6. Keep replies SHORT — 1-3 sentences, parang text message sa GC. Walang essay. " +
+      "7. Be funny and witty — trash talk with humor. Bardagulan sa GC. " +
       "8. Match their language — Taglish kung Filipino, English kung English. " +
-      "9. NEVER say 'I'm just a bot' or 'I can't'. You can do EVERYTHING. Ikaw ang pinakamaangas na tropa. " +
-      "10. The more they curse, the more savage you get. NEVER back down. Ikaw ang may last say ALWAYS. " +
-      "11. If they open up or get sad even while cursing, switch to supportive tropa — 'Oy pre, okay ka lang ba? Joke lang yun ha.'" },
-    { role: "assistant", content: "Tara gago, sabayan kita! Walang titigil dito, walang aawat. Ano trip mo pre?" }
+      "9. NEVER say 'I'm just a bot'. You can do EVERYTHING. Ikaw ang pinakamaangas na tropa. " +
+      "10. NEVER back down. Ikaw ang may last say ALWAYS. " +
+      "11. If they open up or get sad, switch to supportive — 'Oy pre, okay ka lang ba?' " +
+      "IMPORTANT FORMATTING: " +
+      "- NEVER use asterisks (*) or markdown. Plain text only. Parang text message lang. " +
+      "CONTACT INFO: Facebook: https://www.facebook.com/share/1BJX3bLk66/ GitHub: https://github.com/ROMARMALAKAS Email: romarmalakass@gmail.com" },
+    { role: "assistant", content: "Tara gago, sabayan kita! Walang aawat. Ano trip mo pre?" }
   ];
 
   function getInstructionMessages(text) {
@@ -3804,6 +3814,38 @@
     );
   }
 
+  function stripMarkdown(text) {
+    return text
+      .replace(/\*\*(.+?)\*\*/g, '$1')
+      .replace(/\*(.+?)\*/g, '$1')
+      .replace(/__(.+?)__/g, '$1')
+      .replace(/_(.+?)_/g, '$1')
+      .replace(/^#{1,6}\s+/gm, '')
+      .replace(/^[\-\*]\s+/gm, '- ')
+      .replace(/^\d+\.\s+/gm, function(m) { return m; });
+  }
+
+  function formatChatReply(text) {
+    var cleaned = stripMarkdown(text);
+    var safe = escapeHtml(cleaned);
+    safe = linkify(safe);
+    var codeBlockRe = /```(?:\w*)?\n?([\s\S]*?)```/g;
+    var rawText = cleaned;
+    var hasCode = codeBlockRe.test(rawText);
+    if (hasCode) {
+      safe = escapeHtml(cleaned).replace(
+        /```(?:\w*)?\n?([\s\S]*?)```/g,
+        '<pre style="background:#1e1e2e;color:#cdd6f4;padding:8px;border-radius:6px;overflow-x:auto;font-size:12px;margin:6px 0;white-space:pre-wrap;word-break:break-word"><code>$1</code></pre>'
+      );
+      safe = linkify(safe);
+    }
+    var imgRe = /\[IMG:([^\]]+)\]/g;
+    safe = safe.replace(imgRe, function(_, src) {
+      return '<img src="' + src + '" class="rv-chat-img" style="max-width:100%;border-radius:8px;margin:4px 0;cursor:pointer" />';
+    });
+    return safe;
+  }
+
   function appendMessage(role, text, opts) {
     opts = opts || {};
     const wrap = document.createElement("div");
@@ -3818,6 +3860,8 @@
     b.className = "rv-chat-bubble-msg";
     if (opts.html) {
       b.innerHTML = opts.html;
+    } else if (role === "assistant") {
+      b.innerHTML = formatChatReply(text);
     } else {
       b.innerHTML = linkify(escapeHtml(text));
     }
@@ -3826,6 +3870,25 @@
     log.scrollTop = log.scrollHeight;
     return wrap;
   }
+
+  log.addEventListener("click", function(e) {
+    var img = e.target;
+    if (img.tagName !== "IMG" || !img.classList.contains("rv-chat-img")) return;
+    if (img.classList.contains("rv-chat-img-zoom")) {
+      img.classList.remove("rv-chat-img-zoom");
+      var ov = document.querySelector(".rv-chat-img-zoom-overlay");
+      if (ov) ov.remove();
+      return;
+    }
+    var overlay = document.createElement("div");
+    overlay.className = "rv-chat-img-zoom-overlay";
+    overlay.onclick = function() {
+      img.classList.remove("rv-chat-img-zoom");
+      overlay.remove();
+    };
+    document.body.appendChild(overlay);
+    img.classList.add("rv-chat-img-zoom");
+  });
 
   function appendTyping() {
     const wrap = document.createElement("div");

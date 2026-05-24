@@ -759,7 +759,14 @@ _ROMAR_CONTEXT = (
     "Context about Romar Villafuerte: Full-stack web developer from the Philippines. "
     "Projects: Enrollment System (PHP+MySQL), Ride Hailing System (WebSocket), "
     "Mini-game Arcade (13 games). Skills: HTML, CSS, JS, PHP, Python, FastAPI, MySQL, SQLite, WebSocket. "
-    "Contact: romarmalakass@gmail.com. GitHub: ROMARMALAKAS. All solo dev. Available for freelance."
+    "Contact: romarmalakass@gmail.com. "
+    "Facebook: https://www.facebook.com/share/1BJX3bLk66/ "
+    "GitHub: https://github.com/ROMARMALAKAS "
+    "All solo dev. Available for freelance. "
+    "IMAGES you can send (use [IMG:url] format): "
+    "Romar's photo: [IMG:assets/romar-hero.jpg] "
+    "Donate QR: [IMG:assets/donate-qr.jpg] "
+    "When sending images, put [IMG:url] on its own line."
 )
 
 _HF_MODELS = [
