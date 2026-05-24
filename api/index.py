@@ -755,15 +755,44 @@ def _chat_reply(text: str, history: list, is_savage: bool = False) -> str:
         ])
 
 
+_ROMAR_CONTEXT = (
+    "Romar Villafuerte is a full-stack web developer from the Philippines. "
+    "His projects: (1) Enrollment System (PHP+MySQL, role-based logins, cut enrollment from 10min to <1min), "
+    "(2) Ride Hailing System (like Grab/Uber, live map, WebSocket real-time tracking), "
+    "(3) Mini-game Arcade (13 browser games with global leaderboard). "
+    "Skills: HTML, CSS, JavaScript, Bootstrap, PHP, Python, FastAPI, MySQL, SQLite, WebSocket, Git. "
+    "Contact: romarmalakass@gmail.com, GitHub: ROMARMALAKAS, FB: https://www.facebook.com/share/1BJX3bLk66/. "
+    "All projects built solo. Available for freelance."
+)
+
 _HF_MODELS = [
-    "meta-llama/Meta-Llama-3.1-8B-Instruct",
+    "Qwen/Qwen2.5-7B-Instruct",
     "mistralai/Mistral-7B-Instruct-v0.3",
-    "microsoft/Phi-3-mini-4k-instruct",
 ]
 
 
+def _enrich_system_prompt(msgs: list) -> list:
+    """Inject Romar's context into the system prompt."""
+    enriched = []
+    has_system = False
+    for m in msgs:
+        if m.get("role") == "system":
+            has_system = True
+            enriched.append({
+                "role": "system",
+                "content": m["content"] + "\n\nContext about Romar: " + _ROMAR_CONTEXT
+            })
+        else:
+            enriched.append(m)
+    if not has_system:
+        enriched.insert(0, {"role": "system", "content": _ROMAR_CONTEXT})
+    return enriched
+
+
 async def _try_ai_api(msgs: list) -> str:
-    """Try OpenAI first, then HuggingFace Inference API (free)."""
+    """Try OpenAI first, then HuggingFace Router (free)."""
+    enriched = _enrich_system_prompt(msgs)
+
     # 1) OpenAI
     api_key = os.getenv("OPENAI_API_KEY", "")
     if api_key:
@@ -772,7 +801,7 @@ async def _try_ai_api(msgs: list) -> str:
                 resp = await client.post(
                     "https://api.openai.com/v1/chat/completions",
                     headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-                    json={"model": "gpt-4o-mini", "messages": msgs, "max_tokens": 1024}
+                    json={"model": "gpt-4o-mini", "messages": enriched, "max_tokens": 1024}
                 )
                 data = resp.json()
                 reply = data.get("choices", [{}])[0].get("message", {}).get("content", "")
@@ -781,17 +810,16 @@ async def _try_ai_api(msgs: list) -> str:
         except Exception:
             pass
 
-    # 2) HuggingFace Inference API (free with HF token)
+    # 2) HuggingFace Router (free inference)
     hf_token = os.getenv("HF_TOKEN", "")
     if hf_token:
         for model in _HF_MODELS:
             try:
-                url = f"https://api-inference.huggingface.co/models/{model}/v1/chat/completions"
                 async with httpx.AsyncClient(timeout=30) as client:
                     resp = await client.post(
-                        url,
+                        "https://router.huggingface.co/v1/chat/completions",
                         headers={"Authorization": f"Bearer {hf_token}", "Content-Type": "application/json"},
-                        json={"model": model, "messages": msgs, "max_tokens": 512}
+                        json={"model": model, "messages": enriched, "max_tokens": 512}
                     )
                     if resp.status_code == 200:
                         data = resp.json()
