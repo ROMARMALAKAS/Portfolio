@@ -67,6 +67,14 @@ def _hf_save_visits(stats: dict):
     _hf_save("visits.json", stats, "update visits")
 
 
+def _hf_load_scores() -> list:
+    return _hf_load("scores.json") or []
+
+
+def _hf_save_scores(scores: list):
+    _hf_save("scores.json", scores, "update scores")
+
+
 app = FastAPI(title="Romar Portfolio Leaderboard", version="1.0.0")
 
 # Disable CORS. Do not remove this for full-stack development.
@@ -427,23 +435,24 @@ async def healthz():
 # --- Scores ---
 @app.get("/api/scores/{game}")
 async def list_scores(game: str, difficulty: str = "", order: str = "high", limit: int = 10):
-    conn = get_db()
-    has = conn.execute("SELECT 1 FROM scores WHERE game=? LIMIT 1", (game,)).fetchone()
-    if not has:
-        conn.close()
-        return {"game": game, "difficulty": difficulty, "scores": []}
-    direction = "DESC" if order == "high" else "ASC"
+    # Load from HuggingFace persistent storage (survives cold starts)
+    all_scores = _hf_load_scores()
+    filtered = [s for s in all_scores if s.get("game") == game]
     if difficulty:
-        rows = conn.execute(
-            f"SELECT username, score FROM scores WHERE game=? AND difficulty=? ORDER BY score {direction} LIMIT ?",
-            (game, difficulty, limit)).fetchall()
-    else:
-        rows = conn.execute(
-            f"SELECT username, score FROM scores WHERE game=? ORDER BY score {direction} LIMIT ?",
-            (game, limit)).fetchall()
-    conn.close()
+        filtered = [s for s in filtered if s.get("difficulty") == difficulty]
+    reverse = order == "high"
+    filtered.sort(key=lambda s: s.get("score", 0), reverse=reverse)
+    # Deduplicate: keep best score per username
+    seen = set()
+    unique = []
+    for s in filtered:
+        if s["username"] not in seen:
+            seen.add(s["username"])
+            unique.append(s)
+        if len(unique) >= limit:
+            break
     return {"game": game, "difficulty": difficulty,
-            "scores": [{"username": r["username"], "score": r["score"]} for r in rows]}
+            "scores": [{"username": s["username"], "score": s["score"]} for s in unique]}
 
 
 @app.post("/api/scores")
@@ -456,6 +465,16 @@ async def submit_score(body: ScoreIn):
     conn.commit()
     sid = c.lastrowid
     conn.close()
+    # Persist to HuggingFace (survives cold starts)
+    all_scores = _hf_load_scores()
+    all_scores.append({
+        "game": body.game, "difficulty": body.difficulty,
+        "username": body.username, "score": body.score,
+        "sort_order": body.order, "created_at": now,
+    })
+    # Keep last 1000 scores to avoid file bloat
+    all_scores = all_scores[-1000:]
+    _hf_save_scores(all_scores)
     return {"ok": True, "id": sid}
 
 
@@ -1257,6 +1276,27 @@ async def admin_stats(authorization: Optional[str] = Header(None)):
     local_today = conn.execute("SELECT COUNT(*) FROM visits WHERE created_at>=?", (local_today_start,)).fetchone()[0]
     conn.close()
     today_visits = max(today_visits, local_today)
+
+    # Top games & top players from HF persistent scores
+    from collections import Counter, defaultdict
+    all_scores = _hf_load_scores()
+    game_plays = Counter()
+    game_players = defaultdict(set)
+    player_games = defaultdict(int)
+    player_scores = defaultdict(int)
+    for sc in all_scores:
+        g = sc.get("game", "")
+        u = sc.get("username", "")
+        game_plays[g] += 1
+        game_players[g].add(u)
+        player_games[u] += 1
+        player_scores[u] += sc.get("score", 0)
+    top_games = [{"game": g, "plays": c, "players": len(game_players[g])}
+                 for g, c in game_plays.most_common(10)]
+    top_players_raw = sorted(player_scores.items(), key=lambda x: x[1], reverse=True)[:10]
+    top_players = [{"username": u, "games_played": player_games[u], "total_score": s}
+                   for u, s in top_players_raw]
+
     return {
         "ok": True,
         "visits": {
@@ -1265,6 +1305,8 @@ async def admin_stats(authorization: Optional[str] = Header(None)):
             "total": total_visits,
             "by_day": by_day_list,
         },
+        "top_games": top_games,
+        "top_players": top_players,
     }
 
 
