@@ -213,37 +213,37 @@ def init_db():
                      'romarmalakass@gmail.com', 'https://github.com/ROMARMALAKAS',
                      'https://www.facebook.com/share/1BJX3bLk66/', '', 'Philippines', 0)""")
 
-    # Seed projects
-    c.execute("SELECT COUNT(*) FROM projects")
-    if c.fetchone()[0] == 0:
-        seed_projects = [
-            ("Enrollment System",
-             "A web-based enrollment system for managing students, sections, and class schedules. Streamlines registration and record-keeping for schools.",
-             "Problem: my school\u2019s enrollment was still done on paper \u2014 long lines, lost forms, and clashing schedules. I wanted to give the registrar a single screen where they could enroll a student in under a minute.\n\nWhat I built: A PHP + MySQL web app with role-based logins (registrar, teacher, student), a class-schedule grid that flags conflicts, and per-student record cards with full enrollment history.\n\nResult: cut the enrollment time per student from ~10 minutes (paper) to under a minute, and made the term-end grade reports a one-click export.",
-             "Solo developer \u2014 design, frontend, backend, database",
-             "", '["Web App","School","PHP","MySQL"]', "", "", 1, 0, 100),
-            ("Ride Hailing System",
-             "A ride-hailing platform that connects riders with drivers, with live request, accept, and tracking flow \u2014 built around a clean mobile-first interface.",
-             "Problem: trying to learn how the request \u2192 match \u2192 track flow of an Uber-style app actually works under the hood, end-to-end.\n\nWhat I built: a mobile-first web app where riders post a destination, nearby drivers see it on a live map, accept it, and both sides watch each other\u2019s pin in real time. Built on JavaScript + a small WebSocket backend.\n\nResult: a working clone of the core ride-request loop, with auth, live map updates, and a basic trip history. Great learning project for state sync between two clients.",
-             "Solo developer \u2014 frontend, realtime backend, map integration",
-             "", '["Web App","Maps","JavaScript","Realtime"]', "",
-             "https://romar-web.ct.ws/login.php?skip_intro=1&i=1", 1, 0, 100),
-            ("Mini-game Arcade",
-             "A web arcade with 13 mini-games (Snake, Bomberman, Math Quiz, Piano Tiles, Basketball, Memory and more) sharing one global leaderboard.",
-             "Problem: I wanted to learn JavaScript by building games \u2014 but most tutorials stop at one. I challenged myself to ship a whole arcade end-to-end.\n\nWhat I built: 13 mini-games (Snake with Adventure mode, Bomberman, Math Quiz, English Quiz, Piano Tiles, Basketball, Memory, Sliding Puzzle, Guess the Number, and more) on a single page. They all share one global leaderboard backed by a FastAPI backend on Fly.io with SQLite. Each game has its own how-to-play card, lives system, timed rounds, and edge-to-edge mobile play.\n\nResult: a fun, working arcade that doubles as a real codebase \u2014 vanilla JS for the games, a Python FastAPI backend, admin dashboard with auth, view tracking, and a Top Players panel that updates live as people play.",
-             "Solo developer \u2014 game logic, frontend, FastAPI backend, leaderboard",
-             "", '["JavaScript","Canvas","FastAPI","SQLite","Bootstrap"]',
-             "https://github.com/ROMARMALAKAS/Portfolio",
-             "https://romar-villafuerte.vercel.app/#playground", 1, 0, 100),
-            ("Word \u2194 PDF Converter",
-             "A PWA that converts Word documents to PDF and PDF back to Word \u2014 high quality, works offline, and installable on any device.",
-             "Problem: online converters are slow, have file size limits, and plaster your screen with ads. I wanted a clean, fast tool I could install on my phone and use anytime.\n\nWhat I built: a progressive web app with bidirectional conversion. Word to PDF uses mammoth + PyMuPDF on the server for accurate rendering with full-width images. PDF to Word uses pdf2docx for real text extraction \u2014 so the output is sharp vector text, not blurry screenshots. Large files fall back to client-side processing so there\u2019s no upload limit.\n\nResult: a converter that\u2019s fast, ad-free, installable, and produces high-quality output. Server-side handles up to 4 MB with print-quality results; client-side kicks in for anything bigger.",
-             "Solo developer \u2014 frontend, Python serverless backend, PWA",
-             "", '["Python","JavaScript","PyMuPDF","FastAPI","PWA","Vercel"]',
-             "https://github.com/ROMARMALAKAS/word-to-pdf",
-             "https://romar-converter-word-to-pdf.vercel.app", 1, 0, 90),
-        ]
-        for p in seed_projects:
+    # Seed projects — insert any missing seed projects by title
+    seed_projects = [
+        ("Enrollment System",
+         "A web-based enrollment system for managing students, sections, and class schedules. Streamlines registration and record-keeping for schools.",
+         "Problem: my school\u2019s enrollment was still done on paper \u2014 long lines, lost forms, and clashing schedules. I wanted to give the registrar a single screen where they could enroll a student in under a minute.\n\nWhat I built: A PHP + MySQL web app with role-based logins (registrar, teacher, student), a class-schedule grid that flags conflicts, and per-student record cards with full enrollment history.\n\nResult: cut the enrollment time per student from ~10 minutes (paper) to under a minute, and made the term-end grade reports a one-click export.",
+         "Solo developer \u2014 design, frontend, backend, database",
+         "", '["Web App","School","PHP","MySQL"]', "", "", 1, 0, 100),
+        ("Ride Hailing System",
+         "A ride-hailing platform that connects riders with drivers, with live request, accept, and tracking flow \u2014 built around a clean mobile-first interface.",
+         "Problem: trying to learn how the request \u2192 match \u2192 track flow of an Uber-style app actually works under the hood, end-to-end.\n\nWhat I built: a mobile-first web app where riders post a destination, nearby drivers see it on a live map, accept it, and both sides watch each other\u2019s pin in real time. Built on JavaScript + a small WebSocket backend.\n\nResult: a working clone of the core ride-request loop, with auth, live map updates, and a basic trip history. Great learning project for state sync between two clients.",
+         "Solo developer \u2014 frontend, realtime backend, map integration",
+         "", '["Web App","Maps","JavaScript","Realtime"]', "",
+         "https://romar-web.ct.ws/login.php?skip_intro=1&i=1", 1, 0, 100),
+        ("Mini-game Arcade",
+         "A web arcade with 13 mini-games (Snake, Bomberman, Math Quiz, Piano Tiles, Basketball, Memory and more) sharing one global leaderboard.",
+         "Problem: I wanted to learn JavaScript by building games \u2014 but most tutorials stop at one. I challenged myself to ship a whole arcade end-to-end.\n\nWhat I built: 13 mini-games (Snake with Adventure mode, Bomberman, Math Quiz, English Quiz, Piano Tiles, Basketball, Memory, Sliding Puzzle, Guess the Number, and more) on a single page. They all share one global leaderboard backed by a FastAPI backend on Fly.io with SQLite. Each game has its own how-to-play card, lives system, timed rounds, and edge-to-edge mobile play.\n\nResult: a fun, working arcade that doubles as a real codebase \u2014 vanilla JS for the games, a Python FastAPI backend, admin dashboard with auth, view tracking, and a Top Players panel that updates live as people play.",
+         "Solo developer \u2014 game logic, frontend, FastAPI backend, leaderboard",
+         "", '["JavaScript","Canvas","FastAPI","SQLite","Bootstrap"]',
+         "https://github.com/ROMARMALAKAS/Portfolio",
+         "https://romar-villafuerte.vercel.app/#playground", 1, 0, 100),
+        ("Word \u2194 PDF Converter",
+         "A PWA that converts Word documents to PDF and PDF back to Word \u2014 high quality, works offline, and installable on any device.",
+         "Problem: online converters are slow, have file size limits, and plaster your screen with ads. I wanted a clean, fast tool I could install on my phone and use anytime.\n\nWhat I built: a progressive web app with bidirectional conversion. Word to PDF uses mammoth + PyMuPDF on the server for accurate rendering with full-width images. PDF to Word uses pdf2docx for real text extraction \u2014 so the output is sharp vector text, not blurry screenshots. Large files fall back to client-side processing so there\u2019s no upload limit.\n\nResult: a converter that\u2019s fast, ad-free, installable, and produces high-quality output. Server-side handles up to 4 MB with print-quality results; client-side kicks in for anything bigger.",
+         "Solo developer \u2014 frontend, Python serverless backend, PWA",
+         "", '["Python","JavaScript","PyMuPDF","FastAPI","PWA","Vercel"]',
+         "https://github.com/ROMARMALAKAS/word-to-pdf",
+         "https://romar-converter-word-to-pdf.vercel.app", 1, 0, 90),
+    ]
+    existing_titles = {row[0] for row in c.execute("SELECT title FROM projects").fetchall()}
+    for p in seed_projects:
+        if p[0] not in existing_titles:
             c.execute("""INSERT INTO projects (title, description, long_description, role,
                          image_url, tech, github_url, demo_url, featured, hidden, sort_order)
                          VALUES (?,?,?,?,?,?,?,?,?,?,?)""", p)
