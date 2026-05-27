@@ -235,6 +235,13 @@ def init_db():
              "", '["JavaScript","Canvas","FastAPI","SQLite","Bootstrap"]',
              "https://github.com/ROMARMALAKAS/Portfolio",
              "https://romar-villafuerte.vercel.app/#playground", 1, 0, 100),
+            ("Word \u2194 PDF Converter",
+             "A PWA that converts Word documents to PDF and PDF back to Word \u2014 high quality, works offline, and installable on any device.",
+             "Problem: online converters are slow, have file size limits, and plaster your screen with ads. I wanted a clean, fast tool I could install on my phone and use anytime.\n\nWhat I built: a progressive web app with bidirectional conversion. Word to PDF uses mammoth + PyMuPDF on the server for accurate rendering with full-width images. PDF to Word uses pdf2docx for real text extraction \u2014 so the output is sharp vector text, not blurry screenshots. Large files fall back to client-side processing so there\u2019s no upload limit.\n\nResult: a converter that\u2019s fast, ad-free, installable, and produces high-quality output. Server-side handles up to 4 MB with print-quality results; client-side kicks in for anything bigger.",
+             "Solo developer \u2014 frontend, Python serverless backend, PWA",
+             "", '["Python","JavaScript","PyMuPDF","FastAPI","PWA","Vercel"]',
+             "https://github.com/ROMARMALAKAS/word-to-pdf",
+             "https://romar-converter-word-to-pdf.vercel.app", 1, 0, 90),
         ]
         for p in seed_projects:
             c.execute("""INSERT INTO projects (title, description, long_description, role,
@@ -584,7 +591,7 @@ def _chat_reply(text: str, history: list, is_savage: bool = False) -> str:
     if any(p in t for p in ["who is romar", "who's romar", "tell me about romar"]):
         return _rng.choice([
             "Romar Villafuerte is a Website Developer from the Philippines. He builds full-stack web apps — enrollment systems, ride-hailing platforms, game arcades, you name it. The guy can do front-end and back-end no problem.",
-            "He's a full-stack web developer based in the Philippines. His projects include an enrollment system, a ride-hailing app, and a 13-game arcade. Pretty solid portfolio for his age honestly.",
+            "He's a full-stack web developer based in the Philippines. His projects include an enrollment system, a ride-hailing app, a 13-game arcade, and a Word-PDF converter. Pretty solid portfolio for his age honestly.",
         ])
     if any(p in t for p in ["sino si romar", "sino siya", "about romar", "kwento mo"]):
         return _rng.choice([
@@ -620,11 +627,16 @@ def _chat_reply(text: str, history: list, is_savage: bool = False) -> str:
             return "May 13 mini-games siya dito — Snake, Bomberman, Math Quiz, Piano Tiles, Basketball, Memory, at iba pa. Lahat may shared leaderboard. Scroll up sa Games section kung gusto mong maglaro."
         else:
             return "He built a web arcade with 13 mini-games — Snake, Bomberman, Math Quiz, Piano Tiles, Basketball, Memory, and more. They all share a global leaderboard. Scroll up to the Games section to try them."
+    if words & {"converter", "convert", "word", "pdf"}:
+        if tl:
+            return "Yung Word ↔ PDF Converter ni Romar, PWA siya — pwede mo i-install sa phone. Word to PDF at PDF to Word, malinaw yung output. Try mo dito: https://romar-converter-word-to-pdf.vercel.app"
+        else:
+            return "His Word ↔ PDF Converter is a PWA you can install on your phone. Converts Word to PDF and PDF back to Word with high-quality output. Try it here: https://romar-converter-word-to-pdf.vercel.app"
     if words & {"project", "projects", "portfolio", "gawa", "ginawa", "work"}:
         if tl:
-            return "Tatlong main projects ni Romar:\n1. Enrollment System — school management app\n2. Ride Hailing System — parang Grab\n3. Mini-game Arcade — 13 games na may leaderboard\n\nLahat solo dev siya. Tanong mo ko kung gusto mo malaman yung details."
+            return "Apat na main projects ni Romar:\n1. Enrollment System — school management app\n2. Ride Hailing System — parang Grab\n3. Mini-game Arcade — 13 games na may leaderboard\n4. Word ↔ PDF Converter — PWA na high quality converter\n\nLahat solo dev siya. Tanong mo ko kung gusto mo malaman yung details."
         else:
-            return "Romar's main projects:\n1. Enrollment System — school management app\n2. Ride Hailing System — like Grab/Uber\n3. Mini-game Arcade — 13 games with a leaderboard\n\nAll built solo. Ask me about any of them for details."
+            return "Romar's main projects:\n1. Enrollment System — school management app\n2. Ride Hailing System — like Grab/Uber\n3. Mini-game Arcade — 13 games with a leaderboard\n4. Word ↔ PDF Converter — high-quality PWA converter\n\nAll built solo. Ask me about any of them for details."
 
     # === CONTACT / HIRE ===
     if any(p in t for p in ["how to contact", "how to reach", "get in touch", "pano makipag", "pano mag contact"]):
