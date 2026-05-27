@@ -67,6 +67,14 @@ def _hf_save_visits(stats: dict):
     _hf_save("visits.json", stats, "update visits")
 
 
+def _hf_load_scores() -> list:
+    return _hf_load("scores.json") or []
+
+
+def _hf_save_scores(scores: list):
+    _hf_save("scores.json", scores, "update scores")
+
+
 app = FastAPI(title="Romar Portfolio Leaderboard", version="1.0.0")
 
 # Disable CORS. Do not remove this for full-stack development.
@@ -427,23 +435,24 @@ async def healthz():
 # --- Scores ---
 @app.get("/api/scores/{game}")
 async def list_scores(game: str, difficulty: str = "", order: str = "high", limit: int = 10):
-    conn = get_db()
-    has = conn.execute("SELECT 1 FROM scores WHERE game=? LIMIT 1", (game,)).fetchone()
-    if not has:
-        conn.close()
-        return {"game": game, "difficulty": difficulty, "scores": []}
-    direction = "DESC" if order == "high" else "ASC"
+    # Load from HuggingFace persistent storage (survives cold starts)
+    all_scores = _hf_load_scores()
+    filtered = [s for s in all_scores if s.get("game") == game]
     if difficulty:
-        rows = conn.execute(
-            f"SELECT username, score FROM scores WHERE game=? AND difficulty=? ORDER BY score {direction} LIMIT ?",
-            (game, difficulty, limit)).fetchall()
-    else:
-        rows = conn.execute(
-            f"SELECT username, score FROM scores WHERE game=? ORDER BY score {direction} LIMIT ?",
-            (game, limit)).fetchall()
-    conn.close()
+        filtered = [s for s in filtered if s.get("difficulty") == difficulty]
+    reverse = order == "high"
+    filtered.sort(key=lambda s: s.get("score", 0), reverse=reverse)
+    # Deduplicate: keep best score per username
+    seen = set()
+    unique = []
+    for s in filtered:
+        if s["username"] not in seen:
+            seen.add(s["username"])
+            unique.append(s)
+        if len(unique) >= limit:
+            break
     return {"game": game, "difficulty": difficulty,
-            "scores": [{"username": r["username"], "score": r["score"]} for r in rows]}
+            "scores": [{"username": s["username"], "score": s["score"]} for s in unique]}
 
 
 @app.post("/api/scores")
@@ -456,6 +465,16 @@ async def submit_score(body: ScoreIn):
     conn.commit()
     sid = c.lastrowid
     conn.close()
+    # Persist to HuggingFace (survives cold starts)
+    all_scores = _hf_load_scores()
+    all_scores.append({
+        "game": body.game, "difficulty": body.difficulty,
+        "username": body.username, "score": body.score,
+        "sort_order": body.order, "created_at": now,
+    })
+    # Keep last 1000 scores to avoid file bloat
+    all_scores = all_scores[-1000:]
+    _hf_save_scores(all_scores)
     return {"ok": True, "id": sid}
 
 
@@ -962,61 +981,130 @@ async def create_booking(body: BookingIn):
     return {"ok": True}
 
 
+# --- Device name mapping for common models ---
+_PHONE_MODELS = {
+    "sm-s928": "Samsung Galaxy S25 Ultra", "sm-s926": "Samsung Galaxy S25+", "sm-s921": "Samsung Galaxy S25",
+    "sm-s918": "Samsung Galaxy S24 Ultra", "sm-s916": "Samsung Galaxy S24+", "sm-s911": "Samsung Galaxy S24",
+    "sm-s908": "Samsung Galaxy S22 Ultra", "sm-s906": "Samsung Galaxy S22+", "sm-s901": "Samsung Galaxy S22",
+    "sm-g998": "Samsung Galaxy S21 Ultra", "sm-g996": "Samsung Galaxy S21+", "sm-g991": "Samsung Galaxy S21",
+    "sm-g990": "Samsung Galaxy S21 FE", "sm-g988": "Samsung Galaxy S20 Ultra", "sm-g986": "Samsung Galaxy S20+",
+    "sm-g981": "Samsung Galaxy S20", "sm-g980": "Samsung Galaxy S20", "sm-g973": "Samsung Galaxy S10",
+    "sm-a556": "Samsung Galaxy A55", "sm-a546": "Samsung Galaxy A54", "sm-a536": "Samsung Galaxy A53",
+    "sm-a346": "Samsung Galaxy A34", "sm-a245": "Samsung Galaxy A24", "sm-a155": "Samsung Galaxy A15",
+    "sm-a146": "Samsung Galaxy A14", "sm-a127": "Samsung Galaxy A12", "sm-a057": "Samsung Galaxy A05s",
+    "sm-f946": "Samsung Galaxy Z Fold5", "sm-f936": "Samsung Galaxy Z Fold4",
+    "sm-f731": "Samsung Galaxy Z Flip5", "sm-f721": "Samsung Galaxy Z Flip4",
+    "sm-t870": "Samsung Galaxy Tab S7", "sm-t970": "Samsung Galaxy Tab S7+",
+    "sm-x710": "Samsung Galaxy Tab S9", "sm-x810": "Samsung Galaxy Tab S9+",
+    "pixel 9 pro": "Google Pixel 9 Pro", "pixel 9": "Google Pixel 9",
+    "pixel 8 pro": "Google Pixel 8 Pro", "pixel 8a": "Google Pixel 8a", "pixel 8": "Google Pixel 8",
+    "pixel 7 pro": "Google Pixel 7 Pro", "pixel 7a": "Google Pixel 7a", "pixel 7": "Google Pixel 7",
+    "cph2591": "OPPO Reno 11", "cph2505": "OPPO Reno 10", "cph2363": "OPPO Reno 8",
+    "cph2565": "OPPO A98", "cph2481": "OPPO A78", "cph2387": "OPPO A77",
+    "rmx3890": "Realme GT 6", "rmx3760": "Realme 11 Pro+", "rmx3710": "Realme C55",
+    "rmx3630": "Realme 10", "rmx3521": "Realme C35", "rmx3501": "Realme 9 Pro+",
+    "v2254": "Vivo V29", "v2237": "Vivo V27", "v2204": "Vivo Y36",
+    "v2217": "Vivo Y27", "v2120": "Vivo Y22", "v2111": "Vivo Y02s",
+    "2201117": "Xiaomi 12", "2203121": "Xiaomi 12 Pro", "23049": "Xiaomi 13",
+    "22111317": "Redmi Note 12", "23076": "Redmi Note 12S",
+    "2201116": "POCO F4", "22071": "POCO X4 GT", "23073": "POCO X5 Pro",
+    "lm-g900": "LG Velvet",
+}
+
+def _parse_device(ua: str) -> str:
+    if not ua:
+        return "Unknown"
+    ua_lower = ua.lower()
+
+    # iPhone — extract model from CPU identifier
+    if "iphone" in ua_lower:
+        m = re.search(r"iphone os (\d+)_", ua_lower)
+        os_ver = m.group(1) if m else ""
+        if os_ver:
+            return f"iPhone (iOS {os_ver})"
+        return "iPhone"
+
+    # iPad
+    if "ipad" in ua_lower:
+        m = re.search(r"os (\d+)_", ua_lower)
+        os_ver = m.group(1) if m else ""
+        if os_ver:
+            return f"iPad (iPadOS {os_ver})"
+        return "iPad"
+
+    # Android — extract model name
+    if "android" in ua_lower:
+        m = re.search(r"android[^;]*;\s*([^)]+)", ua_lower)
+        if m:
+            raw = m.group(1).strip()
+            parts = raw.split(" build")
+            model_raw = parts[0].strip().lower() if parts else ""
+            # Check known model mapping
+            for prefix, name in _PHONE_MODELS.items():
+                if model_raw.startswith(prefix):
+                    return name
+            # Fallback: capitalize the model string
+            if model_raw:
+                return model_raw.title()
+        return "Android"
+
+    # Desktop
+    if "windows" in ua_lower:
+        if "windows nt 10" in ua_lower:
+            return "Windows 10/11 PC"
+        return "Windows PC"
+    if "macintosh" in ua_lower or "mac os" in ua_lower:
+        return "Mac"
+    if "cros" in ua_lower:
+        return "Chromebook"
+    if "linux" in ua_lower:
+        return "Linux PC"
+    return "Unknown"
+
+
 # --- Visit tracking (with location & device info) ---
 @app.post("/api/track/visit")
 async def track_visit(body: VisitIn, request: Request):
     ip = _get_client_ip(request)
     ua = body.user_agent or request.headers.get("user-agent", "")
 
-    # Parse device from user-agent
-    device = "Unknown"
-    ua_lower = ua.lower()
-    if "iphone" in ua_lower:
-        device = "iPhone"
-    elif "ipad" in ua_lower:
-        device = "iPad"
-    elif "android" in ua_lower:
-        m = re.search(r"android[^;]*;\s*([^)]+)", ua_lower)
-        if m:
-            raw = m.group(1).strip()
-            parts = raw.split(" build")
-            device = parts[0].strip().title() if parts else "Android"
-        else:
-            device = "Android"
-    elif "windows" in ua_lower:
-        device = "Windows PC"
-    elif "macintosh" in ua_lower or "mac os" in ua_lower:
-        device = "Mac"
-    elif "linux" in ua_lower:
-        device = "Linux PC"
+    device = _parse_device(ua)
 
-    # Geo lookup via free API
+    # Geo lookup via free API (include lat/lon for Google Maps)
     country = ""
     city = ""
+    lat = 0.0
+    lon = 0.0
     try:
         async with httpx.AsyncClient(timeout=3) as client:
-            geo = await client.get(f"http://ip-api.com/json/{ip}?fields=country,city")
+            geo = await client.get(f"http://ip-api.com/json/{ip}?fields=country,city,regionName,lat,lon")
             if geo.status_code == 200:
                 gdata = geo.json()
                 country = gdata.get("country", "")
                 city = gdata.get("city", "")
+                region = gdata.get("regionName", "")
+                lat = gdata.get("lat", 0.0)
+                lon = gdata.get("lon", 0.0)
+                if city and region and region != city:
+                    city = f"{city}, {region}"
     except Exception:
         pass
 
     conn = get_db()
-    # Dedup: same IP + device within last 24 hours (prevents repeat counting)
+    # Dedup: same IP within last 24 hours — 1 IP = 1 visitor, period
     cutoff = time.time() - 86400
     existing = conn.execute(
-        "SELECT id FROM visits WHERE ip=? AND device=? AND created_at>?",
-        (ip, device, cutoff)
+        "SELECT id FROM visits WHERE ip=? AND created_at>?",
+        (ip, cutoff)
     ).fetchone()
     # Also check persistent storage for dedup across cold starts
     import datetime
     vstats = _hf_load_visits()
     today_str = datetime.datetime.utcfromtimestamp(time.time()).strftime("%Y-%m-%d")
-    seen_ips = vstats.get("seen_today", {})
-    ip_device_key = f"{ip}:{device}"
-    already_counted = seen_ips.get(ip_device_key) == today_str
+    # Clean seen_today: keep only today's entries with clean IP keys (no colons)
+    raw_seen = vstats.get("seen_today", {})
+    seen_ips = {k: v for k, v in raw_seen.items() if v == today_str and ":" not in k}
+    already_counted = seen_ips.get(ip) == today_str
 
     if not existing and not already_counted:
         now = time.time()
@@ -1024,15 +1112,21 @@ async def track_visit(body: VisitIn, request: Request):
             "INSERT INTO visits (ip, path, referrer, user_agent, country, city, device, created_at) VALUES (?,?,?,?,?,?,?,?)",
             (ip, body.path, body.referrer, ua, country, city, device, now))
         conn.commit()
-        # Persist visit count + dedup info to HuggingFace Hub
+        # Persist visit count + dedup info + visitor details to HuggingFace Hub
         vstats["total"] = vstats.get("total", 0) + 1
         by_day = vstats.get("by_day", {})
         by_day[today_str] = by_day.get(today_str, 0) + 1
         vstats["by_day"] = by_day
-        # Track seen IPs for today (clean up old entries)
-        seen_ips = {k: v for k, v in seen_ips.items() if v == today_str}
-        seen_ips[ip_device_key] = today_str
+        seen_ips[ip] = today_str
         vstats["seen_today"] = seen_ips
+        # Save visitor details (keep last 200)
+        recent = vstats.get("recent_visitors", [])
+        recent.insert(0, {
+            "ip": ip, "device": device, "country": country, "city": city,
+            "lat": lat, "lon": lon,
+            "path": body.path, "referrer": body.referrer, "created_at": now,
+        })
+        vstats["recent_visitors"] = recent[:200]
         _hf_save_visits(vstats)
 
     today_start = int(time.time()) - (int(time.time()) % 86400)
@@ -1182,6 +1276,27 @@ async def admin_stats(authorization: Optional[str] = Header(None)):
     local_today = conn.execute("SELECT COUNT(*) FROM visits WHERE created_at>=?", (local_today_start,)).fetchone()[0]
     conn.close()
     today_visits = max(today_visits, local_today)
+
+    # Top games & top players from HF persistent scores
+    from collections import Counter, defaultdict
+    all_scores = _hf_load_scores()
+    game_plays = Counter()
+    game_players = defaultdict(set)
+    player_games = defaultdict(int)
+    player_scores = defaultdict(int)
+    for sc in all_scores:
+        g = sc.get("game", "")
+        u = sc.get("username", "")
+        game_plays[g] += 1
+        game_players[g].add(u)
+        player_games[u] += 1
+        player_scores[u] += sc.get("score", 0)
+    top_games = [{"game": g, "plays": c, "players": len(game_players[g])}
+                 for g, c in game_plays.most_common(10)]
+    top_players_raw = sorted(player_scores.items(), key=lambda x: x[1], reverse=True)[:10]
+    top_players = [{"username": u, "games_played": player_games[u], "total_score": s}
+                   for u, s in top_players_raw]
+
     return {
         "ok": True,
         "visits": {
@@ -1190,61 +1305,50 @@ async def admin_stats(authorization: Optional[str] = Header(None)):
             "total": total_visits,
             "by_day": by_day_list,
         },
+        "top_games": top_games,
+        "top_players": top_players,
     }
 
 
 @app.get("/api/admin/stats2")
 async def admin_stats2(authorization: Optional[str] = Header(None)):
     _require_admin(authorization)
-    conn = get_db()
-    visitors = conn.execute(
-        "SELECT ip, path, referrer, user_agent, country, city, device, created_at "
-        "FROM visits ORDER BY created_at DESC LIMIT 100"
-    ).fetchall()
-    visitor_list = []
-    for v in visitors:
-        visitor_list.append({
-            "ip": v["ip"],
-            "path": v["path"],
-            "referrer": v["referrer"],
-            "user_agent": v["user_agent"],
-            "country": v["country"],
-            "city": v["city"],
-            "device": v["device"],
-            "created_at": v["created_at"],
-        })
-
-    thirty_days_ago = time.time() - (30 * 86400)
-    daily = conn.execute(
-        "SELECT date(created_at, 'unixepoch') as day, COUNT(*) as cnt "
-        "FROM visits WHERE created_at>=? GROUP BY day ORDER BY day",
-        (thirty_days_ago,)).fetchall()
-
-    countries = conn.execute(
-        "SELECT country, COUNT(*) as cnt FROM visits WHERE country!='' "
-        "GROUP BY country ORDER BY cnt DESC LIMIT 10"
-    ).fetchall()
-
-    devices = conn.execute(
-        "SELECT device, COUNT(*) as cnt FROM visits WHERE device!='' "
-        "GROUP BY device ORDER BY cnt DESC LIMIT 10"
-    ).fetchall()
-
-    # Message stats from HF persistent storage
-    hf_msgs = _hf_load_messages()
-    messages_total = len(hf_msgs)
-    messages_unread = sum(1 for m in hf_msgs if not m.get("read"))
-
-    # Month visits from HF
     import datetime
+    from collections import Counter
+
+    # Load all data from HuggingFace persistent storage
     vstats = _hf_load_visits()
-    month_visits = 0
+    hf_msgs = _hf_load_messages()
+
+    # Visitor list from HF (persistent across cold starts)
+    recent_visitors = vstats.get("recent_visitors", [])
+    visitor_list = recent_visitors[:100]
+
+    # Daily visits from HF by_day
     by_day = vstats.get("by_day", {})
+    thirty_days_ago_str = (datetime.datetime.utcnow() - datetime.timedelta(days=30)).strftime("%Y-%m-%d")
+    daily = []
+    for d_str, cnt in sorted(by_day.items()):
+        if d_str >= thirty_days_ago_str:
+            daily.append({"day": d_str, "count": cnt})
+
+    # Top countries from recent visitors
+    country_counts = Counter(v.get("country", "") for v in recent_visitors if v.get("country"))
+    top_countries = [{"country": c, "count": n} for c, n in country_counts.most_common(10)]
+
+    # Top devices from recent visitors
+    device_counts = Counter(v.get("device", "") for v in recent_visitors if v.get("device"))
+    top_devices = [{"device": d, "count": n} for d, n in device_counts.most_common(10)]
+
+    # Month visits
+    month_visits = 0
     for i in range(30):
         d = (datetime.datetime.utcnow() - datetime.timedelta(days=i)).strftime("%Y-%m-%d")
         month_visits += by_day.get(d, 0)
 
-    conn.close()
+    messages_total = len(hf_msgs)
+    messages_unread = sum(1 for m in hf_msgs if not m.get("read"))
+
     return {
         "ok": True,
         "visits_month": month_visits,
@@ -1252,9 +1356,9 @@ async def admin_stats2(authorization: Optional[str] = Header(None)):
         "messages_unread": messages_unread,
         "most_viewed_projects": [],
         "visitors": visitor_list,
-        "daily_visits": [{"day": d["day"], "count": d["cnt"]} for d in daily],
-        "top_countries": [{"country": c["country"], "count": c["cnt"]} for c in countries],
-        "top_devices": [{"device": d["device"], "count": d["cnt"]} for d in devices],
+        "daily_visits": daily,
+        "top_countries": top_countries,
+        "top_devices": top_devices,
     }
 
 

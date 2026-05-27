@@ -3534,6 +3534,53 @@ body.rv-game-active .rv-game-pane .row { --bs-gutter-x: 12px; }
 .rv-reveal[data-delay="300"] { transition-delay: 0.3s; }
 .rv-reveal[data-delay="400"] { transition-delay: 0.4s; }
 .rv-reveal[data-delay="500"] { transition-delay: 0.5s; }
+.rv-reveal[data-delay="600"] { transition-delay: 0.6s; }
+.rv-reveal[data-delay="700"] { transition-delay: 0.7s; }
+.rv-reveal[data-delay="800"] { transition-delay: 0.8s; }
+
+/* Hero entrance animations */
+.rv-hero .rv-hero-id,
+.rv-hero .rv-display,
+.rv-hero .lead,
+.rv-hero .d-flex.flex-wrap,
+.rv-hero .rv-hero-card {
+  opacity: 0;
+  transform: translateY(30px);
+  animation: rvHeroIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.rv-hero .rv-hero-id     { animation-delay: 0.3s; }
+.rv-hero .rv-display     { animation-delay: 0.5s; }
+.rv-hero .lead           { animation-delay: 0.65s; }
+.rv-hero .d-flex.flex-wrap { animation-delay: 0.8s; }
+.rv-hero .rv-hero-card   { animation-delay: 0.6s; transform: translateY(30px) scale(0.96); }
+body.rv-splash-active .rv-hero .rv-hero-id,
+body.rv-splash-active .rv-hero .rv-display,
+body.rv-splash-active .rv-hero .lead,
+body.rv-splash-active .rv-hero .d-flex.flex-wrap,
+body.rv-splash-active .rv-hero .rv-hero-card {
+  animation-delay: 4.6s;
+}
+body.rv-splash-active .rv-hero .rv-display     { animation-delay: 4.8s; }
+body.rv-splash-active .rv-hero .lead           { animation-delay: 4.95s; }
+body.rv-splash-active .rv-hero .d-flex.flex-wrap { animation-delay: 5.1s; }
+body.rv-splash-active .rv-hero .rv-hero-card   { animation-delay: 4.9s; }
+
+@keyframes rvHeroIn {
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Project card hover lift + tilt */
+.rv-project-card {
+  transition: transform 0.35s cubic-bezier(.22,.61,.36,1), box-shadow 0.35s;
+}
+.rv-project-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 40px -12px rgba(0,0,0,0.18);
+}
+
+/* Section heading slide-in variants */
+.rv-reveal-left  { transform: translateX(-28px); }
+.rv-reveal-right { transform: translateX(28px); }
 
 @media (prefers-reduced-motion: reduce) {
   .rv-ticker-track { animation: none !important; }
@@ -3691,6 +3738,110 @@ body.rv-splash-active {
   .rv-splash-letter,
   .rv-splash-tag,
   .rv-splash-bar { opacity: 1; transform: none; }
+}
+
+/* ---------- Visitor details panel (admin) ---------- */
+.rv-admin-card-blue, .rv-admin-card-violet { cursor: pointer; }
+.rv-admin-card-blue:hover, .rv-admin-card-violet:hover {
+  filter: brightness(1.08);
+  transform: translateY(-2px);
+  transition: all 0.2s;
+}
+.rv-visitor-details {
+  margin-top: 16px;
+  background: var(--rv-surface, #f8fafc);
+  border: 1px solid var(--rv-border, #e2e8f0);
+  border-radius: 12px;
+  padding: 16px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+[data-bs-theme="dark"] .rv-visitor-details {
+  background: #1a1f2e;
+  border-color: #2a2f3e;
+}
+.rv-visitor-details-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.rv-visitor-details-header h5 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+.rv-visitor-close {
+  background: none;
+  border: none;
+  font-size: 1.4rem;
+  cursor: pointer;
+  color: inherit;
+  opacity: 0.6;
+  padding: 0 4px;
+}
+.rv-visitor-close:hover { opacity: 1; }
+.rv-visitor-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  margin-bottom: 6px;
+  background: rgba(0,0,0,0.03);
+  transition: background 0.15s;
+}
+[data-bs-theme="dark"] .rv-visitor-item {
+  background: rgba(255,255,255,0.04);
+}
+.rv-visitor-item:hover {
+  background: rgba(37,99,235,0.08);
+}
+.rv-visitor-icon {
+  font-size: 1.3rem;
+  min-width: 28px;
+  text-align: center;
+  padding-top: 2px;
+}
+.rv-visitor-info {
+  flex: 1;
+  min-width: 0;
+}
+.rv-visitor-device {
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 2px;
+}
+.rv-visitor-meta {
+  font-size: 0.78rem;
+  opacity: 0.7;
+  line-height: 1.4;
+}
+.rv-visitor-meta span {
+  display: inline-block;
+  margin-right: 10px;
+}
+.rv-visitor-time {
+  font-size: 0.75rem;
+  opacity: 0.5;
+  white-space: nowrap;
+  padding-top: 2px;
+}
+.rv-visitor-loc-link {
+  color: #2563eb;
+  text-decoration: none;
+  display: inline-block;
+  margin-right: 10px;
+}
+.rv-visitor-loc-link:hover {
+  text-decoration: underline;
+  color: #1d4ed8;
+}
+[data-bs-theme="dark"] .rv-visitor-loc-link {
+  color: #60a5fa;
+}
+[data-bs-theme="dark"] .rv-visitor-loc-link:hover {
+  color: #93bbfd;
 }
 
 /* ---------- Scroll progress bar ---------- */

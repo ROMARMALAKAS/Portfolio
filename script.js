@@ -35,7 +35,7 @@
   }
 
   // Fall off naturally after the reveal animation finishes.
-  const AUTO_MS = 2400;
+  const AUTO_MS = 4400;
   const tAuto = setTimeout(dismiss, AUTO_MS);
 
   // Click / tap / Esc / scroll all skip the splash.
@@ -51,7 +51,7 @@
   // Safety: once the page is fully loaded, ensure the splash is dismissed
   // (in case JS animations are slower than expected).
   window.addEventListener("load", () => {
-    setTimeout(() => { clearTimeout(tAuto); dismiss(); }, 1800);
+    setTimeout(() => { clearTimeout(tAuto); dismiss(); }, 3800);
   });
 })();
 
@@ -4021,6 +4021,7 @@
       body: JSON.stringify({
         path: location.pathname || "/",
         referrer: (document.referrer || "").slice(0, 300),
+        user_agent: navigator.userAgent || "",
       }),
       keepalive: true,
     }).catch(() => {});
@@ -4318,6 +4319,71 @@
         tr.innerHTML = `<td>${escapeHtml(b.date)}</td><td>${escapeHtml(b.name)}</td><td><a href="mailto:${escapeHtml(b.email)}">${escapeHtml(b.email)}</a></td><td>${escapeHtml(b.note || "—")}</td>`;
         bookBody.appendChild(tr);
       });
+    }
+
+    // Visitor details — make visit stat cards clickable
+    const visitorPanel = document.getElementById("rvVisitorDetails");
+    const visitorList = document.getElementById("rvVisitorList");
+    const visitorClose = document.getElementById("rvVisitorClose");
+    const visitors = (s2 && s2.visitors) || [];
+
+    function deviceIcon(dev) {
+      const d = (dev || "").toLowerCase();
+      if (d.includes("iphone") || d.includes("android") || d.includes("samsung") ||
+          d.includes("oppo") || d.includes("vivo") || d.includes("realme") ||
+          d.includes("xiaomi") || d.includes("redmi") || d.includes("poco") ||
+          d.includes("pixel")) return "bi-phone";
+      if (d.includes("ipad") || d.includes("tab")) return "bi-tablet";
+      return "bi-laptop";
+    }
+
+    function timeAgo(ts) {
+      const diff = Math.floor(Date.now() / 1000 - ts);
+      if (diff < 60) return "just now";
+      if (diff < 3600) return Math.floor(diff / 60) + "m ago";
+      if (diff < 86400) return Math.floor(diff / 3600) + "h ago";
+      return Math.floor(diff / 86400) + "d ago";
+    }
+
+    function showVisitors() {
+      visitorList.innerHTML = "";
+      if (!visitors.length) {
+        visitorList.innerHTML = '<p style="opacity:0.5;text-align:center;padding:20px;">No visitors yet.</p>';
+      } else {
+        visitors.forEach((v) => {
+          const loc = [v.city, v.country].filter(Boolean).join(", ") || "Unknown location";
+          const hasCoords = v.lat && v.lon;
+          const mapsUrl = hasCoords
+            ? "https://www.google.com/maps?q=" + v.lat + "," + v.lon
+            : "https://www.google.com/maps/search/" + encodeURIComponent(loc);
+          const div = document.createElement("div");
+          div.className = "rv-visitor-item";
+          div.innerHTML =
+            '<div class="rv-visitor-icon"><i class="bi ' + deviceIcon(v.device) + '"></i></div>' +
+            '<div class="rv-visitor-info">' +
+              '<div class="rv-visitor-device">' + escapeHtml(v.device || "Unknown device") + '</div>' +
+              '<div class="rv-visitor-meta">' +
+                '<a href="' + mapsUrl + '" target="_blank" rel="noopener" class="rv-visitor-loc-link">' +
+                  '<i class="bi bi-geo-alt"></i> ' + escapeHtml(loc) +
+                '</a>' +
+                '<span><i class="bi bi-globe"></i> ' + escapeHtml(v.ip || "—") + '</span>' +
+              '</div>' +
+            '</div>' +
+            '<div class="rv-visitor-time">' + timeAgo(v.created_at) + '</div>';
+          visitorList.appendChild(div);
+        });
+      }
+      visitorPanel.hidden = false;
+      visitorPanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+
+    // Make all visit stat cards clickable
+    document.querySelectorAll("#rvAdminStats .rv-admin-card-blue, #rvAdminStats .rv-admin-card-violet").forEach((card) => {
+      card.addEventListener("click", showVisitors);
+    });
+
+    if (visitorClose) {
+      visitorClose.addEventListener("click", () => { visitorPanel.hidden = true; });
     }
 
     document.getElementById("rvAdminFoot").textContent =
@@ -5360,6 +5426,12 @@
     ".rv-album-picker",
     ".rv-hero .rv-stat-card",
     ".rv-hero .rv-hero-body",
+    "#about .text-body-secondary",
+    "#contact .rv-contact-form",
+    "#contact .d-flex.flex-wrap",
+    "#contact .rv-contact-or",
+    ".rv-schedule-card",
+    ".rv-facts",
   ];
   autoTargets.forEach((sel) => {
     document.querySelectorAll(sel).forEach((el, idx) => {
@@ -5429,4 +5501,45 @@
   window.addEventListener("scroll", onScroll, { passive: true });
   window.addEventListener("resize", onScroll, { passive: true });
   update();
+})();
+
+/* ---------- Matrix Rain Effect (Hero) ---------- */
+(function () {
+  const canvas = document.getElementById("rvMatrixCanvas");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  const chars =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%^&*<>{}[]|/~アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン";
+  const fontSize = 14;
+  let columns, drops;
+
+  function fadeColor() {
+    return "rgba(11, 15, 26, 0.05)";
+  }
+
+  function resize() {
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+    columns = Math.floor(canvas.width / fontSize);
+    drops = Array(columns).fill(1);
+  }
+  resize();
+  window.addEventListener("resize", resize);
+
+  function draw() {
+    ctx.fillStyle = fadeColor();
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.font = fontSize + "px JetBrains Mono, monospace";
+    for (let i = 0; i < drops.length; i++) {
+      const char = chars[Math.floor(Math.random() * chars.length)];
+      ctx.fillStyle = Math.random() > 0.95 ? "#aaffaa" : "#00ff41";
+      ctx.fillText(char, i * fontSize, drops[i] * fontSize);
+      if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+        drops[i] = 0;
+      }
+      drops[i]++;
+    }
+  }
+
+  setInterval(draw, 60);
 })();
